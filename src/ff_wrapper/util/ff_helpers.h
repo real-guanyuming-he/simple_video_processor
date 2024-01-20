@@ -62,7 +62,7 @@ namespace ffhelpers
 	// Translates the ffmpeg c api error code into string.
 	std::string ff_translate_error_code(int err_code);
 
-#define ON_FF_ERROR(msg) throw std::runtime_error(msg);
+#define ON_FF_ERROR(msg) throw std::runtime_error(msg)
 #define ON_FF_ERROR_WITH_CODE(msg, code) ON_FF_ERROR(std::string(msg) + " " + ffhelpers::ff_translate_error_code(code))
 
 	// Copied from https://ffmpeg.org/doxygen/5.1/codec__par_8c_source.html#l00031

@@ -3,15 +3,15 @@
 * Copyright (C) Guanyuming He 2024
 * This file is licensed under the GNU General Public License v3.
 *
-* This file is part of PROJECT_NAME_REPLACE_LATER.
-* PROJECT_NAME_REPLACE_LATER is free software:
+* This file is part of ff_wrapper.
+* ff_wrapper is free software:
 * you can redistribute it and/or modify it under the terms of the GNU General Public License
 * as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *
-* PROJECT_NAME_REPLACE_LATER is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+* ff_wrapper is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
 * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 * See the GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License along with PROJECT_NAME_REPLACE_LATER.
+* You should have received a copy of the GNU General Public License along with ff_wrapper.
 * If not, see <https://www.gnu.org/licenses/>.
 */
 
@@ -67,8 +67,6 @@ namespace ff
 
 		/*
 		* Does nothing.
-		* Should not copy the state of other because state is private
-		* and derived classes cannot control the state directly.
 		*
 		* Derived classes should do everything.
 		*/
@@ -110,7 +108,7 @@ namespace ff
 
 		ff_object_state get_object_state() const { return state; }
 
-	private:
+	protected:
 		ff_object_state state;
 
 		//////////////////////////// Memory Allocation Control ////////////////////////////////
