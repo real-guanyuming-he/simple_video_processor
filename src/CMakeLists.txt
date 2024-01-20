@@ -17,15 +17,29 @@ cmake_path(APPEND
     SrcFFWrapperPath "util"
     OUTPUT_VARIABLE SrcFFWrapperUtilPath)
 #message("SrcFFWrapperUtilPath=${SrcFFWrapperUtilPath}")
+cmake_path(APPEND 
+    SrcFFWrapperPath "data"
+    OUTPUT_VARIABLE SrcFFWrapperDataPath)
+cmake_path(APPEND 
+    SrcFFWrapperPath "formats"
+    OUTPUT_VARIABLE SrcFFWrapperFormatsPath)
 
 # The FFmpeg wrapper library
 add_library(ff_wrapper SHARED
+# Util
     "${SrcFFWrapperUtilPath}/ff_helpers.h"
     "${SrcFFWrapperUtilPath}/ff_helpers.cpp"
     "${SrcFFWrapperUtilPath}/ff_math_helpers.h"
     "${SrcFFWrapperUtilPath}/ff_object.h"
     "${SrcFFWrapperUtilPath}/ff_object.cpp"
-    "${SrcFFWrapperUtilPath}/util.h")
+    "${SrcFFWrapperUtilPath}/util.h"
+# Data
+    "${SrcFFWrapperDataPath}/packet.h"
+    "${SrcFFWrapperDataPath}/packet.cpp"
+# Formats
+    "${SrcFFWrapperFormatsPath}/media_file_base.h"
+    "${SrcFFWrapperFormatsPath}/demuxer.h"
+    "${SrcFFWrapperFormatsPath}/muxer.h")
 
 ################################# Include/Library Paths #################################
 
@@ -60,105 +74,41 @@ cmake_path(APPEND
 message("MyVcpkgLibPathDbg=${MyVcpkgLibPathDbg}")
 
 # Search for the libs only in the vcpkg/installed dir
+set(FFmpegLibNames
+    "avcodec"
+    "avdevice"
+    "avfilter"
+    "avformat"
+    "avutil"
+    "swresample"
+    "swscale")
+set(ThirdPartyLibNames
+    "ass")
+set(AllLibNames
+    ${FFmpegLibNames} ${ThirdPartyLibNames})
 
-# libavcodec
-find_library(AvcodecPath
-    NAMES "avcodec" "avcodec-60" 
-    PATHS ${MyVcpkgLibPath}
-    NO_DEFAULT_PATH)
-find_library(AvcodecPathDbg
-    NAMES "avcodec" "avcodec-60" 
-    PATHS ${MyVcpkgLibPathDbg}
-    NO_DEFAULT_PATH)
-# libavdevice
-find_library(AvdevicePath
-    NAMES "avdevice" "avdevice-60" 
-    PATHS ${MyVcpkgLibPath}
-    NO_DEFAULT_PATH)
-find_library(AvdevicePathDbg
-    NAMES "avdevice" "avdevice-60" 
-    PATHS ${MyVcpkgLibPathDbg}
-    NO_DEFAULT_PATH)
-# libavfilter
-find_library(AvfilterPath
-    NAMES "avfilter" "avfilter-9" 
-    PATHS ${MyVcpkgLibPath}
-    NO_DEFAULT_PATH)
-find_library(AvfilterPathDbg
-    NAMES "avfilter" "avfilter-9" 
-    PATHS ${MyVcpkgLibPathDbg}
-    NO_DEFAULT_PATH)
-# libavformat
-find_library(AvformatPath
-    NAMES "avformat" "avformat-60" 
-    PATHS ${MyVcpkgLibPath}
-    NO_DEFAULT_PATH)
-find_library(AvformatPathDbg
-    NAMES "avformat" "avformat-60" 
-    PATHS ${MyVcpkgLibPathDbg}
-    NO_DEFAULT_PATH)
-# libavutil
-find_library(AvutilPath
-    NAMES "avutil" "avutil-60" 
-    PATHS ${MyVcpkgLibPath}
-    NO_DEFAULT_PATH)
-find_library(AvutilPathDbg
-    NAMES "avutil" "avutil-60" 
-    PATHS ${MyVcpkgLibPathDbg}
-    NO_DEFAULT_PATH)
-# libswresample
-find_library(SwresamplePath
-    NAMES "swresample" "swresample-4" 
-    PATHS ${MyVcpkgLibPath}
-    NO_DEFAULT_PATH)
-find_library(SwresamplePathDbg
-    NAMES "swresample" "swresample-4" 
-    PATHS ${MyVcpkgLibPathDbg}
-    NO_DEFAULT_PATH)
-# libswscale
-find_library(SwscalePath
-    NAMES "swscale" "swscale-7" 
-    PATHS ${MyVcpkgLibPath}
-    NO_DEFAULT_PATH)
-find_library(SwscalePathDbg
-    NAMES "swscale" "swscale-7" 
-    PATHS ${MyVcpkgLibPathDbg}
-    NO_DEFAULT_PATH)
-# libass
-find_library(AssPath "ass"
-    PATHS ${MyVcpkgLibPath}
-    NO_DEFAULT_PATH)
-find_library(AssPathDbg "ass"
-    PATHS ${MyVcpkgLibPathDbg}
-    NO_DEFAULT_PATH)
+# Find libs for both debug and release
+foreach(LibName IN LISTS AllLibNames)
+    find_library(${LibName}_Path
+        NAMES ${LibName}
+        PATHS ${MyVcpkgLibPath}
+        NO_DEFAULT_PATH)
+    find_library(${LibName}_PathDbg
+        NAMES ${LibName}
+        PATHS ${MyVcpkgLibPathDbg}
+        NO_DEFAULT_PATH)
+endforeach()
 
-set(FFmpegLibraryPaths
-    ${AvcodecPath}
-    ${AvdevicePath}
-    ${AvfilterPath}
-    ${AvformatPath}
-    ${AvutilPath}
-    ${SwresamplePath}
-    ${SwscalePath})
-set(ThirdPartyLibraryPaths
-    ${AssPath})
-set(AllLibraryPaths
-    ${FFmpegLibraryPaths} ${ThirdPartyLibraryPaths})
+target_include_directories(ff_wrapper PRIVATE ${VcpkgIncludePath})
 
-set(FFmpegLibraryPathsDbg
-    ${AvcodecPathDbg}
-    ${AvdevicePathDbg}
-    ${AvfilterPathDbg}
-    ${AvformatPathDbg}
-    ${AvutilPathDbg}
-    ${SwresamplePathDbg}
-    ${SwscalePathDbg})
-set(ThirdPartyLibraryPathsDbg
-    ${AssPathDbg})
-set(AllLibraryPathsDbg
-    ${FFmpegLibraryPathsDbg} ${ThirdPartyLibraryPathsDbg})
+# The use of target_link_directories is discouraged when I can find the full paths of the libs
+# target_link_directories(ff_wrapper PRIVATE 
+#     $<IF:$<CONFIG:Debug>,${MyVcpkgDebugBinPath},${MyVcpkgBinPath}>)
 
-message("AllLibraryPathsDbg=${AllLibraryPathsDbg}")
+foreach(LibName IN LISTS AllLibNames)
+    target_link_libraries(ff_wrapper PRIVATE
+        $<IF:$<CONFIG:Debug>,${${LibName}_PathDbg},${${LibName}_Path}>)
+endforeach()
 
 # Additional libraries to add on Windows.
 # Will have link errors otherwise.
@@ -168,15 +118,6 @@ if(WIN32)
         "strmiids" 
         "mfplat" "mfuuid")
 endif()
-
-target_include_directories(ff_wrapper PRIVATE ${VcpkgIncludePath})
-
-# The use of target_link_directories is discouraged when I can find the full paths of the libs
-# target_link_directories(ff_wrapper PRIVATE 
-#     $<IF:$<CONFIG:Debug>,${MyVcpkgDebugBinPath},${MyVcpkgBinPath}>)
-
-target_link_libraries(ff_wrapper PRIVATE
-    $<IF:$<CONFIG:Debug>,${AllLibraryPathsDbg},${AllLibraryPaths}>)
 if(WIN32)
     target_link_libraries(ff_wrapper PRIVATE
         ${AdditionalLibsWindows})
