@@ -21,7 +21,7 @@ struct AVPacket;
 
 namespace ff
 {
-	class packet final : public ff_object
+	class FF_WRAPPER_API packet final : public ff_object
 	{
 	public:
 		/*
