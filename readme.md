@@ -55,3 +55,6 @@ doc/
 , where `src/` contains the source, `bin/` contains the generated and built files, and `doc/` contains the documentation (including the generated documents).
 
 `bin/` is excluded from Git's version control and is not visible on GitHub.
+
+# Git Branches
+- Branch `ff_data` contains development of wrappers for multimedia data (e.g. Packets that contain compressed data and frames that contain decompressed data).
