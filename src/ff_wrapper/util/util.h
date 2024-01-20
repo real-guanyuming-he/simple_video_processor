@@ -1,3 +1,4 @@
+#pragma once
 /*
 * Copyright (C) Guanyuming He 2024
 * This file is licensed under the GNU General Public License v3.
@@ -42,17 +43,7 @@
 // cannot accept an argument for message.
 // In addition, I want to detect assertions during testing.
 
-// First, define a debug break macro to automatically insert a breakpoint whenever possible
-// This is to assist debugging
-#ifdef _MSC_VER // MSVC
-	#define FF_DEBUG_BREAK __debugbreak();
-#elif __GNUC__
-	#define FF_DEBUG_BREAK __builtin_trap();
-#else
-	#define FF_DEBUG_BREAK
-#endif // Which Compiler
-
-// Then, define the assert macro if NDEBUG is not defined
+// Define the assert macro if NDEBUG is not defined
 #ifndef NDEBUG
 
 #include <fstream> // For accessing assertion log files
@@ -72,7 +63,6 @@ constexpr const auto FF_ASSERTION_LOG_FILE_NAME = "ff_assertion_log.log";
 			msg;\
 		log_file.flush();\
 		log_file.close();\
-		FF_DEBUG_BREAK\
 		std::terminate();\
 	}
 #else // Assertion during testing
@@ -87,7 +77,6 @@ constexpr const auto FF_ASSERTION_LOG_FILE_NAME = "ff_assertion_log.log";
 			msg;\
 		log_file.flush();\
 		log_file.close();\
-		FF_DEBUG_BREAK\
 		exit(-1);/* CTest treats non-zero return values as failures. */\
 	}
 #endif // !FF_TESTING

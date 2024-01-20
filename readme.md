@@ -13,7 +13,7 @@ This project uses `vcpkg` and `CMake` to manage the build. Before you can build 
 
 - Install `CMake` 3.27 or later
 - Install the latest `vcpkg` and
-    - use it to install `FFmpeg` version 6, x64 static through `vcpkg install`
+    - use it to install `FFmpeg` x64 through `vcpkg install`
     - set the environment variable `VCPKG_ROOT` to its root directory
 
 Then, you can let CMake generate the project files from the `bin/` directory by invoking
