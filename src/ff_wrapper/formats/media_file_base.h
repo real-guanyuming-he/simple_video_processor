@@ -17,6 +17,8 @@
 
 #include "../util/ff_object.h"
 
+struct AVFormatContext;
+
 namespace ff
 {
 	/*
@@ -24,10 +26,40 @@ namespace ff
 	* 
 	* Provides encapsulation for the common methods of AVFormatContext
 	*/
-	class media_file_base
+	class FF_WRAPPER_API media_file_base : public ff_object
 	{
+	public:
+		/*
+		* Does nothing but setting the fields to nullptr.
+		*/
+		media_file_base() noexcept : 
+			ff_object(), 
+			p_fmt_ctx(nullptr), file_path(nullptr) {}
+
+		/*
+		* Opens the file indicated by path
+		* and initialize the fmt ctx with it.
+		*/
+		media_file_base(const wchar_t* path);
+
+		~media_file_base() = default;
 
 	protected:
+		::AVFormatContext* p_fmt_ctx;
 
+		virtual void internal_allocate_object_memory() override;
+		virtual void internal_allocate_resources_memory(uint64_t size, void* additional_information) override;
+		virtual void internal_release_object_memory() override;
+		virtual void internal_release_resources_memory() override;
+
+	private:
+		// Absolute path to the multimedia file.
+		const wchar_t* file_path;
+	public:
+		/*
+		* @returns the absolute path to the multimedia file,
+		* or nullptr if not set.
+		*/
+		const wchar_t* get_file_path() const { return file_path; }
 	};
 }

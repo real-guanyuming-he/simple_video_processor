@@ -58,3 +58,4 @@ doc/
 
 # Git Branches
 - Branch `ff_data` contains development of wrappers for multimedia data (e.g. Packets that contain compressed data and frames that contain decompressed data).
+- Branch `ff_formats` contains development of formats (file I/O, demuxer, and muxer)
