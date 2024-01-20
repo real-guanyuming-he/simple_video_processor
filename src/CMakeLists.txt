@@ -1,14 +1,8 @@
 cmake_minimum_required(VERSION 3.27)
 
-# vcpkg does not automatically detect that it's referencing a static build,
-# so I should set this variable manually.
-# I don't need to modify the cache var of the same name, because inside the vcpkg toolchain file
-# the cache var is modified accordingly.
-set(VCPKG_TARGET_TRIPLET "x64-windows-static")
-
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-project(videoprocessortemp
+project("simple_video_processor"
     VERSION 0.0.1
     LANGUAGES C CXX)
 
@@ -26,6 +20,9 @@ cmake_path(APPEND
 
 # The FFmpeg wrapper library
 add_library(ff_wrapper SHARED
+    "${SrcFFWrapperUtilPath}/ff_helpers.h"
+    "${SrcFFWrapperUtilPath}/ff_helpers.cpp"
+    "${SrcFFWrapperUtilPath}/ff_math_helpers.h"
     "${SrcFFWrapperUtilPath}/ff_object.h"
     "${SrcFFWrapperUtilPath}/ff_object.cpp"
     "${SrcFFWrapperUtilPath}/util.h")
@@ -41,54 +38,149 @@ cmake_path(GET
     VcpkgIncludePath PARENT_PATH
     MyVcpkgInstalledRootPath)
 
-# This path is the whole /debug/lib below /installed
+# These two are debug/lib and lib dirs
+# Used because linking to dynamic libraries means to link to the static entry points of them
 cmake_path(APPEND
     MyVcpkgInstalledRootPath "debug" "lib"
-    OUTPUT_VARIABLE MyVcpkgDebugLibPath)
-# This is the /lib below /installed
+    OUTPUT_VARIABLE MyVcpkgLibPathDbg)
 cmake_path(APPEND
     MyVcpkgInstalledRootPath "lib"
     OUTPUT_VARIABLE MyVcpkgLibPath)
 
-set(FFmpegLibraries 
-    "avcodec"
-    "avdevice"
-    "avfilter"
-    "avformat"
-    "avutil"
-    "swresample"
-    "swscale")
-set(ThirdPartyLibraries
-    "ass"
-    "libpng16"
-    "libsharpyuv"
-    "libwebp" "libwebpdecoder" "libwebpdemux" "libwebpmux"
-    "libx264"
-    "openh264"
-#    "srt"
-    "x265-static")
-set(AllLibraries
-    ${FFmpegLibraries} ${ThirdPartyLibraries})
+# These two are debug/bin and /bin dirs
+# Not used for now
+# cmake_path(APPEND
+#     MyVcpkgInstalledRootPath "debug" "bin"
+#     OUTPUT_VARIABLE MyVcpkgDebugBinPath)
+# # This is the /lib below /installed
+# cmake_path(APPEND
+#     MyVcpkgInstalledRootPath "bin"
+#     OUTPUT_VARIABLE MyVcpkgBinPath)
 
-# FFmpeg libraries are not appended with 'd' under a debug build
-# However, other libraries may
-set(ThirdPartyLibrariesDebug
-    "ass"
-    "libpng16d"
-    "libsharpyuv"
-    "libwebp" "libwebpdecoder" "libwebpdemux" "libwebpmux"
-    "libx264"
-    "openh264"
-#    "srt"
-    "x265-static")
-set(AllLibrariesDebug
-    ${FFmpegLibraries} ${ThirdPartyLibrariesDebug})
+message("MyVcpkgLibPathDbg=${MyVcpkgLibPathDbg}")
+
+# Search for the libs only in the vcpkg/installed dir
+
+# libavcodec
+find_library(AvcodecPath
+    NAMES "avcodec" "avcodec-60" 
+    PATHS ${MyVcpkgLibPath}
+    NO_DEFAULT_PATH)
+find_library(AvcodecPathDbg
+    NAMES "avcodec" "avcodec-60" 
+    PATHS ${MyVcpkgLibPathDbg}
+    NO_DEFAULT_PATH)
+# libavdevice
+find_library(AvdevicePath
+    NAMES "avdevice" "avdevice-60" 
+    PATHS ${MyVcpkgLibPath}
+    NO_DEFAULT_PATH)
+find_library(AvdevicePathDbg
+    NAMES "avdevice" "avdevice-60" 
+    PATHS ${MyVcpkgLibPathDbg}
+    NO_DEFAULT_PATH)
+# libavfilter
+find_library(AvfilterPath
+    NAMES "avfilter" "avfilter-9" 
+    PATHS ${MyVcpkgLibPath}
+    NO_DEFAULT_PATH)
+find_library(AvfilterPathDbg
+    NAMES "avfilter" "avfilter-9" 
+    PATHS ${MyVcpkgLibPathDbg}
+    NO_DEFAULT_PATH)
+# libavformat
+find_library(AvformatPath
+    NAMES "avformat" "avformat-60" 
+    PATHS ${MyVcpkgLibPath}
+    NO_DEFAULT_PATH)
+find_library(AvformatPathDbg
+    NAMES "avformat" "avformat-60" 
+    PATHS ${MyVcpkgLibPathDbg}
+    NO_DEFAULT_PATH)
+# libavutil
+find_library(AvutilPath
+    NAMES "avutil" "avutil-60" 
+    PATHS ${MyVcpkgLibPath}
+    NO_DEFAULT_PATH)
+find_library(AvutilPathDbg
+    NAMES "avutil" "avutil-60" 
+    PATHS ${MyVcpkgLibPathDbg}
+    NO_DEFAULT_PATH)
+# libswresample
+find_library(SwresamplePath
+    NAMES "swresample" "swresample-4" 
+    PATHS ${MyVcpkgLibPath}
+    NO_DEFAULT_PATH)
+find_library(SwresamplePathDbg
+    NAMES "swresample" "swresample-4" 
+    PATHS ${MyVcpkgLibPathDbg}
+    NO_DEFAULT_PATH)
+# libswscale
+find_library(SwscalePath
+    NAMES "swscale" "swscale-7" 
+    PATHS ${MyVcpkgLibPath}
+    NO_DEFAULT_PATH)
+find_library(SwscalePathDbg
+    NAMES "swscale" "swscale-7" 
+    PATHS ${MyVcpkgLibPathDbg}
+    NO_DEFAULT_PATH)
+# libass
+find_library(AssPath "ass"
+    PATHS ${MyVcpkgLibPath}
+    NO_DEFAULT_PATH)
+find_library(AssPathDbg "ass"
+    PATHS ${MyVcpkgLibPathDbg}
+    NO_DEFAULT_PATH)
+
+set(FFmpegLibraryPaths
+    ${AvcodecPath}
+    ${AvdevicePath}
+    ${AvfilterPath}
+    ${AvformatPath}
+    ${AvutilPath}
+    ${SwresamplePath}
+    ${SwscalePath})
+set(ThirdPartyLibraryPaths
+    ${AssPath})
+set(AllLibraryPaths
+    ${FFmpegLibraryPaths} ${ThirdPartyLibraryPaths})
+
+set(FFmpegLibraryPathsDbg
+    ${AvcodecPathDbg}
+    ${AvdevicePathDbg}
+    ${AvfilterPathDbg}
+    ${AvformatPathDbg}
+    ${AvutilPathDbg}
+    ${SwresamplePathDbg}
+    ${SwscalePathDbg})
+set(ThirdPartyLibraryPathsDbg
+    ${AssPathDbg})
+set(AllLibraryPathsDbg
+    ${FFmpegLibraryPathsDbg} ${ThirdPartyLibraryPathsDbg})
+
+message("AllLibraryPathsDbg=${AllLibraryPathsDbg}")
+
+# Additional libraries to add on Windows.
+# Will have link errors otherwise.
+if(WIN32)
+    set(AdditionalLibsWindows
+        "bcrypt"
+        "strmiids" 
+        "mfplat" "mfuuid")
+endif()
 
 target_include_directories(ff_wrapper PRIVATE ${VcpkgIncludePath})
-target_link_directories(ff_wrapper PRIVATE 
-    $<IF:$<CONFIG:Debug>,${MyVcpkgDebugLibPath},${MyVcpkgLibPath}>)
+
+# The use of target_link_directories is discouraged when I can find the full paths of the libs
+# target_link_directories(ff_wrapper PRIVATE 
+#     $<IF:$<CONFIG:Debug>,${MyVcpkgDebugBinPath},${MyVcpkgBinPath}>)
+
 target_link_libraries(ff_wrapper PRIVATE
-    $<IF:$<CONFIG:Debug>,${AllLibrariesDebug},${AllLibraries}>)
+    $<IF:$<CONFIG:Debug>,${AllLibraryPathsDbg},${AllLibraryPaths}>)
+if(WIN32)
+    target_link_libraries(ff_wrapper PRIVATE
+        ${AdditionalLibsWindows})
+endif()
 
 ################################# Other Compiler/Linker Options #################################
 
@@ -108,8 +200,6 @@ set(TestSrcPath "test")
 cmake_path(APPEND
     TestSrcPath ${FFWrapperName}
     OUTPUT_VARIABLE TestSrcFFWrapperPath)
-
-set(ListTestTargets)
 
 # Test ff_object
 add_executable(test_ff_object 
@@ -136,5 +226,5 @@ endforeach()
 # Debug Output
 #message("VcpkgIncludePath=${VcpkgIncludePath}")
 #message("MyVcpkgInstalledRootPath=${MyVcpkgInstalledRootPath}")
-#message("MyVcpkgDebugLibPath=${MyVcpkgDebugLibPath}")
+#message("MyVcpkgLibPathDbg=${MyVcpkgLibPathDbg}")
 #message("MyVcpkgLibPath=${MyVcpkgLibPath}")
