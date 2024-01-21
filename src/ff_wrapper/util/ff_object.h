@@ -144,12 +144,12 @@ namespace ff
 		* Releases the memory allocated for the object and sets the object pointer to nullptr.
 		* Should be called after releasing resources, not before.
 		*/
-		virtual void internal_release_object_memory() = 0;
+		virtual void internal_release_object_memory() noexcept = 0;
 		/*
 		* Releases only the memory allocated for the resources
 		* Should be called before releasing the object memory.
 		*/
-		virtual void internal_release_resources_memory() = 0;
+		virtual void internal_release_resources_memory() noexcept = 0;
 
 	public:
 		/*
@@ -198,7 +198,7 @@ namespace ff
 		*
 		* After the call, sets state to DESTROYED.
 		*/
-		void destroy();
+		void destroy() noexcept;
 
 		////////////////////////////// Testing Only ////////////////////////////
 #ifdef FF_TESTING

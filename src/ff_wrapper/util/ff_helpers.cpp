@@ -27,7 +27,7 @@ extern "C"
 
 namespace ffhelpers
 {
-	void safely_close_input_format_context(AVFormatContext** ppfc)
+	void safely_close_input_format_context(AVFormatContext** ppfc) noexcept
 	{
 		if (*ppfc)
 		{
@@ -35,7 +35,7 @@ namespace ffhelpers
 		}
 	}
 
-	void safely_free_format_context(::AVFormatContext** ppfc)
+	void safely_free_format_context(::AVFormatContext** ppfc) noexcept
 	{
 		if (*ppfc)
 		{
@@ -44,7 +44,7 @@ namespace ffhelpers
 		}
 	}
 
-	void safely_free_avio_context(AVIOContext** ppioct)
+	void safely_free_avio_context(AVIOContext** ppioct) noexcept
 	{
 		if (*ppioct)
 		{
@@ -52,7 +52,7 @@ namespace ffhelpers
 		}
 	}
 
-	void safely_free_frame(AVFrame** ppf)
+	void safely_free_frame(AVFrame** ppf) noexcept
 	{
 		if (*ppf)
 		{
@@ -61,7 +61,7 @@ namespace ffhelpers
 		}
 	}
 
-	void safely_free_packet(AVPacket** pppkt)
+	void safely_free_packet(AVPacket** pppkt) noexcept
 	{
 		if (*pppkt)
 		{
@@ -70,7 +70,7 @@ namespace ffhelpers
 		}
 	}
 
-	void safely_free_codec_context(AVCodecContext** ppcodctx)
+	void safely_free_codec_context(AVCodecContext** ppcodctx) noexcept
 	{
 		if (*ppcodctx)
 		{
@@ -78,13 +78,13 @@ namespace ffhelpers
 			avcodec_free_context(ppcodctx);
 		}
 	}
-	void safely_free_sws_context(::SwsContext** sws_ctx)
+	void safely_free_sws_context(::SwsContext** sws_ctx) noexcept
 	{
 		// Don't need to check for nullptr as the func does so
 		sws_freeContext(*sws_ctx);
 		sws_ctx = nullptr;
 	}
-	void safely_free_swr_context(::SwrContext** swr_ctx)
+	void safely_free_swr_context(::SwrContext** swr_ctx) noexcept
 	{
 		if (*swr_ctx)
 		{
@@ -92,7 +92,7 @@ namespace ffhelpers
 			swr_free(swr_ctx);
 		}
 	}
-	void safely_free_audio_fifo(::AVAudioFifo** fifo)
+	void safely_free_audio_fifo(::AVAudioFifo** fifo) noexcept
 	{
 		if (*fifo)
 		{
@@ -110,7 +110,7 @@ namespace ffhelpers
 		return ret;
 	}
 
-	void codec_parameters_reset(::AVCodecParameters* par)
+	void codec_parameters_reset(::AVCodecParameters* par) noexcept
 	{
 		av_freep(&par->extradata);
 		av_channel_layout_uninit(&par->ch_layout);

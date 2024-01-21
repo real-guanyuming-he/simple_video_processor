@@ -38,34 +38,33 @@ namespace ffhelpers
 {
 	// Any of these functions frees the ptr if it's not nullptr and then sets it to nullptr
 #pragma region safely_free
-
-	void safely_close_input_format_context(::AVFormatContext** ppfc);
+	void safely_close_input_format_context(::AVFormatContext** ppfc) noexcept;
 
 	// Unlike safely_close_input_format_context, it calls avformat_free_context()
-	void safely_free_format_context(::AVFormatContext** ppfc);
+	void safely_free_format_context(::AVFormatContext** ppfc) noexcept;
 
-	void safely_free_avio_context(::AVIOContext** ppioct);
+	void safely_free_avio_context(::AVIOContext** ppioct) noexcept;
 
-	void safely_free_frame(::AVFrame** ppf);
+	void safely_free_frame(::AVFrame** ppf) noexcept;
 
-	void safely_free_packet(::AVPacket** pppkt);
+	void safely_free_packet(::AVPacket** pppkt) noexcept;
 
-	void safely_free_codec_context(::AVCodecContext** ppcodctx);
+	void safely_free_codec_context(::AVCodecContext** ppcodctx) noexcept;
 
-	void safely_free_sws_context(::SwsContext** sws_ctx);
+	void safely_free_sws_context(::SwsContext** sws_ctx) noexcept;
 
-	void safely_free_swr_context(::SwrContext** swr_ctx);
+	void safely_free_swr_context(::SwrContext** swr_ctx) noexcept;
 
-	void safely_free_audio_fifo(::AVAudioFifo** fifo);
+	void safely_free_audio_fifo(::AVAudioFifo** fifo) noexcept;
 #pragma endregion
 
 	// Translates the ffmpeg c api error code into string.
 	std::string ff_translate_error_code(int err_code);
 
-#define ON_FF_ERROR(msg) throw std::runtime_error(msg);
+#define ON_FF_ERROR(msg) throw std::runtime_error(msg)
 #define ON_FF_ERROR_WITH_CODE(msg, code) ON_FF_ERROR(std::string(msg) + " " + ffhelpers::ff_translate_error_code(code))
 
 	// Copied from https://ffmpeg.org/doxygen/5.1/codec__par_8c_source.html#l00031
-	void codec_parameters_reset(::AVCodecParameters* par);
+	void codec_parameters_reset(::AVCodecParameters* par) noexcept;
 }
 

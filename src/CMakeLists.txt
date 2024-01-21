@@ -33,13 +33,11 @@ add_library(ff_wrapper SHARED
     "${SrcFFWrapperUtilPath}/ff_object.h"
     "${SrcFFWrapperUtilPath}/ff_object.cpp"
     "${SrcFFWrapperUtilPath}/util.h"
+    "${SrcFFWrapperUtilPath}/dict.h"
+    "${SrcFFWrapperUtilPath}/dict.cpp"
 # Data
     "${SrcFFWrapperDataPath}/packet.h"
-    "${SrcFFWrapperDataPath}/packet.cpp"
-# Formats
-    "${SrcFFWrapperFormatsPath}/media_file_base.h"
-    "${SrcFFWrapperFormatsPath}/demuxer.h"
-    "${SrcFFWrapperFormatsPath}/muxer.h")
+    "${SrcFFWrapperDataPath}/packet.cpp")
 
 ################################# Include/Library Paths #################################
 
@@ -145,8 +143,13 @@ cmake_path(APPEND
 # Test ff_object
 add_executable(test_ff_object 
     "${TestSrcFFWrapperPath}/test_ff_object.cpp")
-list(APPEND ListTestTargets
-    test_ff_object)
+# Test dict
+add_executable(test_dict
+    "${TestSrcFFWrapperPath}/test_dict.cpp")
+
+set(ListTestTargets
+    "test_ff_object"
+    "test_dict")
 
 ################################# Common Test Settings #################################
 

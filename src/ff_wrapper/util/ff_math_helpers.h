@@ -17,16 +17,14 @@
 
 /*
 * ff_math_helpers.h:
-* Defines math helpers for ffmpeg programming
+* Defines math helpers for ffmpeg programming.
+* 
+* Header only. Functions are mostly constexpr.
 */
 
 extern "C"
 {
-// We don't really need AVFormat in math helpers, but we need at least one of these man lib headers to prevent a compile error:
-// missing -D__STDC_CONSTANT_MACROS / #define __STDC_CONSTANT_MACROS
-#include <libavformat/avformat.h>
-
-#include <libavutil/avutil.h>
+#include <libavutil/rational.h>
 }
 
 namespace ffhelpers
