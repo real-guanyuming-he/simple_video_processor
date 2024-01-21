@@ -22,17 +22,14 @@ extern "C"
 
 #include "ff_helpers.h"
 
-ff::dict::dict() : p_dict(nullptr)
-{
-	auto ret = av_dict_set(&p_dict, nullptr, nullptr, NULL);
-	if (ret < 0)
-	{
-		ON_FF_ERROR_WITH_CODE("Could not allocate an AVDictionary", ret);
-	}
-}
-
 ff::dict::dict(const dict& other) : dict()
 {
+	if (nullptr == other.p_dict)
+	{
+		p_dict = nullptr;
+		return;
+	}
+
 	auto ret = av_dict_copy(&p_dict, other.p_dict, NULL);
 	if (ret < 0)
 	{
@@ -49,16 +46,79 @@ ff::dict::~dict()
 	}
 }
 
-bool ff::dict::query_entry(const std::string& key) const
+int ff::dict::num() const noexcept
 {
-	return false;
+	if (nullptr == p_dict)
+	{
+		return 0;
+	}
+	return av_dict_count(p_dict);
 }
 
-std::string ff::dict::get_value(const std::string& key) const
+bool ff::dict::query_entry(const char* key) const noexcept
 {
-	return std::string();
+	if (nullptr == p_dict)
+	{
+		return false;
+	}
+
+	const auto* entry = internal_query_entry(key);
+	return nullptr != entry;
 }
 
-void ff::dict::insert_entry(const std::string& key, const std::string& value)
+std::string ff::dict::get_value(const char* key) const noexcept
 {
+	if (nullptr == p_dict)
+	{
+		return std::string();
+	}
+
+	const AVDictionaryEntry* entry = internal_query_entry(key);
+	if (nullptr == entry)
+	{
+		return std::string();
+	}
+	return std::string(entry->value);
+}
+
+void ff::dict::insert_entry(const char* key, const char* value)
+{
+	auto ret = av_dict_set
+	(
+		&p_dict,
+		key,
+		value,
+		AV_DICT_MATCH_CASE
+	);
+	if (ret < 0)
+	{
+		ON_FF_ERROR_WITH_CODE("Could not set an AVDictionary", ret);
+	}
+}
+
+void ff::dict::delete_entry(const char* key) noexcept
+{
+	if (nullptr == p_dict)
+	{
+		return;
+	}
+
+	av_dict_set
+	(
+		&p_dict,
+		key,
+		nullptr,
+		AV_DICT_MATCH_CASE
+	);
+}
+
+AVDictionaryEntry* ff::dict::internal_query_entry(const char* key) const noexcept
+{
+	return av_dict_get
+	(
+		p_dict,
+		key,
+		nullptr,
+		AV_DICT_MATCH_CASE // Match case
+	);
 }
