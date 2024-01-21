@@ -37,7 +37,11 @@ add_library(ff_wrapper SHARED
     "${SrcFFWrapperUtilPath}/dict.cpp"
 # Data
     "${SrcFFWrapperDataPath}/packet.h"
-    "${SrcFFWrapperDataPath}/packet.cpp")
+    "${SrcFFWrapperDataPath}/packet.cpp"
+# Formats
+    "${SrcFFWrapperFormatsPath}/media_file_base.h"
+    "${SrcFFWrapperFormatsPath}/muxer.h"
+    "${SrcFFWrapperFormatsPath}/demuxer.h")
 
 ################################# Include/Library Paths #################################
 
