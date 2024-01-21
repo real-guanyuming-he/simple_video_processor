@@ -66,12 +66,12 @@ void ff::packet::internal_allocate_resources_memory(uint64_t size, void* additio
 	}
 }
 
-void ff::packet::internal_release_object_memory()
+void ff::packet::internal_release_object_memory() noexcept
 {
 	av_packet_unref(p_av_packet);
 }
 
-void ff::packet::internal_release_resources_memory()
+void ff::packet::internal_release_resources_memory() noexcept
 {
 	// p_av_packet should not be nullptr
 	// this is ensured by the state machine of ff_object.

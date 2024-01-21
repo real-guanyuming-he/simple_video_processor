@@ -71,7 +71,7 @@ namespace ff
 		state = ff_object_state::DESTROYED;
 	}
 
-	void ff_object::destroy()
+	void ff_object::destroy() noexcept
 	{
 		switch (state)
 		{

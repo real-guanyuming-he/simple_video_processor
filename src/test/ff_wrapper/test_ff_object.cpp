@@ -37,11 +37,11 @@ namespace ff
 		{
 			which_methods_called[1] = true;
 		}
-		virtual void internal_release_object_memory() override
+		virtual void internal_release_object_memory() noexcept override
 		{
 			which_methods_called[2] = true;
 		}
-		virtual void internal_release_resources_memory() override
+		virtual void internal_release_resources_memory() noexcept override
 		{
 			which_methods_called[3] = true;
 		}

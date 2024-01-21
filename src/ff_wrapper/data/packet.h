@@ -58,12 +58,12 @@ namespace ff
 		/*
 		* Frees the packet by calling av_packet_free()
 		*/
-		virtual void internal_release_object_memory() override;
+		virtual void internal_release_object_memory() noexcept override;
 
 		/*
 		* Frees the packet's data (payload) by calling av_packet_unref()
 		*/
-		virtual void internal_release_resources_memory() override;
+		virtual void internal_release_resources_memory() noexcept override;
 
 	private:
 		::AVPacket* p_av_packet;
