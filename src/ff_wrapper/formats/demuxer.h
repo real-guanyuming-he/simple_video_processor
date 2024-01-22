@@ -16,19 +16,20 @@
 */
 
 #include "../util/dict.h"
+#include "media_base.h"
 
 struct AVFormatContext;
 
 namespace ff
 {
-	class demuxer
+	class demuxer : public media_base
 	{
 	public:
 		/*
 		* Inits all pointers to nullptr.
 		*/
 		demuxer() noexcept :
-			p_fmt_ctx(nullptr), file_path(nullptr) {}
+			media_base() {}
 
 		/*
 		* Opens a local multimedia file pointed to by path.
@@ -58,9 +59,5 @@ namespace ff
 
 	public:
 		const ::AVFormatContext* get_av_fmt_ctx() const noexcept { return p_fmt_ctx; }
-	
-	private:
-		::AVFormatContext* p_fmt_ctx;
-		const char* file_path;
 	};
 }
