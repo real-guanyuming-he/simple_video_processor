@@ -57,6 +57,9 @@ doc/
 `bin/` is excluded from Git's version control and is not visible on GitHub.
 
 # Git Branches
-- Branch `ff_data` contains development of wrappers for multimedia data (e.g. Packets that contain compressed data and frames that contain decompressed data).
-- Branch `ff_formats` contains development of formats (file I/O, demuxer, and muxer)
-- Branch `ff_util` contains development of the utility for `ff_wrapper`.
+After a branch is used (and its changes tested), it is merged into master. Then, new branches are created from there. It is often confusing to reuse branches and I did so at the very beginning. Since this sentence is written, no branch will be reused and new branches will mostly be created from master.
+
+However, the branch names do follow some conventions:
+- Branch `ff_data_xxx` contains development of wrappers for multimedia data (e.g. Packets that contain compressed data and frames that contain decompressed data).
+- Branch `ff_formats_xxx` contains development of formats (file I/O, demuxer, and muxer)
+- Branch `ff_util_xxx` contains development of the utility for `ff_wrapper`.
