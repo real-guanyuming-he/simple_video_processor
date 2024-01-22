@@ -39,6 +39,8 @@ add_library(ff_wrapper SHARED
     "${SrcFFWrapperDataPath}/packet.h"
     "${SrcFFWrapperDataPath}/packet.cpp"
 # Formats
+    "${SrcFFWrapperFormatsPath}/stream.h"
+    "${SrcFFWrapperFormatsPath}/stream.cpp"
     "${SrcFFWrapperFormatsPath}/muxer.h"
 #    "${SrcFFWrapperFormatsPath}/muxer.cpp"
     "${SrcFFWrapperFormatsPath}/demuxer.h"
