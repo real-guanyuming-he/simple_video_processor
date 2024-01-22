@@ -14,3 +14,53 @@
 * You should have received a copy of the GNU General Public License along with ff_wrapper.
 * If not, see <https://www.gnu.org/licenses/>.
 */
+
+#include "../util/dict.h"
+
+struct AVFormatContext;
+
+namespace ff
+{
+	class demuxer
+	{
+	public:
+		/*
+		* Inits all pointers to nullptr.
+		*/
+		demuxer() noexcept :
+			p_fmt_ctx(nullptr), file_path(nullptr) {}
+
+		/*
+		* Opens a local multimedia file pointed to by path.
+		*
+		* @param the absolute path to the multimedia file.
+		* @param options specifies how the file is opened. Is empty by default.
+		* @throws std::invalid_argument if path is nullptr.
+		* @throws std::filesystem::filesystem_error if file not found.
+		*/
+		demuxer(const char* path, const dict& options = dict());
+
+		/*
+		* Opens a local multimedia file pointed to by path.
+		* 
+		* @param the absolute path to the multimedia file.
+		* @param options specifies how the file is opened. Cannot be empty.
+		* After the constructor returns, the options argument will be replaced with a dict containing options that were not found.
+		* @throws std::invalid_argument if path is nullptr or options is empty.
+		* @throws std::filesystem::filesystem_error if file not found.
+		*/
+		demuxer(const char* path, dict& options);
+
+		/*
+		* Releases all resources and sets all pointers to nullptr.
+		*/
+		~demuxer() noexcept;
+
+	public:
+		const ::AVFormatContext* get_av_fmt_ctx() const noexcept { return p_fmt_ctx; }
+	
+	private:
+		::AVFormatContext* p_fmt_ctx;
+		const char* file_path;
+	};
+}

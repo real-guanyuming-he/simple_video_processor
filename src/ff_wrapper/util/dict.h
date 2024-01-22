@@ -46,7 +46,14 @@ namespace ff
 		if p_dict is nullptr.
 		*/
 		dict() noexcept
-			: p_dict(nullptr) {};
+			: p_dict(nullptr) {}
+
+		/*
+		* Allows users to explicitly use a nullptr to create an empty dict.
+		* Exactly the same as dict().
+		*/
+		dict(std::nullptr_t) noexcept 
+			: dict() {}
 
 		/*
 		* Copies the content of other to this.
@@ -68,6 +75,19 @@ namespace ff
 		* Releases the dictionary and sets the pointer to nullptr
 		*/
 		~dict();
+
+	public:
+		/*
+		* Destroys the current dict and replaces it with the argument.
+		* Also sets other's pointer to nullptr.
+		* @param right the new dict
+		*/
+		dict& operator=(dict&& right) noexcept;
+		/*
+		* Destroys the current dict and replaces it with the argument
+		* @param dict the new dict
+		*/
+		dict& operator=(::AVDictionary* dict) noexcept;
 
 	public:
 		/*
@@ -149,6 +169,7 @@ namespace ff
 
 	public:
 		const ::AVDictionary* get_av_dict() const noexcept { return p_dict; }
+		::AVDictionary* get_av_dict() noexcept { return p_dict; }
 
 	///////////////////// Private Helpers ///////////////////////
 	private:

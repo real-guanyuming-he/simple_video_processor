@@ -14,6 +14,7 @@
 * If not, see <https://www.gnu.org/licenses/>.
 */
 #include "dict.h"
+#include "ff_helpers.h"
 
 extern "C"
 {
@@ -39,11 +40,20 @@ ff::dict::dict(const dict& other) : dict()
 
 ff::dict::~dict()
 {
-	if (nullptr != p_dict)
-	{
-		av_dict_free(&p_dict);
-		p_dict = nullptr;
-	}
+	ffhelpers::safely_free_dict(&p_dict);
+}
+
+ff::dict& ff::dict::operator=(dict&& right) noexcept
+{
+	this->operator=(right.p_dict);
+	return *this;
+}
+
+ff::dict& ff::dict::operator=(::AVDictionary* dict) noexcept
+{
+	ffhelpers::safely_free_dict(&p_dict);
+	p_dict = dict;
+	return *this;
 }
 
 int ff::dict::num() const noexcept

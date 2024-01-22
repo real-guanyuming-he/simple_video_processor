@@ -14,3 +14,10 @@
 * You should have received a copy of the GNU General Public License along with ff_wrapper.
 * If not, see <https://www.gnu.org/licenses/>.
 */
+
+
+
+namespace ff
+{
+
+}

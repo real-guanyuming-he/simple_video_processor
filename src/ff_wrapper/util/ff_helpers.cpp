@@ -27,6 +27,15 @@ extern "C"
 
 namespace ffhelpers
 {
+	void safely_free_dict(::AVDictionary** ppd) noexcept
+	{
+		if (nullptr != *ppd)
+		{
+			av_dict_free(ppd);
+			*ppd = nullptr;
+		}
+	}
+
 	void safely_close_input_format_context(AVFormatContext** ppfc) noexcept
 	{
 		if (*ppfc)

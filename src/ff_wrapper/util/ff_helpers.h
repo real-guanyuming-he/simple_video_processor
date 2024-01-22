@@ -22,6 +22,7 @@
 * Note: Math helpers are defined in another header because constexpr and inline are used heavily there
 */
 
+struct AVDictionary;
 struct AVFormatContext;
 struct AVIOContext;
 struct AVFrame;
@@ -38,9 +39,13 @@ namespace ffhelpers
 {
 	// Any of these functions frees the ptr if it's not nullptr and then sets it to nullptr
 #pragma region safely_free
+	void safely_free_dict(::AVDictionary** ppd) noexcept;
+
+	// If ppfc is opened by avformat_open_input, then call this.
 	void safely_close_input_format_context(::AVFormatContext** ppfc) noexcept;
 
 	// Unlike safely_close_input_format_context, it calls avformat_free_context()
+	// for ppfc allocated by avformat_alloc_context().
 	void safely_free_format_context(::AVFormatContext** ppfc) noexcept;
 
 	void safely_free_avio_context(::AVIOContext** ppioct) noexcept;
