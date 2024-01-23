@@ -1,6 +1,6 @@
 #pragma once
 /*
-* Copyright (C) Guanyuming He 2024
+* Copyright (C) 2024 Guanyuming He
 * This file is licensed under the GNU General Public License v3.
 *
 * This file is part of PROJECT_NAME_REPLACE_LATER.

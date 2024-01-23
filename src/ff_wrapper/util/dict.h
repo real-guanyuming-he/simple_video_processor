@@ -1,6 +1,6 @@
 #pragma once
 /*
-* Copyright (C) Guanyuming He 2024
+* Copyright (C) 2024 Guanyuming He
 * This file is licensed under the GNU General Public License v3.
 *
 * This file is part of ff_wrapper.
@@ -34,6 +34,12 @@ namespace ff
 	* 
 	* In addition, the encapsulation does not allow multiple values for a key. Values should be concatenated 
 	* into one string to be given to a key.
+	* 
+	* Note: Because FFmpeg APIs usually modify the dict passed in to give options that were not used,
+	* when designing C++ wrappers that use a dict, I often include two versions, 
+	* one accepting a reference to a const dict, another accepting a reference to a dict.
+	* If you use the const version, I assume you don't care about the values FFmpeg gives back, 
+	* and I will make a copy of your dict.
 	*/
 	class FF_WRAPPER_API dict final
 	{
@@ -52,7 +58,7 @@ namespace ff
 		* Allows users to explicitly use a nullptr to create an empty dict.
 		* Exactly the same as dict().
 		*/
-		dict(std::nullptr_t) noexcept 
+		explicit dict(std::nullptr_t) noexcept 
 			: dict() {}
 
 		/*
