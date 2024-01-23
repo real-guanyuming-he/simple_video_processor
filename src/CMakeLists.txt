@@ -12,20 +12,22 @@ enable_testing()
 ################################# Source Paths #################################
 set(FFWrapperName "ff_wrapper")
 
-set(SrcFFWrapperPath ${FFWrapperName})
 cmake_path(APPEND 
-    SrcFFWrapperPath "util"
+    CMAKE_SOURCE_DIR ${FFWrapperName}
+    OUTPUT_VARIABLE SrcFFWrapperRootPath)
+cmake_path(APPEND 
+    SrcFFWrapperRootPath "util"
     OUTPUT_VARIABLE SrcFFWrapperUtilPath)
 #message("SrcFFWrapperUtilPath=${SrcFFWrapperUtilPath}")
 cmake_path(APPEND 
-    SrcFFWrapperPath "data"
+    SrcFFWrapperRootPath "data"
     OUTPUT_VARIABLE SrcFFWrapperDataPath)
 cmake_path(APPEND 
-    SrcFFWrapperPath "formats"
+    SrcFFWrapperRootPath "formats"
     OUTPUT_VARIABLE SrcFFWrapperFormatsPath)
 
 # The FFmpeg wrapper library
-add_library(ff_wrapper SHARED
+set(FFWrapperSourceFiles
 # Util
     "${SrcFFWrapperUtilPath}/ff_helpers.h"
     "${SrcFFWrapperUtilPath}/ff_helpers.cpp"
@@ -47,6 +49,12 @@ add_library(ff_wrapper SHARED
     "${SrcFFWrapperFormatsPath}/demuxer.cpp"
     "${SrcFFWrapperFormatsPath}/media_base.h"
     "${SrcFFWrapperFormatsPath}/media_base.cpp")
+add_library(ff_wrapper SHARED
+    ${FFWrapperSourceFiles})
+# Add IDE subfolders (mostly Visual Studio filters)
+# according to the directory structure.
+source_group(TREE ${SrcFFWrapperRootPath}
+    FILES ${FFWrapperSourceFiles})
 
 ################################# Include/Library Paths #################################
 
