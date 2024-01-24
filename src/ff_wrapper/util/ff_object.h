@@ -1,6 +1,6 @@
 #pragma once
 /*
-* Copyright (C) Guanyuming He 2024
+* Copyright (C) 2024 Guanyuming He
 * This file is licensed under the GNU General Public License v3.
 *
 * This file is part of ff_wrapper.
@@ -123,8 +123,6 @@ namespace ff
 
 		/*
 		* Allocates memory for the object.
-		*
-		* @throws std::bad_alloc if the allocation fails.
 		*/
 		virtual void internal_allocate_object_memory() = 0;
 		/*
@@ -132,7 +130,6 @@ namespace ff
 		*
 		* @param size: whether used or not depends on the derived class
 		* @param additional_information: whether used or not depend on the derived class
-		* @throws std::bad_alloc if the allocation fails.
 		*/
 		virtual void internal_allocate_resources_memory
 		(
@@ -156,7 +153,6 @@ namespace ff
 		* If the object is DESTROYED, then it allocates memory for the object,
 		* and adjusts the state to ff_object_state::OBJECT_CREATED.
 		*
-		* @throws std::bad_alloc if the allocation fails.
 		* @note assertion fails if the state is not ff_object_state::DESTROYED
 		*/
 		void allocate_object_memory();
@@ -167,7 +163,6 @@ namespace ff
 		*
 		* @param size: whether used or not depends on the derived class
 		* @param additional_information: whether used or not depend on the derived class
-		* @throws std::bad_alloc if the allocation fails.
 		* @note assertion fails if the state is not ff_object_state::OBJECT_CREATED
 		*/
 		void allocate_resources_memory

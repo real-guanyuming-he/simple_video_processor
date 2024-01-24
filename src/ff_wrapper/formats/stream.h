@@ -1,6 +1,6 @@
 #pragma once
 /*
-* Copyright (C) Guanyuming He 2024
+* Copyright (C) 2024 Guanyuming He
 * This file is licensed under the GNU General Public License v3.
 *
 * This file is part of ff_wrapper.
@@ -31,16 +31,19 @@ namespace ff
 	{
 	public:
 		stream() noexcept
-			: p_stream() {}
+			: p_stream(nullptr) {}
 		stream(::AVStream* st)
 			: p_stream(st) {}
 
-		~stream() = default;
+		virtual ~stream() = default;
 
 	public:
 		bool is_video() const noexcept;
 		bool is_audio() const noexcept;
 		bool is_subtitle() const noexcept;
+
+	public:
+
 
 	private:
 		::AVStream* p_stream;

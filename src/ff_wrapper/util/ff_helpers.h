@@ -1,6 +1,6 @@
 #pragma once
 /*
-* Copyright (C) Guanyuming He 2024
+* Copyright (C) 2024 Guanyuming He
 * This file is licensed under the GNU General Public License v3.
 *
 * This file is part of PROJECT_NAME_REPLACE_LATER.
@@ -67,7 +67,7 @@ namespace ffhelpers
 	std::string ff_translate_error_code(int err_code);
 
 #define ON_FF_ERROR(msg) throw std::runtime_error(msg)
-#define ON_FF_ERROR_WITH_CODE(msg, code) ON_FF_ERROR(std::string(msg) + " " + ffhelpers::ff_translate_error_code(code))
+#define ON_FF_ERROR_WITH_CODE(msg, code) ON_FF_ERROR(std::string(msg) + ": " + ffhelpers::ff_translate_error_code(code))
 
 	// Copied from https://ffmpeg.org/doxygen/5.1/codec__par_8c_source.html#l00031
 	void codec_parameters_reset(::AVCodecParameters* par) noexcept;
