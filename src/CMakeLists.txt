@@ -31,7 +31,7 @@ set(FFWrapperSourceFiles
 # Util
     "${SrcFFWrapperUtilPath}/ff_helpers.h"
     "${SrcFFWrapperUtilPath}/ff_helpers.cpp"
-    "${SrcFFWrapperUtilPath}/ff_math_helpers.h"
+    "${SrcFFWrapperUtilPath}/ff_math.h"
     "${SrcFFWrapperUtilPath}/ff_object.h"
     "${SrcFFWrapperUtilPath}/ff_object.cpp"
     "${SrcFFWrapperUtilPath}/util.h"
@@ -43,6 +43,8 @@ set(FFWrapperSourceFiles
 # Formats
     "${SrcFFWrapperFormatsPath}/stream.h"
     "${SrcFFWrapperFormatsPath}/stream.cpp"
+    "${SrcFFWrapperFormatsPath}/demux_stream.h"
+    "${SrcFFWrapperFormatsPath}/demux_stream.cpp"
     "${SrcFFWrapperFormatsPath}/muxer.h"
 #    "${SrcFFWrapperFormatsPath}/muxer.cpp"
     "${SrcFFWrapperFormatsPath}/demuxer.h"
@@ -140,9 +142,9 @@ endif()
 
 ################################# Other Compiler/Linker Options #################################
 
-# Use the C++ 17 standard
+# Use the C++ 20 standard
 set_property(TARGET ff_wrapper
-    PROPERTY CXX_STANDARD 17)
+    PROPERTY CXX_STANDARD 20)
 
 # Define FF_WRAPPER_EXPORT for ff_wrapper on Windows to correctly export its symbols into a DLL
 if(WIN32)
