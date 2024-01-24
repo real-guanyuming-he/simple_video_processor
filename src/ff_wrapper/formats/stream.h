@@ -35,12 +35,15 @@ namespace ff
 		stream(::AVStream* st)
 			: p_stream(st) {}
 
-		~stream() = default;
+		virtual ~stream() = default;
 
 	public:
 		bool is_video() const noexcept;
 		bool is_audio() const noexcept;
 		bool is_subtitle() const noexcept;
+
+	public:
+
 
 	private:
 		::AVStream* p_stream;

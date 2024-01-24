@@ -102,6 +102,84 @@ void ff::demuxer::probe_stream_information(dict& options)
 	options = pavd;
 }
 
+ff::packet ff::demuxer::demux_next_packet()
+{
+	// Create an AVPacket inside the function. 
+	// On success, return a ff::packet that takes over the ownership of the AVPacket.
+	// I do this instead of creating a ff::packet directly 
+	// because av_read_frame() will alloc resource for the frame,
+	// which should cause a ff::packet's state to change.
+
+	::AVPacket* av_pkt = av_packet_alloc();
+	if (nullptr == av_pkt)
+	{
+		throw std::bad_alloc();
+	}
+
+	int ret = av_read_frame(p_fmt_ctx, av_pkt);
+	if (0 == ret)
+	{
+		return packet(av_pkt);
+	}
+	// ret<0 -> Error or EOF
+
+	// On error, pkt will be blank (as if it came from av_packet_alloc())
+	if (nullptr == av_pkt->buf && 0 == av_pkt->size)
+	{
+		// Error
+		switch (ret)
+		{
+		case AVERROR(ENOMEM):
+			throw std::bad_alloc();
+			break;
+		default:
+			ON_FF_ERROR_WITH_CODE("Unexpected error happened during a call to av_read_frame()", ret);
+			break;
+		}
+	}
+	else
+	{
+		// EOF
+		eof_reached = true;
+		return packet();
+	}
+
+}
+
+void ff::demuxer::seek(int stream_ind, int64_t time_stamp, bool direction)
+{
+	if (stream_ind < 0 || stream_ind >= p_fmt_ctx->nb_streams)
+	{
+		throw std::invalid_argument("Stream index is out of range.");
+	}
+
+	int ret = av_seek_frame
+	(
+		p_fmt_ctx, stream_ind, time_stamp,
+		direction ? NULL : AVSEEK_FLAG_BACKWARD
+	);
+
+	if (ret < 0) // Failure
+	{
+		switch (ret)
+		{
+		case AVERROR(ENOMEM):
+			throw std::bad_alloc();
+			break;
+		default:
+			ON_FF_ERROR_WITH_CODE("Unexpected error happened during a call to av_seek_frame()", ret);
+			break;
+		}
+	}
+	else // Success
+	{
+		// reset the eof status
+		// Even if the last packet is sought,
+		// eof still remains to be reached by the next attempt to demux a packet.
+		eof_reached = false;
+	}
+}
+
 void ff::demuxer::internal_open_format(const char* path, bool probe_stream_info, ::AVDictionary** dict)
 {
 	int ret = avformat_open_input(&p_fmt_ctx, path, nullptr, dict);
@@ -124,7 +202,7 @@ void ff::demuxer::internal_open_format(const char* path, bool probe_stream_info,
 			throw std::runtime_error("Unexpected error happened during a call to avformat_open_input(): Invalid argument.");
 			break;
 		default: // ?
-			throw std::runtime_error("Unexpected error happened during a call to avformat_open_input(): Unknown error.");
+			ON_FF_ERROR_WITH_CODE("Unexpected error happened during a call to avformat_open_input()", ret);
 		}
 	}
 
@@ -145,7 +223,7 @@ void ff::demuxer::internal_probe_stream_info(::AVDictionary** dict)
 			throw std::bad_alloc();
 			break;
 		default:
-			throw std::runtime_error("Unexpected error happened during a call to avformat_find_stream_info().");
+			ON_FF_ERROR_WITH_CODE("Unexpected error happened during a call to avformat_find_stream_info()", ret);
 		}
 	}
 

@@ -65,6 +65,10 @@ namespace ff
 		*/
 		virtual void internal_release_resources_memory() noexcept override;
 
+	public:
+		const ::AVPacket* get_av_packet() const noexcept { return p_av_packet; }
+		::AVPacket* get_av_packet() noexcept { return p_av_packet; }
+
 	private:
 		::AVPacket* p_av_packet;
 	};

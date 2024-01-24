@@ -15,11 +15,12 @@
 * If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "../util/dict.h"
-#include "media_base.h"
-#include "stream.h"
+#include "../util/dict.h" // Use a dictionary to pass options
+#include "media_base.h" // A demuxer inherits media base
+#include "stream.h" // A demuxer has info about all streams in a file
+#include "../data/packet.h" // A demuxer demuxes a file into packets
 
-#include <vector>
+#include <vector> // Streams are stored in a vector
 
 struct AVFormatContext;
 
@@ -106,6 +107,29 @@ namespace ff
 		*/
 		void probe_stream_information(dict& options);
 
+		/*
+		* Demuxes a packet from the currently location in the file.
+		* 
+		* @returns the packet demuxed, or a DESTROYED packet if eof has been reached.
+		* Since then, eof() remains true until it is reset by another related method.
+		*/
+		packet demux_next_packet();
+
+		/*
+		* Seeks to the first frame of the stream in the file that is
+		* the first one beyond/before time_stamp for direction true/false.
+		* 
+		* @param stream_ind which stream
+		* @param time_stamp seek to where, in the time base of the stream.
+		* @param direction ture=forward;false=backward
+		* 
+		* @throws std::invalid_argument if stream ind is wrong
+		*/
+		void seek(int stream_ind, int64_t time_stamp, bool direction = true);
+
+
+		bool eof() const noexcept { return eof_reached; }
+
 	public:
 		const ::AVFormatContext* get_av_fmt_ctx() const noexcept { return p_fmt_ctx; }
 
@@ -119,6 +143,18 @@ namespace ff
 		* in the order they appear in streams.
 		*/
 		std::vector<int> v_indices, a_indices, s_indices;
+		/*
+		* Best video, audio, and subtitile streams found by av_find_best_stream(), respectively.
+		* Or -1 if not available.
+		*/
+		// TODO: Add the fields, probably with the decoder information returned by av_find_best_stream()
+
+		private:
+			/*
+			* Set to true during a call to demux_next_packet()
+			* if it detects the eof.
+			*/
+			bool eof_reached = false;
 
 	private:
 		// Because of the two versions of methods that use dict,
