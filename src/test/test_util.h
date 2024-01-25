@@ -35,4 +35,24 @@ if (expr)\
 #define TEST_ASSERT_EQUALS(expected, actual, msg)\
 TEST_ASSERT_TRUE(actual == expected, msg)
 
+#define TEST_ASSERT_THROWS(expr, exception_type)\
+{\
+	bool thrown = false; \
+	try\
+	{\
+	expr; \
+	}\
+	catch (const exception_type& e)\
+	{\
+	thrown = true; \
+	}\
+	if (!thrown)\
+	{\
+	std::cerr << "Test failed at line " << __LINE__ << \
+	" in file " << __FILE__ << ",\n" << \
+	"which should have thrown but did not."; \
+	return -1; \
+	}\
+}
+
 #include <iostream>

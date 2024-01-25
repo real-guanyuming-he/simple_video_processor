@@ -43,8 +43,8 @@ set(FFWrapperSourceFiles
 # Formats
     "${SrcFFWrapperFormatsPath}/stream.h"
     "${SrcFFWrapperFormatsPath}/stream.cpp"
-    "${SrcFFWrapperFormatsPath}/demux_stream.h"
-    "${SrcFFWrapperFormatsPath}/demux_stream.cpp"
+#    "${SrcFFWrapperFormatsPath}/demux_stream.h"
+#    "${SrcFFWrapperFormatsPath}/demux_stream.cpp"
     "${SrcFFWrapperFormatsPath}/muxer.h"
 #    "${SrcFFWrapperFormatsPath}/muxer.cpp"
     "${SrcFFWrapperFormatsPath}/demuxer.h"
@@ -165,10 +165,14 @@ add_executable(test_ff_object
 # Test dict
 add_executable(test_dict
     "${TestSrcFFWrapperPath}/test_dict.cpp")
+# Test rational
+add_executable(test_rational
+    "${TestSrcFFWrapperPath}/test_rational.cpp")
 
 set(ListTestTargets
     "test_ff_object"
-    "test_dict")
+    "test_dict"
+    "test_rational")
 
 ################################# Common Test Settings #################################
 
@@ -184,7 +188,17 @@ foreach(test IN LISTS ListTestTargets)
     # Define the testing macro
     target_compile_definitions(${test}
         PRIVATE "FF_TESTING")
+
+    # Use the C++ 20 standard
+    set_property(TARGET ${test}
+        PROPERTY CXX_STANDARD 20)
 endforeach()
+
+################################# Exclusive Test Settings #################################
+
+# Because AVRational is used, I have to include a header file.
+target_include_directories("test_rational"
+    PRIVATE ${VcpkgIncludePath})
 
 # Debug Output
 #message("VcpkgIncludePath=${VcpkgIncludePath}")
