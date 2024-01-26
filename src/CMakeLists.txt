@@ -32,6 +32,8 @@ set(FFWrapperSourceFiles
     "${SrcFFWrapperUtilPath}/ff_helpers.h"
     "${SrcFFWrapperUtilPath}/ff_helpers.cpp"
     "${SrcFFWrapperUtilPath}/ff_math.h"
+    "${SrcFFWrapperUtilPath}/ff_time.h"
+    "${SrcFFWrapperUtilPath}/ff_time.cpp"
     "${SrcFFWrapperUtilPath}/ff_object.h"
     "${SrcFFWrapperUtilPath}/ff_object.cpp"
     "${SrcFFWrapperUtilPath}/util.h"
@@ -51,7 +53,7 @@ set(FFWrapperSourceFiles
     "${SrcFFWrapperFormatsPath}/demuxer.cpp"
     "${SrcFFWrapperFormatsPath}/media_base.h"
     "${SrcFFWrapperFormatsPath}/media_base.cpp")
-add_library(ff_wrapper SHARED
+add_library(${FFWrapperName} SHARED
     ${FFWrapperSourceFiles})
 # Add IDE subfolders (mostly Visual Studio filters)
 # according to the directory structure.
@@ -168,11 +170,15 @@ add_executable(test_dict
 # Test rational
 add_executable(test_rational
     "${TestSrcFFWrapperPath}/test_rational.cpp")
+# Test time
+add_executable(test_time
+    "${TestSrcFFWrapperPath}/test_time.cpp")
 
 set(ListTestTargets
     "test_ff_object"
     "test_dict"
-    "test_rational")
+    "test_rational"
+    "test_time")
 
 ################################# Common Test Settings #################################
 
@@ -199,6 +205,9 @@ endforeach()
 # Because AVRational is used, I have to include a header file.
 target_include_directories("test_rational"
     PRIVATE ${VcpkgIncludePath})
+target_include_directories("test_time"
+    PRIVATE ${VcpkgIncludePath})
+
 
 # Debug Output
 #message("VcpkgIncludePath=${VcpkgIncludePath}")

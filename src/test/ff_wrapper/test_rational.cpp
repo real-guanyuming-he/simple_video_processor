@@ -36,24 +36,24 @@ int main()
 	// Test the construction/assignment of rationals
 	{
 		ff::rational z;
-		TEST_ASSERT_EQUALS(0, z.num(), "expected to have a zero created by default.");
-		TEST_ASSERT_EQUALS(1, z.den(), "expected to have a denominator = 1.");
+		TEST_ASSERT_EQUALS(0, z.get_num(), "expected to have a zero created by default.");
+		TEST_ASSERT_EQUALS(1, z.get_den(), "expected to have a denominator = 1.");
 
 		ff::rational r1(AVRational{ .num = 1, .den = 2 });
-		TEST_ASSERT_EQUALS(1, r1.num(), "expected to have exactly the same nums");
-		TEST_ASSERT_EQUALS(2, r1.den(), "expected to have exactly the same dens");
+		TEST_ASSERT_EQUALS(1, r1.get_num(), "expected to have exactly the same nums");
+		TEST_ASSERT_EQUALS(2, r1.get_den(), "expected to have exactly the same dens");
 
 		ff::rational r2(3, 9);
-		TEST_ASSERT_EQUALS(3, r2.num(), "expected to have exactly the same nums");
-		TEST_ASSERT_EQUALS(9, r2.den(), "expected to have exactly the same dens");
+		TEST_ASSERT_EQUALS(3, r2.get_num(), "expected to have exactly the same nums");
+		TEST_ASSERT_EQUALS(9, r2.get_den(), "expected to have exactly the same dens");
 
 		r1 = ff::rational(4, 2);
-		TEST_ASSERT_EQUALS(4, r1.num(), "expected to have exactly the same nums");
-		TEST_ASSERT_EQUALS(2, r1.den(), "expected to have exactly the same dens");
+		TEST_ASSERT_EQUALS(4, r1.get_num(), "expected to have exactly the same nums");
+		TEST_ASSERT_EQUALS(2, r1.get_den(), "expected to have exactly the same dens");
 
 		r2 = AVRational{ .num = 5, .den = 7 };
-		TEST_ASSERT_EQUALS(5, r2.num(), "expected to have exactly the same nums");
-		TEST_ASSERT_EQUALS(7, r2.den(), "expected to have exactly the same dens");
+		TEST_ASSERT_EQUALS(5, r2.get_num(), "expected to have exactly the same nums");
+		TEST_ASSERT_EQUALS(7, r2.get_den(), "expected to have exactly the same dens");
 	}
 
 	// Test equality/inequality
@@ -94,6 +94,12 @@ int main()
 
 		// Smaller/Larger
 		{
+			// Zero
+			ff::rational z(0, 1), p1(1, 8), n1(-2, 9);
+			TEST_ASSERT_TRUE(n1 < z && z > n1, "Should be smaller than 0");
+			TEST_ASSERT_TRUE(ff::zero_rational < p1 && p1 > ff::zero_rational, "Should be bigger than 0");
+			
+			// Positive
 			ff::rational r1(13, 15), r2(15, 17);
 			TEST_ASSERT_TRUE(r1 < r2, "Should be smaller");
 			TEST_ASSERT_TRUE(r2 > r1, "Should be bigger");
@@ -105,6 +111,19 @@ int main()
 			ff::rational r5(24, 66), r6(48, 132);
 			TEST_ASSERT_TRUE(r5 <= r6, "Should be equal");
 			TEST_ASSERT_TRUE(r5 >= r6, "Should be equal");
+
+			// Negative & positive
+			ff::rational nr2(7, -9), nr1(-8, 9);
+			TEST_ASSERT_TRUE(nr1 < nr2, "Should be smaller");
+			TEST_ASSERT_TRUE(nr2 > nr1, "Should be bigger");
+
+			ff::rational nr4(-16, -8), nr3(-2, 1);
+			TEST_ASSERT_TRUE(nr3 < nr4, "Should be smaller");
+			TEST_ASSERT_TRUE(nr4 > nr3, "Should be bigger");
+
+			ff::rational nr6(-132, 111), nr5(132, -111);
+			TEST_ASSERT_TRUE(nr5 <= nr6, "Should be equal");
+			TEST_ASSERT_TRUE(nr5 >= nr6, "Should be equal");
 		}
 	}
 
@@ -137,12 +156,12 @@ int main()
 			ff::rational r1(17, 11), r2(17 * 5, 11 * 5);
 			r2.reduce();
 
-			TEST_ASSERT_TRUE(r2.num() == r1.num() && r2.den() == r1.den(), "Should be reduced to lowest terms");
+			TEST_ASSERT_TRUE(r2.get_num() == r1.get_num() && r2.get_den() == r1.get_den(), "Should be reduced to lowest terms");
 
 			ff::rational r3(16, 99), r4(16*3*4, 99*3*4);
 			r4.reduce();
 
-			TEST_ASSERT_TRUE(r4.num() == r3.num() && r4.den() == r3.den(), "Should be reduced to lowest terms");
+			TEST_ASSERT_TRUE(r4.get_num() == r3.get_num() && r4.get_den() == r3.get_den(), "Should be reduced to lowest terms");
 		}
 	}
 
@@ -228,6 +247,20 @@ int main()
 			ff::rational r5(600, 21), r6(17, 34);
 			TEST_ASSERT_EQUALS(ff::rational(400, 7), r5 / r6, "Multiplication should perform correctly");
 		}
+	}
+
+	// Cross-type operations
+	{
+		ff::rational_64 big1(1e9, 10);
+		ff::rational big2(1e8, 1);
+
+		TEST_ASSERT_EQUALS(ff::rational_64(1e16, 1), big1 * big2, "Should not have overflow and should have the correct result.");
+		TEST_ASSERT_EQUALS(ff::rational_64(1e16, 1), big2 * big1, "Should not have overflow and should have the correct result.");
+		
+		ff::rational_64 big3(1e16, 1);
+		ff::rational big4(1e5, 1e2);
+		TEST_ASSERT_EQUALS(ff::rational_64(1e13, 1), big3 / big4, "Should not overflow and should be correct");
+		TEST_ASSERT_EQUALS(ff::rational_64(1, 1e13), big4 / big3, "Should not overflow and should be correct");
 	}
 
 	return 0;

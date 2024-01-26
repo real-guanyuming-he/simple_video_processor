@@ -18,6 +18,9 @@
 /*
 * ff_math.h:
 * Defines math helpers for ffmpeg programming.
+* Classes:
+* rational: constexpr wrapper for AVRational.
+* time: records both the time and the time base.
 * 
 * Header only. Functions are mostly constexpr.
 */
@@ -27,16 +30,24 @@ extern "C"
 #include <libavutil/rational.h>
 }
 
+#include <type_traits> // for type traits
 #include <numeric> // for gcd
+#include <stdexcept> // for std::invalid_argument
 
 namespace ff
 {
 	/*
 	* Represents a rational number.
-	* Pass by value is preferred. Should be 64 bit on most systems.
+	* I aim to provide two versions, one using int as num and den,
+	* and another using int64_t as num and den.
+	* Providing the second version is to prevent data overflow
+	* when an int64_t timestamp is multiplied with an int rational
 	* 
 	* av_..._q() functions are not constexpr. This class
 	* make all such common operations constexpr by rewriting them.
+	* 
+	* No need to be DLL imported/exported, because this is a template
+	* and header only.
 	* 
 	* Invariant: den != 0.
 	* Established by constructors and assignment operators.
@@ -44,21 +55,23 @@ namespace ff
 	*  1. arithmetic operators (Rationals is closed under +,-,*, and / detects 0).
 	*  2. the only mutator, reduce(), that reduces one to lowest terms.
 	*/
-	class rational final
+	template <typename T>
+	requires std::same_as<T, int> || std::same_as<T, int64_t>
+	class rational_temp final
 	{
 	public:
 ///////////////////////////// Default things /////////////////////////////
-		~rational() = default;
+		~rational_temp() = default;
 
-		constexpr rational(const rational&) noexcept = default;
-		constexpr rational& operator=(const rational&) noexcept = default;
+		constexpr rational_temp(const rational_temp&) noexcept = default;
+		constexpr rational_temp& operator=(const rational_temp&) noexcept = default;
 
 	public:
 		/*
 		* Initializes a zero (0/1).
 		*/
-		constexpr rational() noexcept
-			: r{ .num = 0, .den = 1 } {}
+		constexpr rational_temp() noexcept
+			: num(0), den(1) {}
 
 		/*
 		* Initializes directly from an AVRational
@@ -66,8 +79,8 @@ namespace ff
 		* @param avr
 		* @throws std::invalid_argument if avr.den = 0
 		*/
-		constexpr rational(AVRational avr)
-			: r(avr) 
+		constexpr rational_temp(AVRational avr)
+			: num(avr.num), den(avr.den)
 		{
 			if (avr.den == 0)
 			{
@@ -82,10 +95,10 @@ namespace ff
 		* @param den denominator
 		* @throws std::invalid_argument if den = 0
 		*/
-		constexpr rational(int num, int den)
-			: r{ .num=num, .den=den } 
+		constexpr rational_temp(T n, T d)
+			: num(n), den(d)
 		{
-			if (den == 0)
+			if (d == 0)
 			{
 				throw std::invalid_argument("The denominator cannot be 0.");
 			}
@@ -94,131 +107,142 @@ namespace ff
 		/*
 		* @throws std::invalid_argument if den = 0
 		*/
-		constexpr rational& operator=(const AVRational avr)
+		constexpr rational_temp& operator=(const AVRational avr)
 		{
 			if (avr.den == 0)
 			{
 				throw std::invalid_argument("The denominator cannot be 0.");
 			}
 
-			r.num = avr.num;
-			r.den = avr.den;
+			num = avr.num;
+			den = avr.den;
 			return *this;
 		}
 
 	public:
 ///////////////////////////// Arithmetic operators /////////////////////////////
-		constexpr bool operator==(const rational right) const noexcept
+		constexpr bool operator==(const rational_temp right) const noexcept
 		{
 			// b,d != 0 -> (a/b = c/d <-> ad = bc)  
-			return r.num * right.r.den == r.den * right.r.num;
+			return num * right.den == den * right.num;
 		}
 		constexpr bool operator==(const AVRational right) const noexcept
 		{
 			// b,d != 0 -> (a/b = c/d <-> ad = bc)  
-			return r.num * right.den == r.den * right.num;
+			return num * right.den == den * right.num;
 		}
-		constexpr bool operator!=(const rational right) const noexcept
+		constexpr bool operator!=(const rational_temp right) const noexcept
 		{
 			// b,d != 0 -> (a/b != c/d <-> ad != bc)  
-			return r.num * right.r.den != r.den * right.r.num;
+			return num * right.den != den * right.num;
 		}
 		constexpr bool operator!=(const AVRational right) const noexcept
 		{
 			// b,d != 0 -> (a/b != c/d <-> ad != bc)  
-			return r.num * right.den != r.den * right.num;
+			return num * right.den != den * right.num;
 		}
 
-		constexpr bool operator<(const rational right) const noexcept
+		constexpr bool operator<(const rational_temp right) const noexcept
 		{
 			// bd > 0 -> ad < bc
 			// bd < 0 -> ad > bc
-			if (r.den * right.r.den > 0)
+			if (den * right.den > 0)
 			{
-				return r.num * right.r.den < r.den * right.r.num;
+				return num * right.den < den * right.num;
 			}
 			else
 			{
-				return r.num * right.r.den > r.den * right.r.num;
+				return num * right.den > den * right.num;
 			}
 		}
-		constexpr bool operator>(const rational right) const noexcept
+		constexpr bool operator>(const rational_temp right) const noexcept
 		{
 			// bd > 0 -> ad > bc
 			// bd < 0 -> ad < bc
-			if (r.den * right.r.den > 0)
+			if (den * right.den > 0)
 			{
-				return r.num * right.r.den > r.den * right.r.num;
+				return num * right.den > den * right.num;
 			}
 			else
 			{
-				return r.num * right.r.den < r.den * right.r.num;
+				return num * right.den < den * right.num;
 			}
 		}
 
-		constexpr bool operator<=(const rational right) const noexcept
+		constexpr bool operator<=(const rational_temp right) const noexcept
 		{
 			// bd > 0 -> ad <= bc
 			// bd < 0 -> ad >= bc
-			if (r.den * right.r.den > 0)
+			if (den * right.den > 0)
 			{
-				return r.num * right.r.den <= r.den * right.r.num;
+				return num * right.den <= den * right.num;
 			}
 			else
 			{
-				return r.num * right.r.den >= r.den * right.r.num;
+				return num * right.den >= den * right.num;
 			}
 		}
-		constexpr bool operator>=(const rational right) const noexcept
+		constexpr bool operator>=(const rational_temp right) const noexcept
 		{
 			// bd > 0 -> ad >= bc
 			// bd < 0 -> ad <= bc
-			if (r.den * right.r.den > 0)
+			if (den * right.den > 0)
 			{
-				return r.num * right.r.den >= r.den * right.r.num;
+				return num * right.den >= den * right.num;
 			}
 			else
 			{
-				return r.num * right.r.den <= r.den * right.r.num;
+				return num * right.den <= den * right.num;
 			}
 		}
 
-		constexpr rational operator+(const rational right) const noexcept
+		constexpr rational_temp operator+(const rational_temp right) const noexcept
 		{
 			// a/b + c/d = (ad+bc)/bd
 			return reduce
-			(rational(
-				r.num * right.r.den + r.den * right.r.num,
-				r.den * right.r.den
+			(rational_temp(
+				num * right.den + den * right.num,
+				den * right.den
 			));
 		}
-		constexpr rational operator-(const rational right) const noexcept
+		constexpr rational_temp operator-(const rational_temp right) const noexcept
 		{
 			// a/b + c/d = (ad-bc)/bd
 			return reduce
-			(rational(
-				r.num * right.r.den - r.den * right.r.num,
-				r.den * right.r.den
+			(rational_temp(
+				num * right.den - den * right.num,
+				den * right.den
 			));
 		}
 
-		constexpr rational operator*(const rational right) const noexcept
+		constexpr rational_temp operator*(const rational_temp right) const noexcept
 		{
 			// a/b * c/d = ac/bd
 			return reduce
-			(rational(
-				r.num * right.r.num,
-				r.den * right.r.den
+			(rational_temp(
+				num * right.num,
+				den * right.den
 			));
 		}
 
-		constexpr rational operator*(const int n) const noexcept
+		template <typename U>
+		constexpr rational_temp<int64_t> operator*(const rational_temp<U> right) const noexcept
 		{
-			return reduce(rational(r.num * n, r.den));
+			int64_t a = num, b = den, c = right.get_num(), d = right.get_den();
+			return rational_temp<int64_t>::reduce
+			(rational_temp<int64_t>(
+				a * c,
+				b * d
+			));
 		}
-		constexpr rational& operator*=(const int n) noexcept
+
+		constexpr rational_temp operator*(const T n) const noexcept
 		{
-			r.num *= n;
+			return reduce(rational_temp(num * n, den));
+		}
+		constexpr rational_temp& operator*=(const T n) noexcept
+		{
+			num *= n;
 			reduce();
 			return *this;
 		}
@@ -226,65 +250,91 @@ namespace ff
 		/*
 		* @throws std::invalid_argument if right = 0
 		*/
-		constexpr rational operator/(const rational right) const
+		constexpr rational_temp operator/(const rational_temp right) const
 		{
-			if (right.num() == 0)
+			if (right.num == 0)
 			{
 				throw std::invalid_argument("Cannot divide by 0.");
 			}
 
 			// a/b / c/d = ad/bc
 			return reduce
-			(rational(
-				r.num * right.r.den,
-				r.den * right.r.num
+			(rational_temp(
+				num * right.den,
+				den * right.num
 			));
 		}
 		/*
+		* @throws std::invalid_argument if right = 0
+		*/
+		template <typename U>
+		constexpr rational_temp<int64_t> operator/(const rational_temp<U> right) const
+		{
+			if (right.get_num() == 0)
+			{
+				throw std::invalid_argument("Cannot divide by 0.");
+			}
+
+			int64_t a = num, b = den, c = right.get_num(), d = right.get_den();
+			return rational_temp<int64_t>::reduce
+			(rational_temp<int64_t>(
+				a * d,
+				b * c
+			));
+		}
+
+		/*
 		* @throws std::invalid_argument if n = 0
 		*/
-		constexpr rational operator/(const int n) const
+		constexpr rational_temp operator/(const T n) const
 		{
 			if (n == 0)
 			{
 				throw std::invalid_argument("Cannot divide by 0.");
 			}
 
-			return reduce(rational(r.num, r.den * n));
+			return reduce(rational_temp(num, den * n));
 		}
 		/*
 		* @throws std::invalid_argument if n = 0
 		*/
-		constexpr rational& operator/=(const int n)
+		constexpr rational_temp& operator/=(const T n)
 		{
 			if (n == 0)
 			{
 				throw std::invalid_argument("Cannot divide by 0.");
 			}
 
-			r.den *= n;
+			den *= n;
 			reduce();
 			return *this;
 		}
 
 	public:
 ///////////////////////////// Observers & Producers /////////////////////////////
-		constexpr AVRational av_rational() const noexcept { return r; }
-		constexpr int num() const noexcept { return r.num; }
-		constexpr int den() const noexcept { return r.den; }
+		constexpr AVRational av_rational() const noexcept 
+		{
+			return AVRational
+			{
+				.num = static_cast<int>(num),
+				.den = static_cast<int>(den)
+			};
+		}
+		constexpr T get_num() const noexcept { return num; }
+		constexpr T get_den() const noexcept { return den; }
 
 		constexpr double to_double() const noexcept
 		{
-			return (double)r.num / (double)r.den;
+			return (double)num / (double)den;
 		}
 
 		/*
 		* Reduces the rational to lowest terms.
 		*/
-		static constexpr rational reduce(rational r)
+		static constexpr rational_temp reduce(rational_temp r)
 		{
-			int gcd = std::gcd(r.r.num, r.r.den);
-			return rational(r.r.num / gcd, r.r.den / gcd);
+			auto gcd = std::gcd(r.num, r.den);
+			return rational_temp(r.num / gcd, r.den / gcd);
 		}
 	public:
 ///////////////////////////// Mutators /////////////////////////////
@@ -293,20 +343,42 @@ namespace ff
 		*/
 		constexpr void reduce()
 		{
-			int gcd = std::gcd(r.num, r.den);
-			r.num /= gcd; r.den /= gcd;
+			auto gcd = std::gcd(num, den);
+			num /= gcd; den /= gcd;
 		}
 
 	private:
-		AVRational r;
+		// numerator
+		T num;
+		// denominator
+		T den;
 	};
 
-	// Suitable for 24,25,30,60,120 and many other common fps values.
-	static constexpr rational ff_common_video_time_base(1, 600);
+	using rational = ff::rational_temp<int>;
+	using rational_64 = ff::rational_temp<int64_t>;
 
-	// Suitable for many common audio sample rates
-	static constexpr rational ff_common_audio_time_base(1, 90000);
+	// A zero constant.
+	static constexpr rational zero_rational(0, 1);
+	static constexpr rational_64 zero_rational_64(0, 1);
+}
 
-	static constexpr int common_audio_sample_rate = 44100;
-
+constexpr ff::rational operator*(int n, ff::rational r) noexcept
+{
+	r *= n;
+	return r;
+}
+constexpr ff::rational operator/(int n, ff::rational r) noexcept
+{
+	r /= n;
+	return r;
+}
+constexpr ff::rational_64 operator*(int64_t n, ff::rational_64 r) noexcept
+{
+	r *= n;
+	return r;
+}
+constexpr ff::rational_64 operator/(int64_t n, ff::rational_64 r) noexcept
+{
+	r /= n;
+	return r;
 }

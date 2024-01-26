@@ -146,7 +146,7 @@ ff::packet ff::demuxer::demux_next_packet()
 
 }
 
-void ff::demuxer::seek(int stream_ind, int64_t time_stamp, bool direction)
+void ff::demuxer::seek(int stream_ind, int64_t timestamp, bool direction)
 {
 	if (stream_ind < 0 || stream_ind >= p_fmt_ctx->nb_streams)
 	{
@@ -155,7 +155,7 @@ void ff::demuxer::seek(int stream_ind, int64_t time_stamp, bool direction)
 
 	int ret = av_seek_frame
 	(
-		p_fmt_ctx, stream_ind, time_stamp,
+		p_fmt_ctx, stream_ind, timestamp,
 		direction ? NULL : AVSEEK_FLAG_BACKWARD
 	);
 

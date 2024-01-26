@@ -117,15 +117,15 @@ namespace ff
 
 		/*
 		* Seeks to the first frame of the stream in the file that is
-		* the first one beyond/before time_stamp for direction true/false.
+		* the first one beyond/before timestamp for direction true/false.
 		* 
 		* @param stream_ind which stream
-		* @param time_stamp seek to where, in the time base of the stream.
+		* @param timestamp seek to where, in the time base of the stream.
 		* @param direction ture=forward;false=backward
 		* 
 		* @throws std::invalid_argument if stream ind is wrong
 		*/
-		void seek(int stream_ind, int64_t time_stamp, bool direction = true);
+		void seek(int stream_ind, int64_t timestamp, bool direction = true);
 
 
 		bool eof() const noexcept { return eof_reached; }
