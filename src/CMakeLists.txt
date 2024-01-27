@@ -45,8 +45,6 @@ set(FFWrapperSourceFiles
 # Formats
     "${SrcFFWrapperFormatsPath}/stream.h"
     "${SrcFFWrapperFormatsPath}/stream.cpp"
-#    "${SrcFFWrapperFormatsPath}/demux_stream.h"
-#    "${SrcFFWrapperFormatsPath}/demux_stream.cpp"
     "${SrcFFWrapperFormatsPath}/muxer.h"
 #    "${SrcFFWrapperFormatsPath}/muxer.cpp"
     "${SrcFFWrapperFormatsPath}/demuxer.h"
@@ -173,12 +171,16 @@ add_executable(test_rational
 # Test time
 add_executable(test_time
     "${TestSrcFFWrapperPath}/test_time.cpp")
+# Test demuxer
+add_executable(test_demuxer
+    "${TestSrcFFWrapperPath}/test_demuxer.cpp")
 
 set(ListTestTargets
     "test_ff_object"
     "test_dict"
     "test_rational"
-    "test_time")
+    "test_time"
+    "test_demuxer")
 
 ################################# Common Test Settings #################################
 

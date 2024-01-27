@@ -53,7 +53,11 @@ namespace ff
 	class time final
 	{
 	public:
-		time() = default;
+		/*
+		* Sets time = 0 and time base to 1.
+		*/
+		time() noexcept
+			: t(ff::zero_rational_64), b(1, 1) {}
 		~time() = default;
 
 		/*
@@ -110,6 +114,14 @@ namespace ff
 		constexpr bool operator!=(const time& right) const noexcept
 		{
 			return to_absolute() != right.to_absolute();
+		}
+		constexpr bool operator==(const int64_t right) const noexcept
+		{
+			return to_absolute() == right;
+		}
+		constexpr bool operator!=(const int64_t right) const noexcept
+		{
+			return to_absolute() != right;
 		}
 
 	public:

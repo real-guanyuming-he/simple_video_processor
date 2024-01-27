@@ -17,6 +17,8 @@
 
 struct AVStream;
 
+#include "../util/ff_time.h"
+
 namespace ff
 {
 	/*
@@ -37,13 +39,30 @@ namespace ff
 
 		virtual ~stream() = default;
 
+/////////////////////////////// Stream related ///////////////////////////////
 	public:
+		const ::AVStream* av_stream() const noexcept { return p_stream; }
+		::AVStream* av_stream() noexcept { return p_stream; }
+
 		bool is_video() const noexcept;
 		bool is_audio() const noexcept;
 		bool is_subtitle() const noexcept;
 
-	public:
+		/*
+		* @returns The duration of the stream.
+		* It is not 100% accurate as it may be calculated from the file size and bitrate.
+		* Can be equal to 0, in which case it is unknown.
+		*/
+		ff::time duration() const noexcept;
+		/*
+		* @returns The time base of the stream.
+		* Can be nonpositive, in which case it is unknown or not fixed.
+		*/
+		ff::rational time_base() const noexcept;
 
+/////////////////////////////// Codec related ///////////////////////////////
+	public:
+		const int codec_id() const noexcept;
 
 	private:
 		::AVStream* p_stream;

@@ -1,14 +1,14 @@
 # Introduction
 The project consists of two pieces of software.
-- An encapsulation of `FFmpeg` done in modern C++, which is designed to be cross-platform.
-- A GUI video processor on Windows, programmed with the above wrapper and Microsoft's WinUI 3.
+- An encapsulation of `FFmpeg` done in modern C++ (C++ 20), which is designed to be cross-platform.
+- A GUI video processor on Windows, programmed with the above wrapper and Microsoft's `WinUI 3`.
 
-The whole software is completely free and open source.
+The whole software is completely free and open source (in `GNU GPL v3`).
 
 # Motivation
 TO BE WRITTEN.
 
-# Configure and Build
+# Configuration and Building
 This project uses `vcpkg` and `CMake` to manage the build. Before you can build this project, you must have the two installed on your system and configured as follows:
 
 - Install `CMake` 3.27 or later
@@ -26,12 +26,14 @@ How you build the software is up to you.
 # Testing
 The project uses CTest to automate testing. I have written some auxiliary macros inside `src/test/util/test_util.h` to make my test cases compatibale with CTest and enable them to log error messages to a local file `test_log.log`.
 
+*Note: In order to run some tests, you must additionally have the `FFmpeg` CLI (with `libavfilter`) installed on your system and added to `PATH`. This is because the tool will be used to generate test videos for these tests.*
+
 # Project Structure
 The files are arranged in this structure:
 ```
 .gitignore
 readme.md
-LICENSES
+LICENSE
 ...
 
 src/

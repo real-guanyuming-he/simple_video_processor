@@ -62,6 +62,9 @@ int main()
 		{
 			ff::rational z1(0, 1), z2(0, 12345);
 			TEST_ASSERT_TRUE(z1 == z2 && z2 == z1, "Expected to be equal to each other.");
+
+			// integer
+			TEST_ASSERT_TRUE(ff::zero_rational == 0, "Expected to be equal.");
 		}
 
 		// Exactly the same numbers | coprime number inequalities
@@ -74,6 +77,11 @@ int main()
 
 			r2 = ff::rational(7, 2);
 			TEST_ASSERT_TRUE(r1 != r2 && r2 != r1, "Expected not to be equal to each other.");
+
+			// integer
+			ff::rational r3(17, 1);
+			TEST_ASSERT_TRUE(r3 == 17, "Expected to be equal.");
+			TEST_ASSERT_TRUE(r3 != 18 && r3 != 16, "Expected not to be equal.");
 		}
 
 		// Not the same numbers, but still the same value |
@@ -90,6 +98,11 @@ int main()
 
 			r1 = ff::rational(15, 5);
 			TEST_ASSERT_TRUE(r1 != r2 && r2 != r1, "Expected not to be equal to each other.");
+
+			// integer
+			ff::rational r3(25, 5), r4(26, 5);
+			TEST_ASSERT_TRUE(r3 == 5, "Expected to be equal.");
+			TEST_ASSERT_TRUE(r4 != 5 && r3 != 6, "Expected not to be equal.");
 		}
 
 		// Smaller/Larger

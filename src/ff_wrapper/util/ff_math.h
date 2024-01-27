@@ -131,6 +131,11 @@ namespace ff
 			// b,d != 0 -> (a/b = c/d <-> ad = bc)  
 			return num * right.den == den * right.num;
 		}
+		constexpr bool operator==(const int64_t right) const noexcept
+		{
+			// c != 0 -> a = b/c <-> ac = b
+			return right * den == num;
+		}
 		constexpr bool operator!=(const rational_temp right) const noexcept
 		{
 			// b,d != 0 -> (a/b != c/d <-> ad != bc)  
@@ -140,6 +145,11 @@ namespace ff
 		{
 			// b,d != 0 -> (a/b != c/d <-> ad != bc)  
 			return num * right.den != den * right.num;
+		}
+		constexpr bool operator!=(const int64_t right) const noexcept
+		{
+			// c != 0 -> a != b/c <-> ac != b
+			return right * den != num;
 		}
 
 		constexpr bool operator<(const rational_temp right) const noexcept

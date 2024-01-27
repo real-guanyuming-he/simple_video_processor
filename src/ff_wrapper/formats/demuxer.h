@@ -127,7 +127,6 @@ namespace ff
 		*/
 		void seek(int stream_ind, int64_t timestamp, bool direction = true);
 
-
 		bool eof() const noexcept { return eof_reached; }
 
 	public:
