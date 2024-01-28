@@ -249,17 +249,17 @@ void ff::demuxer::internal_probe_stream_info(::AVDictionary** dict)
 	}
 }
 
-const char* ff::demuxer::description() const noexcept
+std::string ff::demuxer::description() const noexcept
 {
-	return p_fmt_ctx->iformat->long_name;
+	return std::string(p_fmt_ctx->iformat->long_name);
 }
 
-const char* ff::demuxer::short_names() const noexcept
+std::vector<std::string> ff::demuxer::short_names() const noexcept
 {
-	return p_fmt_ctx->iformat->name;
+	return media_base::string_to_list(std::string(p_fmt_ctx->iformat->name));
 }
 
-const char* ff::demuxer::extensions() const noexcept
+std::vector<std::string> ff::demuxer::extensions() const noexcept
 {
-	return p_fmt_ctx->iformat->extensions;
+	return media_base::string_to_list(std::string(p_fmt_ctx->iformat->extensions));
 }

@@ -25,15 +25,21 @@
 
 #include <string>
 
+extern "C"
+{
+#include <libavformat/avformat.h> // For AV_TIME_BASE macro
+}
+
 namespace ff
 {
+	// Equals to 1/AV_TIME_BASE
+	static constexpr rational av_time_base(1, AV_TIME_BASE);
+
 	// Suitable for 24,25,30,60,120 and many other common fps values.
 	static constexpr rational common_video_time_base(1, 600);
 
 	// Suitable for many common audio sample rates
 	static constexpr rational common_audio_time_base(1, 90000);
-
-	static constexpr int common_audio_sample_rate = 44100;
 
 	/*
 	* Represents a time stamp since the start of some multimedia file.

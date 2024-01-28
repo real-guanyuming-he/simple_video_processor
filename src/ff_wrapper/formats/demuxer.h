@@ -170,8 +170,8 @@ namespace ff
 
 	public:
 		// Inherited via media_base
-		virtual const char* description() const noexcept override;
-		virtual const char* short_names() const noexcept override;
-		virtual const char* extensions() const noexcept override;
+		virtual std::string description() const noexcept override;
+		virtual std::vector<std::string> short_names() const noexcept override;
+		virtual std::vector<std::string> extensions() const noexcept override;
 };
 }

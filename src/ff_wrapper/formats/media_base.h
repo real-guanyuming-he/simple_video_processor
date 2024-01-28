@@ -20,6 +20,7 @@
 * Defines a base class for multimedia files.
 */
 
+#include <string>
 #include <vector>
 
 struct AVFormatContext;
@@ -46,25 +47,23 @@ namespace ff
 		/*
 		* @returns a description of the media file's format.
 		*/
-		virtual const char* description() const noexcept = 0;
+		virtual std::string description() const noexcept = 0;
 
 		/*
 		* @returns a list of short names that the format of the media file may be called
-		* in a string, separated by ;
 		*/
-		virtual const char* short_names() const noexcept = 0;
+		virtual std::vector<std::string> short_names() const noexcept = 0;
 
 		/*
 		* @returns a list of file extensions that the format of the media file may use
-		* in a string, separated by ;
 		*/
-		virtual const char* extensions() const noexcept = 0;
+		virtual std::vector<std::string> extensions() const noexcept = 0;
 
 		/*
-		* Converts a list represented by such a string as returned by the above two methods
-		* into a vector.
+		* Converts a list represented by such a string as obtained inside the above two methods
+		* into a vector. The items are assumed to be separated by commas.
 		*/
-		static std::vector<const char*> string_to_list(const char* str);
+		static std::vector<std::string> string_to_list(std::string str, char separator = ',');
 
 	public:
 		/*

@@ -5,9 +5,10 @@ extern "C"
 #include <libavformat/avformat.h>
 }
 
-std::vector<const char*> ff::media_base::string_to_list(const char* str)
+std::vector<std::string> ff::media_base::string_to_list(std::string str, char separator)
 {
-	throw std::exception("Not implemented");
+
+	return std::vector<std::string>();
 }
 
 const char* ff::media_base::get_file_path() const noexcept
