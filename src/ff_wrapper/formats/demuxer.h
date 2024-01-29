@@ -26,7 +26,7 @@ struct AVFormatContext;
 
 namespace ff
 {
-	class demuxer : public media_base
+	class FF_WRAPPER_API demuxer : public media_base
 	{
 	public:
 		/*
@@ -131,6 +131,20 @@ namespace ff
 
 	public:
 		const ::AVFormatContext* get_av_fmt_ctx() const noexcept { return p_fmt_ctx; }
+
+		/*
+		* @returns the stream specified by the index.
+		* @throws std::invalid_argument if the index is out of range
+		*/
+		inline stream get_stream(int index) const
+		{
+			if (index < 0 || index >= streams.size())
+			{
+				throw std::invalid_argument("Stream index out of range.");
+			}
+
+			return streams[index];
+		}
 
 	private:
 		/*

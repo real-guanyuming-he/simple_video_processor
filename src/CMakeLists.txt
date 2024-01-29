@@ -116,14 +116,14 @@ foreach(LibName IN LISTS AllLibNames)
         NO_DEFAULT_PATH)
 endforeach()
 
-target_include_directories(ff_wrapper PRIVATE ${VcpkgIncludePath})
+target_include_directories(${FFWrapperName} PRIVATE ${VcpkgIncludePath})
 
 # The use of target_link_directories is discouraged when I can find the full paths of the libs
-# target_link_directories(ff_wrapper PRIVATE 
+# target_link_directories(${FFWrapperName} PRIVATE 
 #     $<IF:$<CONFIG:Debug>,${MyVcpkgDebugBinPath},${MyVcpkgBinPath}>)
 
 foreach(LibName IN LISTS AllLibNames)
-    target_link_libraries(ff_wrapper PRIVATE
+    target_link_libraries(${FFWrapperName} PRIVATE
         $<IF:$<CONFIG:Debug>,${${LibName}_PathDbg},${${LibName}_Path}>)
 endforeach()
 
@@ -136,19 +136,19 @@ if(WIN32)
         "mfplat" "mfuuid")
 endif()
 if(WIN32)
-    target_link_libraries(ff_wrapper PRIVATE
+    target_link_libraries(${FFWrapperName} PRIVATE
         ${AdditionalLibsWindows})
 endif()
 
 ################################# Other Compiler/Linker Options #################################
 
 # Use the C++ 20 standard
-set_property(TARGET ff_wrapper
+set_property(TARGET ${FFWrapperName}
     PROPERTY CXX_STANDARD 20)
 
 # Define FF_WRAPPER_EXPORT for ff_wrapper on Windows to correctly export its symbols into a DLL
 if(WIN32)
-    target_compile_definitions(ff_wrapper
+    target_compile_definitions(${FFWrapperName}
         PRIVATE "FF_WRAPPER_EXPORT")
 endif()
 
@@ -200,16 +200,27 @@ foreach(test IN LISTS ListTestTargets)
     # Use the C++ 20 standard
     set_property(TARGET ${test}
         PROPERTY CXX_STANDARD 20)
+
+    # As long as ff_math.h is included,
+    # the include dir has to be added because AVRational is used
+    # For convenience, just add the dir to all test's include paths
+    target_include_directories(${test}
+        PRIVATE ${VcpkgIncludePath})
 endforeach()
 
 ################################# Exclusive Test Settings #################################
 
-# Because AVRational is used, I have to include a header file.
-target_include_directories("test_rational"
-    PRIVATE ${VcpkgIncludePath})
-target_include_directories("test_time"
-    PRIVATE ${VcpkgIncludePath})
+# Putting FFmpeg to PATH doesn't work for std::system() some times.
+# Therefore, define the full path as a macro.
+cmake_path(APPEND
+    MyVcpkgInstalledRootPath "tools" "ffmpeg" "ffmpeg"
+    OUTPUT_VARIABLE MyFFmpegExecutablePath)
+# Put quotation marks around it to make it a string literal in C++.
+set(MyFFmpegExecutablePath "\"${MyFFmpegExecutablePath}\"")
 
+# Define the macro for all the tests that use FFmpeg CLI
+target_compile_definitions("test_demuxer"
+    PRIVATE "FFMPEG_EXECUTABLE_PATH=${MyFFmpegExecutablePath}")
 
 # Debug Output
 #message("VcpkgIncludePath=${VcpkgIncludePath}")

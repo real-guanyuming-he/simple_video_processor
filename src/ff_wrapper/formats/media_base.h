@@ -20,6 +20,8 @@
 * Defines a base class for multimedia files.
 */
 
+#include "../util/util.h"
+
 #include <string>
 #include <vector>
 
@@ -33,7 +35,7 @@ namespace ff
 	* It merely assumes that it's valid (i.e. fully set up by a demuxer or muxer)
 	and provides methods of common operations regarding it (e.g. get video info).
 	*/
-	class media_base
+	class FF_WRAPPER_API media_base
 	{
 	public:
 		media_base() = default;

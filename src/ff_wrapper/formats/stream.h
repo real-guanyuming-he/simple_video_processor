@@ -29,7 +29,7 @@ namespace ff
 	* However, derived classes may have to ability to create a new stream. 
 	* Those things have to be done for muxing.
 	*/
-	class stream
+	class FF_WRAPPER_API stream
 	{
 	public:
 		stream() noexcept
