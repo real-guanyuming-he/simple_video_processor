@@ -81,6 +81,16 @@ constexpr const auto FF_ASSERTION_LOG_FILE_NAME = "ff_assertion_log.log";
 	}
 #endif // !FF_TESTING
 
-#elif
+#else
 	#define FF_ASSERT(expr, msg)
 #endif // !NDEBUG
+
+// Will be used to turn path macros that I predefine by CMake into string literals.
+#ifndef FF_STRINGIFY
+	#define FF_STRINGIFY(x) #x
+#endif // !FF_STRINGIFY
+
+// Used to expand the macro before stringifying it.
+#ifndef FF_EXPAND_STRINGIFY
+#define FF_EXPAND_STRINGIFY(x) FF_STRINGIFY(x)
+#endif // !FF_EXPAND_STRINGIF

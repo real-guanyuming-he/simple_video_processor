@@ -111,6 +111,13 @@ int main()
 			ff::rational z(0, 1), p1(1, 8), n1(-2, 9);
 			TEST_ASSERT_TRUE(n1 < z && z > n1, "Should be smaller than 0");
 			TEST_ASSERT_TRUE(ff::zero_rational < p1 && p1 > ff::zero_rational, "Should be bigger than 0");
+
+			// Integer
+			ff::rational i1(123, 2), i2(-2, 34), i3(17, 3), i4(33, 222);
+			TEST_ASSERT_TRUE(i1 < 123, "Should be smaller");
+			TEST_ASSERT_TRUE(i2 > -1, "Should be bigger");
+			TEST_ASSERT_TRUE(i3 > 5, "Should be bigger");
+			TEST_ASSERT_TRUE(i4 < 1, "Should be smaller");
 			
 			// Positive
 			ff::rational r1(13, 15), r2(15, 17);

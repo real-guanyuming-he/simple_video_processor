@@ -165,6 +165,19 @@ namespace ff
 				return num * right.den > den * right.num;
 			}
 		}
+		constexpr bool operator<(const T right) const noexcept
+		{
+			// b > 0 -> a < bc
+			// b < 0 -> a > bc
+			if (den > 0)
+			{
+				return num < den * right;
+			}
+			else
+			{
+				return num > den * right;
+			}
+		}
 		constexpr bool operator>(const rational_temp right) const noexcept
 		{
 			// bd > 0 -> ad > bc
@@ -176,6 +189,19 @@ namespace ff
 			else
 			{
 				return num * right.den < den * right.num;
+			}
+		}
+		constexpr bool operator>(const T right) const noexcept
+		{
+			// b > 0 -> a > bc
+			// b < 0 -> a < bc
+			if (den > 0)
+			{
+				return num > den * right;
+			}
+			else
+			{
+				return num < den * right;
 			}
 		}
 
@@ -192,6 +218,19 @@ namespace ff
 				return num * right.den >= den * right.num;
 			}
 		}
+		constexpr bool operator<=(const T right) const noexcept
+		{
+			// b > 0 -> a <= bc
+			// b < 0 -> a >= bc
+			if (den > 0)
+			{
+				return num <= den * right;
+			}
+			else
+			{
+				return num >= den * right;
+			}
+		}
 		constexpr bool operator>=(const rational_temp right) const noexcept
 		{
 			// bd > 0 -> ad >= bc
@@ -203,6 +242,19 @@ namespace ff
 			else
 			{
 				return num * right.den <= den * right.num;
+			}
+		}
+		constexpr bool operator>=(const T right) const noexcept
+		{
+			// b > 0 -> a >= bc
+			// b < 0 -> a <= bc
+			if (den > 0)
+			{
+				return num >= den * right;
+			}
+			else
+			{
+				return num <= den * right;
 			}
 		}
 

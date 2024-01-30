@@ -66,31 +66,48 @@ namespace ff
 		ff_object() noexcept;
 
 		/*
-		* Does nothing.
+		* Only copies the state.
 		*
-		* Derived classes should do everything.
+		* Derived classes should do everything else.
 		*/
-		ff_object(const ff_object& other) : ff_object() {}
+		ff_object(const ff_object& other) noexcept 
+			: state(other.state) {}
 
 		/*
 		* Does not allocate any memory. Simply copies the state of other.
+		* Derived class should call this to handle the state.
 		*
 		* Derived classes should copy the pointers.
 		*/
-		ff_object(ff_object&& other) noexcept : state(other.state) {}
+		ff_object(ff_object&& other) noexcept 
+			: state(other.state) 
+		{
+			other.state = ff_object_state::DESTROYED;
+		}
+
+		/*
+		* Destroys the object by calling destroy(). Then,
+		* copies the state.
+		*
+		* Derived classes should do everything else, including the state control.
+		*/
+		ff_object& operator=(const ff_object& right) noexcept;
+
+		/*
+		* Destroys the object by calling destroy(). Then,
+		* 
+		* Only copies the state and sets right's to DESTORYED.
+		* Derived class should call this to handle the state.
+		*/
+		ff_object& operator=(ff_object&& right) noexcept;
 
 		/*
 		* The destructor.
-		* It releases all the memory allocated for the resources
-		* as well as all the memory allocated for the FFmpeg object itself.
 		*
-		* Derived classes should also make sure that all custom destruction logic
-		* is executed in the destructor.
+		* Derived classes should call destroy() themselves doing so here
+		* would call this's internal_... methods.
 		*/
-		virtual ~ff_object()
-		{
-			destroy();
-		}
+		virtual ~ff_object() {}
 
 		////////////////////////// State Controls //////////////////////////
 	public:
@@ -106,9 +123,14 @@ namespace ff
 			READY
 		};
 
-		ff_object_state get_object_state() const { return state; }
+		ff_object_state get_object_state() const noexcept { return state; }
+		bool destroyed() const noexcept { return ff_object_state::DESTROYED == state; }
+		bool created() const noexcept { return ff_object_state::OBJECT_CREATED == state; }
+		bool ready() const noexcept { return ff_object_state::READY == state; }
 
 	protected:
+		// Declare the state as protected to give more memory allocation control to 
+		// derived classes.
 		ff_object_state state;
 
 		//////////////////////////// Memory Allocation Control ////////////////////////////////

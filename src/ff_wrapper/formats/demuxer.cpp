@@ -117,9 +117,10 @@ ff::packet ff::demuxer::demux_next_packet()
 	}
 
 	int ret = av_read_frame(p_fmt_ctx, av_pkt);
+	// ret=0 -> success
 	if (0 == ret)
 	{
-		return packet(av_pkt);
+		return packet(av_pkt, &streams[av_pkt->stream_index]);
 	}
 	// ret<0 -> Error or EOF
 
@@ -132,6 +133,9 @@ ff::packet ff::demuxer::demux_next_packet()
 		case AVERROR(ENOMEM):
 			throw std::bad_alloc();
 			break;
+		case AVERROR_EOF: // EOF
+			eof_reached = true;
+			return packet();
 		default:
 			ON_FF_ERROR_WITH_CODE("Unexpected error happened during a call to av_read_frame()", ret);
 			break;
@@ -165,6 +169,10 @@ void ff::demuxer::seek(int stream_ind, int64_t timestamp, bool direction)
 		{
 		case AVERROR(ENOMEM):
 			throw std::bad_alloc();
+			break;
+		case AVERROR_EOF:
+			eof_reached = true;
+			throw std::invalid_argument("The demuxer could not seek to the timestamp you provided until the end.");
 			break;
 		default:
 			ON_FF_ERROR_WITH_CODE("Unexpected error happened during a call to av_seek_frame()", ret);

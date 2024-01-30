@@ -14,12 +14,23 @@
 * If not, see <https://www.gnu.org/licenses/>.
 */
 
+#ifndef NDEBUG
+	#ifdef _WIN32
+	#define FF_DEBUG_BREAK __debugbreak();
+	#else
+	#define FF_DEBUG_BREAK
+	#endif // _WIN32
+#else
+	#define FF_DEBUG_BREAK
+#endif // !NDEBUG
+
 #define TEST_ASSERT_TRUE(expr, msg)\
 if (!(expr))\
 {\
 	std::cerr << "Test failed at line " << __LINE__ <<\
 		" in file " << __FILE__ << " with message:\n" <<\
 		msg;\
+	FF_DEBUG_BREAK\
 	return -1; /* CTest treats non-zero return values as failures. */ \
 }
 
@@ -29,6 +40,7 @@ if (expr)\
 	std::cerr << "Test failed at line " << __LINE__ <<\
 		" in file " << __FILE__ << " with message:\n" <<\
 		msg;\
+	FF_DEBUG_BREAK\
 	return -1; /* CTest treats non-zero return values as failures. */ \
 }
 
@@ -51,6 +63,7 @@ TEST_ASSERT_TRUE(actual == expected, msg)
 	std::cerr << "Test failed at line " << __LINE__ << \
 	" in file " << __FILE__ << ",\n" << \
 	"which should have thrown but did not."; \
+	FF_DEBUG_BREAK\
 	return -1; \
 	}\
 }

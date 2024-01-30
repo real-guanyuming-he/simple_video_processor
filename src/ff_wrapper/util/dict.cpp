@@ -22,6 +22,7 @@ extern "C"
 }
 
 #include "ff_helpers.h"
+#include <stdexcept>
 
 ff::dict::dict(const dict& other) : dict()
 {

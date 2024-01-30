@@ -215,6 +215,12 @@ endforeach()
 cmake_path(APPEND
     MyVcpkgInstalledRootPath "tools" "ffmpeg" "ffmpeg"
     OUTPUT_VARIABLE MyFFmpegExecutablePath)
+# Append OS-specific executable extension
+if(WIN32)
+    cmake_path(APPEND_STRING
+        MyFFmpegExecutablePath ".exe"
+        OUTPUT_VARIABLE MyFFmpegExecutablePath)
+endif()
 # Put quotation marks around it to make it a string literal in C++.
 set(MyFFmpegExecutablePath "\"${MyFFmpegExecutablePath}\"")
 

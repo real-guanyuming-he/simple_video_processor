@@ -26,7 +26,7 @@ How you build the software is up to you.
 # Testing
 The project uses CTest to automate testing. I have written some auxiliary macros inside `src/test/util/test_util.h` to make my test cases compatibale with CTest and enable them to log error messages to a local file `test_log.log`.
 
-*Note: In order to run some tests, you must have also installed the ffmpeg CLI through your `vcpkg install` earlier. The CLI is used by those tests to generate test videos.*
+*Note: In order to run some tests, you must have also installed the ffmpeg CLI through your `vcpkg install` earlier. The CLI is used by those tests to generate test videos. In addition, the vcpkg root path must not contain any space (Because I don't know why adding quotations around the ffmpeg path will make std::system() fail, at least on Windows).*
 
 # Project Structure
 The files are arranged in this structure:

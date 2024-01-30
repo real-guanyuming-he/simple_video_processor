@@ -23,15 +23,30 @@ namespace ff
 		state = ff_object_state::DESTROYED;
 	}
 
+	ff_object& ff_object::operator=(const ff_object& right) noexcept
+	{
+		destroy();
+		state = right.state;
+		return *this;
+	}
+
+	ff_object& ff_object::operator=(ff_object&& right) noexcept
+	{
+		destroy();
+		state = right.state;
+		right.state = ff_object_state::DESTROYED;
+		return *this;
+	}
+
 	void ff_object::allocate_object_memory()
 	{
 		FF_ASSERT
 		(
 			state == ff_object_state::DESTROYED,
 			"Can only allocated object memory if the object is destroyed"
-		)
+		);
 
-			internal_allocate_object_memory();
+		internal_allocate_object_memory();
 		state = ff_object_state::OBJECT_CREATED;
 	}
 
@@ -41,9 +56,9 @@ namespace ff
 		(
 			state == ff_object_state::OBJECT_CREATED,
 			"Can only allocated resource memory if the object is created"
-		)
+		);
 
-			internal_allocate_resources_memory(size, additional_information);
+		internal_allocate_resources_memory(size, additional_information);
 		state = ff_object_state::READY;
 	}
 
@@ -53,9 +68,9 @@ namespace ff
 		(
 			state == ff_object_state::READY,
 			"Can only release resources memory if the object is ready"
-		)
+		);
 
-			internal_release_resources_memory();
+		internal_release_resources_memory();
 		state = ff_object_state::OBJECT_CREATED;
 	}
 
@@ -65,9 +80,9 @@ namespace ff
 		(
 			state == ff_object_state::OBJECT_CREATED,
 			"Can only release object memory if the object is created"
-		)
+		);
 
-			internal_release_object_memory();
+		internal_release_object_memory();
 		state = ff_object_state::DESTROYED;
 	}
 
@@ -77,6 +92,7 @@ namespace ff
 		{
 		case ff_object_state::READY:
 			internal_release_resources_memory();
+			state = ff_object_state::OBJECT_CREATED;
 			[[fallthrough]];
 		case ff_object_state::OBJECT_CREATED:
 			internal_release_object_memory();

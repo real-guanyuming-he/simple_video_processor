@@ -121,6 +121,48 @@ namespace ff
 		{
 			return to_absolute() != right.to_absolute();
 		}
+
+		constexpr bool operator<(const rational_64& right) const noexcept
+		{
+			return to_absolute() < right;
+		}
+		constexpr bool operator>(const rational_64& right) const noexcept
+		{
+			return to_absolute() > right;
+		}
+		constexpr bool operator<=(const rational_64& right) const noexcept
+		{
+			return to_absolute() <= right;
+		}
+		constexpr bool operator>=(const rational_64& right) const noexcept
+		{
+			return to_absolute() >= right;
+		}
+		constexpr bool operator==(const rational_64& right) const noexcept
+		{
+			return to_absolute() == right;
+		}
+		constexpr bool operator!=(const rational_64& right) const noexcept
+		{
+			return to_absolute() != right;
+		}
+
+		constexpr bool operator<(const int64_t right) const noexcept
+		{
+			return to_absolute() < right;
+		}
+		constexpr bool operator>(const int64_t right) const noexcept
+		{
+			return to_absolute() > right;
+		}
+		constexpr bool operator<=(const int64_t right) const noexcept
+		{
+			return to_absolute() <= right;
+		}
+		constexpr bool operator>=(const int64_t right) const noexcept
+		{
+			return to_absolute() >= right;
+		}
 		constexpr bool operator==(const int64_t right) const noexcept
 		{
 			return to_absolute() == right;

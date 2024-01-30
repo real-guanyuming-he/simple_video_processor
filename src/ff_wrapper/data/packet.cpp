@@ -17,11 +17,14 @@
 #include "packet.h"
 
 #include "../util/ff_helpers.h"
+#include "../formats/stream.h"
 
 extern "C"
 {
 #include <libavcodec/packet.h>
 }
+
+#include <stdexcept>
 
 ff::packet::packet(bool allocate_packet)
 	: p_av_packet(nullptr)
@@ -34,8 +37,8 @@ ff::packet::packet(bool allocate_packet)
 	}
 }
 
-ff::packet::packet(::AVPacket* in_packet, bool has_data) noexcept
-	: p_av_packet(in_packet)
+ff::packet::packet(::AVPacket* in_packet, const stream* stream, bool has_data) noexcept
+	: p_av_packet(in_packet), p_stream(stream)
 {
 	if (has_data)
 	{
@@ -45,6 +48,41 @@ ff::packet::packet(::AVPacket* in_packet, bool has_data) noexcept
 	{
 		state = ff_object_state::OBJECT_CREATED;
 	}
+}
+
+ff::packet::packet(const packet& other)
+	: ff_object(other), p_av_packet(nullptr)
+{
+	if (nullptr == other.p_av_packet)
+	{
+		return;
+	}
+	
+	p_av_packet = av_packet_clone(other.p_av_packet);
+	if (nullptr == p_av_packet)
+	{
+		throw std::bad_alloc();
+	}
+	p_stream = other.p_stream;
+}
+
+ff::packet& ff::packet::operator=(const packet& right)
+{
+	ff_object::operator=(right);
+
+	if (nullptr == right.p_av_packet)
+	{
+		return *this;
+	}
+
+	p_av_packet = av_packet_clone(right.p_av_packet);
+	if (!p_av_packet)
+	{
+		throw std::bad_alloc();
+	}
+	p_stream = right.p_stream;
+	
+	return *this;
 }
 
 void ff::packet::internal_allocate_object_memory()
@@ -68,12 +106,32 @@ void ff::packet::internal_allocate_resources_memory(uint64_t size, void* additio
 
 void ff::packet::internal_release_object_memory() noexcept
 {
-	av_packet_unref(p_av_packet);
+	av_packet_free(&p_av_packet);
 }
 
 void ff::packet::internal_release_resources_memory() noexcept
 {
 	// p_av_packet should not be nullptr
 	// this is ensured by the state machine of ff_object.
-	av_packet_free(&p_av_packet);
+	av_packet_unref(p_av_packet);
+}
+
+ff::time ff::packet::pts() const
+{
+	if (!linked_to_stream())
+	{
+		throw std::logic_error("Not linked to any stream.");
+	}
+
+	return ff::time(p_av_packet->pts, p_stream->time_base());
+}
+
+ff::time ff::packet::dts() const
+{
+	if (!linked_to_stream())
+	{
+		throw std::logic_error("Not linked to any stream.");
+	}
+
+	return ff::time(p_av_packet->dts, p_stream->time_base());
 }

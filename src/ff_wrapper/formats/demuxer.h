@@ -112,6 +112,7 @@ namespace ff
 		* 
 		* @returns the packet demuxed, or a DESTROYED packet if eof has been reached.
 		* Since then, eof() remains true until it is reset by another related method.
+		* If the packet is not DESTROYED, then it is linked to its corresponding stream.
 		*/
 		packet demux_next_packet();
 
@@ -138,12 +139,80 @@ namespace ff
 		*/
 		inline stream get_stream(int index) const
 		{
-			if (index < 0 || index >= streams.size())
+			if (index < 0 || index >= num_streams())
 			{
 				throw std::invalid_argument("Stream index out of range.");
 			}
 
 			return streams[index];
+		}
+
+		int num_videos() const noexcept { return v_indices.size(); }
+		int num_audios() const noexcept { return a_indices.size(); }
+		int num_subtitles() const noexcept { return s_indices.size(); }
+
+		/*
+		* @returns the stream index of the i^th video stream.
+		* @throws std::invalid_argument if the index is out of range
+		*/
+		inline int get_video_ind(int i) const
+		{
+			if (i < 0 || i >= num_videos())
+			{
+				throw std::invalid_argument("Stream index out of range.");
+			}
+
+			return v_indices[i];
+		}
+		/*
+		* @returns the stream index of the i^th audio stream.
+		* @throws std::invalid_argument if the index is out of range
+		*/
+		inline int get_audio_ind(int i) const
+		{
+			if (i < 0 || i >= num_audios())
+			{
+				throw std::invalid_argument("Stream index out of range.");
+			}
+
+			return a_indices[i];
+		}
+		/*
+		* @returns the stream index of the i^th subtitle stream.
+		* @throws std::invalid_argument if the index is out of range
+		*/
+		inline int get_subtitle_ind(int i) const
+		{
+			if (i < 0 || i >= num_subtitles())
+			{
+				throw std::invalid_argument("Stream index out of range.");
+			}
+
+			return s_indices[i];
+		}
+		/*
+		* @returns the i^th video stream.
+		* @throws std::invalid_argument if the index is out of range
+		*/
+		inline stream get_video(int i) const
+		{
+			return streams[get_video_ind(i)];
+		}
+		/*
+		* @returns the i^th audio stream.
+		* @throws std::invalid_argument if the index is out of range
+		*/
+		inline stream get_audio(int i) const
+		{
+			return streams[get_audio_ind(i)];
+		}
+		/*
+		* @returns the i^th subtitle stream.
+		* @throws std::invalid_argument if the index is out of range
+		*/
+		inline stream get_subtitle(int i) const
+		{
+			return streams[get_subtitle_ind(i)];
 		}
 
 	private:
