@@ -64,5 +64,6 @@ After a branch is used (and its changes tested), it is merged into master. Then,
 However, the branch names do follow some conventions:
 - Branch `cmake_xxx` contains changes that only affect the `CMakeLists.txt` file. Generally these changes rewrite/improve existing CMake tasks implemented in the file.
 - Branch `ff_data_xxx` contains development of wrappers for multimedia data (e.g. Packets that contain compressed data and frames that contain decompressed data).
-- Branch `ff_formats_xxx` contains development of formats (file I/O, demuxer, and muxer)
+- Branch `ff_formats_xxx` contains development of formats (file I/O, demuxer, and muxer).
+- Branch `ff_codec_xxx` contains development of decoders and encoders.
 - Branch `ff_util_xxx` contains development of the utility for `ff_wrapper`.

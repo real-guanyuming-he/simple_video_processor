@@ -25,6 +25,9 @@ cmake_path(APPEND
 cmake_path(APPEND 
     SrcFFWrapperRootPath "formats"
     OUTPUT_VARIABLE SrcFFWrapperFormatsPath)
+cmake_path(APPEND 
+    SrcFFWrapperRootPath "codec"
+    OUTPUT_VARIABLE SrcFFWrapperCodecPath)
 
 # The FFmpeg wrapper library
 set(FFWrapperSourceFiles
@@ -50,7 +53,11 @@ set(FFWrapperSourceFiles
     "${SrcFFWrapperFormatsPath}/demuxer.h"
     "${SrcFFWrapperFormatsPath}/demuxer.cpp"
     "${SrcFFWrapperFormatsPath}/media_base.h"
-    "${SrcFFWrapperFormatsPath}/media_base.cpp")
+    "${SrcFFWrapperFormatsPath}/media_base.cpp"
+# Codec
+    "${SrcFFWrapperCodecPath}/decoder.h"
+    "${SrcFFWrapperCodecPath}/decoder.cpp")
+    
 add_library(${FFWrapperName} SHARED
     ${FFWrapperSourceFiles})
 # Add IDE subfolders (mostly Visual Studio filters)
