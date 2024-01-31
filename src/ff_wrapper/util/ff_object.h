@@ -155,8 +155,7 @@ namespace ff
 		*/
 		virtual void internal_allocate_resources_memory
 		(
-			uint64_t size,
-			void* additional_information
+			uint64_t size, void * additional_information
 		) = 0;
 
 		/*
@@ -190,7 +189,7 @@ namespace ff
 		void allocate_resources_memory
 		(
 			uint64_t size = 0,
-			void* additional_information = nullptr
+			void *additional_information = nullptr
 		);
 
 		/*

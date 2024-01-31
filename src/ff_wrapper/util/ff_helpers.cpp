@@ -87,12 +87,14 @@ namespace ffhelpers
 			avcodec_free_context(ppcodctx);
 		}
 	}
+
 	void safely_free_sws_context(::SwsContext** sws_ctx) noexcept
 	{
 		// Don't need to check for nullptr as the func does so
 		sws_freeContext(*sws_ctx);
 		sws_ctx = nullptr;
 	}
+
 	void safely_free_swr_context(::SwrContext** swr_ctx) noexcept
 	{
 		if (*swr_ctx)
@@ -101,6 +103,7 @@ namespace ffhelpers
 			swr_free(swr_ctx);
 		}
 	}
+
 	void safely_free_audio_fifo(::AVAudioFifo** fifo) noexcept
 	{
 		if (*fifo)
@@ -109,6 +112,7 @@ namespace ffhelpers
 			*fifo = nullptr;
 		}
 	}
+
 	std::string ff_translate_error_code(int err_code)
 	{
 		std::string ret;
@@ -136,7 +140,7 @@ namespace ffhelpers
 		par->color_trc = AVCOL_TRC_UNSPECIFIED;
 		par->color_space = AVCOL_SPC_UNSPECIFIED;
 		par->chroma_location = AVCHROMA_LOC_UNSPECIFIED;
-		par->sample_aspect_ratio = AVRational{ 0, 1 };
+		par->sample_aspect_ratio = AVRational{ .num=0, .den=1 };
 		par->profile = FF_PROFILE_UNKNOWN;
 		par->level = FF_LEVEL_UNKNOWN;
 	}

@@ -50,7 +50,7 @@ namespace ff
 		state = ff_object_state::OBJECT_CREATED;
 	}
 
-	void ff_object::allocate_resources_memory(uint64_t size, void* additional_information)
+	void ff_object::allocate_resources_memory(uint64_t size, void *additional_information)
 	{
 		FF_ASSERT
 		(

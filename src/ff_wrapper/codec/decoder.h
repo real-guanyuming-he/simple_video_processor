@@ -15,13 +15,21 @@
 * If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "../util/util.h"
 #include "../util/ff_object.h"
+#include "../util/dict.h"
+
+extern "C"
+{
+#include <libavcodec/codec_id.h>
+}
 
 struct AVCodec;
 struct AVCodecContext;
 
 namespace ff
 {
+
 	/*
 	* A decoder. Consists of two parts,
 	* a description (which identifies the decoder) of the decoder and 
@@ -34,14 +42,30 @@ namespace ff
 	* 
 	* This class uses the void pointer parameter of allocate_resources_memory()
 	* to pass in a dict of options. For type-safety, I provide a wrapper,
-	* create_decoder_context(), which declares a const dict& parameter as a safer forwarder.
+	* create_decoder_context(), which declares a dict& parameter as a safer forwarder.
 	* You should use this method() instead and avoid calling allocate_resources_memory() directly.
 	*/
-	class decoder : public ff_object
+	class FF_WRAPPER_API decoder : public ff_object
 	{
 	public:
-		decoder();
-		~decoder();
+		// Constructors must provide identification info of the decoder.
+		decoder() = delete;
+		
+		/*
+		* Identify the decoder by ID and find the description of the decoder.
+		* @throws std::invalid_argument if the no decoder of the ID can be found.
+		*/
+		explicit decoder(AVCodecID ID);
+		/*
+		* Identify the decoder by name and find the description of the decoder.
+		* @throws std::invalid_argument if the no decoder of the name can be found.
+		*/
+		explicit decoder(const char* name);
+
+		/*
+		* Destroys the decoder, clears the description and everything else completely.
+		*/
+		~decoder() noexcept { destroy(); }
 
 	private:
 		/*
@@ -51,10 +75,44 @@ namespace ff
 		void internal_allocate_object_memory() override;
 
 		/*
+		* A wrapper for allocate_resources_memory() for type-safety.
+		* @param options the options to be used to create the decoder. Cannot be empty.
+		* Unused options will be stored back.
+		*/
+		void create_decoder_context(ff::dict& options)
+		{
+			if (options.empty())
+			{
+				throw std::invalid_argument("Dict cannot be empty.");
+			}
+
+			auto* pavd = options.get_av_dict();
+			allocate_resources_memory(0, &pavd);
+			options = pavd;
+		}
+		/*
+		* A wrapper for allocate_resources_memory() for type-safety.
+		* @param options the options to be used to create the decoder. Can be empty.
+		*/
+		inline void create_decoder_context(const ff::dict& options = dict())
+		{
+			AVDictionary** ppavd = nullptr;
+			if (!options.empty())
+			{
+				ff::dict cpy(options);
+				auto* pavd = cpy.get_av_dict();
+				ppavd = &pavd;
+			}
+
+			allocate_resources_memory(0, ppavd);
+		}
+		/*
 		* Allocates the context for the decoder.
+		* Note: I provide a wrapper, create_decoder_context(), for type-safety. Call that instead of
+		* calling allocate_resources_memory().
 		* 
 		* @param size not used.
-		* @param additional_information a pointer to ff::dict. 
+		* @param additional_information a pointer to AVDictionary*. 
 		* If it is not of this type, then the behaviour is undefined.
 		*/
 		void internal_allocate_resources_memory(uint64_t size, void* additional_information) override;
@@ -70,10 +128,15 @@ namespace ff
 		void internal_release_resources_memory() noexcept override;
 
 	private:
+		// The identification info about the decoder that is given through constructors.
+		AVCodecID codec_id = AVCodecID::AV_CODEC_ID_NONE; const char* codec_name = nullptr;
+
 		// Description and information about this decoder.
-		const AVCodec* p_codec_desc;
-		// Context where the decoder lies in.
-		const AVCodec* p_codec_ctx;
+		// This is probably preallocated in static storage inside FFmpeg,
+		// so it doesn't need to be freed. Just reset the pointer.
+		const AVCodec* p_codec_desc = nullptr;
+		// Context where a decoder lies in.
+		AVCodecContext* p_codec_ctx = nullptr;
 	};
 	
 }

@@ -31,8 +31,6 @@ ff::packet::packet(bool allocate_packet)
 {
 	if (allocate_packet)
 	{
-		// internal_allocate_object_memory()
-		// will call this class's version.
 		allocate_object_memory();
 	}
 }
@@ -95,7 +93,7 @@ void ff::packet::internal_allocate_object_memory()
 	}
 }
 
-void ff::packet::internal_allocate_resources_memory(uint64_t size, void* additional_information)
+void ff::packet::internal_allocate_resources_memory(uint64_t size, void * additional_information)
 {
 	auto ret = av_new_packet(p_av_packet, static_cast<int>(size));
 	if (ret != 0)
