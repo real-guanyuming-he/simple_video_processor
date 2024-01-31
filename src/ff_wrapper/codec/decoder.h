@@ -18,6 +18,7 @@
 #include "../util/util.h"
 #include "../util/ff_object.h"
 #include "../util/dict.h"
+#include "../codec/codec_properties.h"
 
 extern "C"
 {
@@ -65,7 +66,7 @@ namespace ff
 		/*
 		* Destroys the decoder, clears the description and everything else completely.
 		*/
-		~decoder() noexcept { destroy(); }
+		~decoder() noexcept;
 
 	private:
 		/*
@@ -79,33 +80,12 @@ namespace ff
 		* @param options the options to be used to create the decoder. Cannot be empty.
 		* Unused options will be stored back.
 		*/
-		void create_decoder_context(ff::dict& options)
-		{
-			if (options.empty())
-			{
-				throw std::invalid_argument("Dict cannot be empty.");
-			}
-
-			auto* pavd = options.get_av_dict();
-			allocate_resources_memory(0, &pavd);
-			options = pavd;
-		}
+		void create_decoder_context(ff::dict& options);
 		/*
 		* A wrapper for allocate_resources_memory() for type-safety.
 		* @param options the options to be used to create the decoder. Can be empty.
 		*/
-		inline void create_decoder_context(const ff::dict& options = dict())
-		{
-			AVDictionary** ppavd = nullptr;
-			if (!options.empty())
-			{
-				ff::dict cpy(options);
-				auto* pavd = cpy.get_av_dict();
-				ppavd = &pavd;
-			}
-
-			allocate_resources_memory(0, ppavd);
-		}
+		void create_decoder_context(const ff::dict& options = dict());
 		/*
 		* Allocates the context for the decoder.
 		* Note: I provide a wrapper, create_decoder_context(), for type-safety. Call that instead of
@@ -126,6 +106,13 @@ namespace ff
 		* Releases the context of the decoder.
 		*/
 		void internal_release_resources_memory() noexcept override;
+
+	public:
+		/*
+		* @returns the properties of the decoder.
+		* @throws std::logic_error if the decoder is not ready.
+		*/
+		codec_properties get_decoder_properties() const;
 
 	private:
 		// The identification info about the decoder that is given through constructors.

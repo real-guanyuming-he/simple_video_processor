@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.27)
 
+# Enable the use of IDE source folders (mostly for Visual Studio filters)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 project("simple_video_processor"
@@ -56,11 +57,13 @@ set(FFWrapperSourceFiles
     "${SrcFFWrapperFormatsPath}/media_base.cpp"
 # Codec
     "${SrcFFWrapperCodecPath}/decoder.h"
-    "${SrcFFWrapperCodecPath}/decoder.cpp")
+    "${SrcFFWrapperCodecPath}/decoder.cpp"
+    "${SrcFFWrapperCodecPath}/codec_properties.h"
+    "${SrcFFWrapperCodecPath}/codec_properties.cpp")
     
 add_library(${FFWrapperName} SHARED
     ${FFWrapperSourceFiles})
-# Add IDE subfolders (mostly Visual Studio filters)
+# Add IDE subfolders (mostly for Visual Studio filters)
 # according to the directory structure.
 source_group(TREE ${SrcFFWrapperRootPath}
     FILES ${FFWrapperSourceFiles})
@@ -210,7 +213,7 @@ foreach(test IN LISTS ListTestTargets)
 
     # As long as ff_math.h is included,
     # the include dir has to be added because AVRational is used
-    # For convenience, just add the dir to all test's include paths
+    # For convenience, just add the dir to all tests' include paths
     target_include_directories(${test}
         PRIVATE ${VcpkgIncludePath})
 endforeach()

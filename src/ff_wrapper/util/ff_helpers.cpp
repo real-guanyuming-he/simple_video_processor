@@ -88,6 +88,15 @@ namespace ffhelpers
 		}
 	}
 
+	void safely_free_codec_parameters(::AVCodecParameters** ppcp) noexcept
+	{
+		if (*ppcp)
+		{
+			// the functions already does the setting nullptr for us
+			avcodec_parameters_free(ppcp);
+		}
+	}
+
 	void safely_free_sws_context(::SwsContext** sws_ctx) noexcept
 	{
 		// Don't need to check for nullptr as the func does so
@@ -121,27 +130,5 @@ namespace ffhelpers
 		av_make_error_string(&ret[0], AV_ERROR_MAX_STRING_SIZE, err_code);
 
 		return ret;
-	}
-
-	void codec_parameters_reset(::AVCodecParameters* par) noexcept
-	{
-		av_freep(&par->extradata);
-		av_channel_layout_uninit(&par->ch_layout);
-
-		memset(par, 0, sizeof(*par));
-
-		par->codec_type = AVMEDIA_TYPE_UNKNOWN;
-		par->codec_id = AV_CODEC_ID_NONE;
-		par->format = -1;
-		par->ch_layout.order = AV_CHANNEL_ORDER_UNSPEC;
-		par->field_order = AV_FIELD_UNKNOWN;
-		par->color_range = AVCOL_RANGE_UNSPECIFIED;
-		par->color_primaries = AVCOL_PRI_UNSPECIFIED;
-		par->color_trc = AVCOL_TRC_UNSPECIFIED;
-		par->color_space = AVCOL_SPC_UNSPECIFIED;
-		par->chroma_location = AVCHROMA_LOC_UNSPECIFIED;
-		par->sample_aspect_ratio = AVRational{ .num=0, .den=1 };
-		par->profile = FF_PROFILE_UNKNOWN;
-		par->level = FF_LEVEL_UNKNOWN;
 	}
 }

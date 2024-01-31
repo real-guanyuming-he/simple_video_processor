@@ -59,6 +59,8 @@ namespace ffhelpers
 
 	void safely_free_codec_context(::AVCodecContext** ppcodctx) noexcept;
 
+	void safely_free_codec_parameters(::AVCodecParameters** ppcp) noexcept;
+
 	void safely_free_sws_context(::SwsContext** sws_ctx) noexcept;
 
 	void safely_free_swr_context(::SwrContext** swr_ctx) noexcept;
@@ -71,8 +73,5 @@ namespace ffhelpers
 
 #define ON_FF_ERROR(msg) throw std::runtime_error(msg)
 #define ON_FF_ERROR_WITH_CODE(msg, code) ON_FF_ERROR(std::string(msg) + ": " + ffhelpers::ff_translate_error_code(code))
-
-	// Copied from https://ffmpeg.org/doxygen/5.1/codec__par_8c_source.html#l00031
-	void codec_parameters_reset(::AVCodecParameters* par) noexcept;
 }
 

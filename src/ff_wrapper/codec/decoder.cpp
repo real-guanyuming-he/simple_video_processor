@@ -37,6 +37,36 @@ ff::decoder::decoder(const char* name)
 	allocate_object_memory();
 }
 
+ff::decoder::~decoder() noexcept
+{
+	destroy();
+}
+
+void ff::decoder::create_decoder_context(ff::dict& options)
+{
+	if (options.empty())
+	{
+		throw std::invalid_argument("Dict cannot be empty.");
+	}
+
+	auto* pavd = options.get_av_dict();
+	allocate_resources_memory(0, &pavd);
+	options = pavd;
+}
+
+void ff::decoder::create_decoder_context(const ff::dict& options = dict())
+{
+	AVDictionary** ppavd = nullptr;
+	if (!options.empty())
+	{
+		ff::dict cpy(options);
+		auto* pavd = cpy.get_av_dict();
+		ppavd = &pavd;
+	}
+
+	allocate_resources_memory(0, ppavd);
+}
+
 void ff::decoder::internal_allocate_object_memory()
 {
 	// A constructor either identifies the decoder by ID or by name.
@@ -120,4 +150,14 @@ void ff::decoder::internal_release_object_memory() noexcept
 void ff::decoder::internal_release_resources_memory() noexcept
 {
 	ffhelpers::safely_free_codec_context(&p_codec_ctx);
+}
+
+ff::codec_properties ff::decoder::get_decoder_properties() const
+{
+	if (!ready())
+	{
+		throw std::logic_error("Properties can only be obtained when the decoder is ready.");
+	}
+
+	return codec_properties(p_codec_ctx);
 }
