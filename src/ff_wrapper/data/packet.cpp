@@ -27,7 +27,7 @@ extern "C"
 #include <stdexcept>
 
 ff::packet::packet(bool allocate_packet)
-	: p_av_packet(nullptr)
+	: ff_object(), p_av_packet(nullptr)
 {
 	if (allocate_packet)
 	{
@@ -35,9 +35,14 @@ ff::packet::packet(bool allocate_packet)
 	}
 }
 
-ff::packet::packet(::AVPacket* in_packet, const stream* stream, bool has_data) noexcept
+ff::packet::packet(::AVPacket* in_packet, const stream* stream, bool has_data)
 	: p_av_packet(in_packet), p_stream(stream)
 {
+	if (nullptr == in_packet)
+	{
+		throw std::invalid_argument("packet cannot be nullptr");
+	}
+
 	if (has_data)
 	{
 		state = ff_object_state::READY;

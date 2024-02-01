@@ -24,6 +24,11 @@
 // Creating a dynamic library on different platforms require different attribute settings
 // These macros handle that.
 // Put FF_WRAPPER_EXPORT before all APIs that are to be exposed in this dynamic library.
+// 
+// I originally only export non-inline functions. However, after some thought,
+// I instead export some inline functions as well (In particular, for most classes (to be exported) 
+// that has both inline and non-inline methods, I export the whole class). 
+// I believe this cound be useful for using the DLL from a non-C++ lanaguage.
 #ifdef _WIN32
 
 	// On Windows, additional dll attributes needs to be specified.
@@ -38,18 +43,32 @@
 	#define FF_WRAPPER_API
 #endif // _WIN32
 
-
 // My own assertion framework. The built-in assert() in cassert
 // cannot accept an argument for message.
 // In addition, I want to detect assertions during testing.
 
+// First, define a convenient debug break macro
+// that will break for me inside a debugger during testing.
+// Especially useful if I can't easily reproduce some shit that happens.
+#ifndef NDEBUG
+	#ifdef _WIN32
+	#define FF_DEBUG_BREAK __debugbreak();
+	#else
+	#define FF_DEBUG_BREAK
+	#endif // _WIN32
+#else
+	#define FF_DEBUG_BREAK
+#endif // !NDEBUG
+
 // Define the assert macro if NDEBUG is not defined
+// Therefore, do not use assert for errors that may be caused by users of the library.
+// Use exceptions instead.
 #ifndef NDEBUG
 
 #include <fstream> // For accessing assertion log files
 #include <ctime> // To log time
 
-constexpr const auto FF_ASSERTION_LOG_FILE_NAME = "ff_assertion_log.log";
+static constexpr const auto FF_ASSERTION_LOG_FILE_NAME = "ff_assertion_log.log";
 
 #ifndef FF_TESTING // Normal assertion
 	#define FF_ASSERT(expr, msg)\
@@ -63,7 +82,7 @@ constexpr const auto FF_ASSERTION_LOG_FILE_NAME = "ff_assertion_log.log";
 			msg;\
 		log_file.flush();\
 		log_file.close();\
-		std::terminate();\
+		throw std::logic_error(msg);\
 	}
 #else // Assertion during testing
 	#define FF_ASSERT(expr, msg)\
@@ -77,6 +96,7 @@ constexpr const auto FF_ASSERTION_LOG_FILE_NAME = "ff_assertion_log.log";
 			msg;\
 		log_file.flush();\
 		log_file.close();\
+		FF_DEBUG_BREAK\
 		exit(-1);/* CTest treats non-zero return values as failures. */\
 	}
 #endif // !FF_TESTING

@@ -54,7 +54,7 @@ void ff::decoder::create_decoder_context(ff::dict& options)
 	options = pavd;
 }
 
-void ff::decoder::create_decoder_context(const ff::dict& options = dict())
+void ff::decoder::create_decoder_context(const ff::dict& options)
 {
 	AVDictionary** ppavd = nullptr;
 	if (!options.empty())

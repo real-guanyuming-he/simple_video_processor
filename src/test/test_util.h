@@ -14,15 +14,7 @@
 * If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef NDEBUG
-	#ifdef _WIN32
-	#define FF_DEBUG_BREAK __debugbreak();
-	#else
-	#define FF_DEBUG_BREAK
-	#endif // _WIN32
-#else
-	#define FF_DEBUG_BREAK
-#endif // !NDEBUG
+#include "../ff_wrapper/util/util.h"
 
 #define TEST_ASSERT_TRUE(expr, msg)\
 if (!(expr))\

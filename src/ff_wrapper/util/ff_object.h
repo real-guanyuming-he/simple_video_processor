@@ -34,21 +34,21 @@
 namespace ff
 {
 	/*
-* This class is defined to provide abstraction for
-* most FFmpeg objects that involve two-levels of memory management:
-* 1. memory allocation for the object itself
-* 2. memory allocation for the resources that the object uses
-*
-* The class uses states to control the memory allocation
-* 1. DESTROYED. The object has no memory allocated for it. The value of its pointers are all nullptr.
-* 2. OBJECT_CREATED. The object has memory allocated for it, but it has no resources allocated.
-* The value of the object pointer is not nullptr.
-* 3. READY. The object has memory allocated for it and it is using some resources allocated.
-*
-* Thread Safety: NOT thread-safe.
-*
-* Testing: Define FF_TESTING to access all members through t_get_ref_...()
-*/
+	* This class is defined to provide abstraction for
+	* most FFmpeg objects that involve two-levels of memory management:
+	* 1. memory allocation for the object itself
+	* 2. memory allocation for the resources that the object uses
+	*
+	* The class uses states to control the memory allocation
+	* 1. DESTROYED. The object has no memory allocated for it. The value of its pointers are all nullptr.
+	* 2. OBJECT_CREATED. The object has memory allocated for it, but it has no resources allocated.
+	* The value of the object pointer is not nullptr.
+	* 3. READY. The object has memory allocated for it and it is using some resources allocated.
+	*
+	* Thread Safety: NOT thread-safe.
+	*
+	* Testing: Define FF_TESTING to access all members through t_get_ref_...()
+	*/
 	class FF_WRAPPER_API ff_object
 	{
 	public:
@@ -181,9 +181,12 @@ namespace ff
 		/*
 		* If the object is OBJECT_CREATED, then allocates memory for the resources in some way,
 		* and adjusts the state to ff_object_state::READY.
+		* For type safety, if additional_information is used to point to some real type T,
+		* then the derived class is encouraged to provide a wrapper for allocate_resources_memory()
+		* that directly accepts a parameter of some type related to T.
 		*
 		* @param size: whether used or not depends on the derived class
-		* @param additional_information: whether used or not depend on the derived class
+		* @param additional_information: whether used or not depends on the derived class
 		* @note assertion fails if the state is not ff_object_state::OBJECT_CREATED
 		*/
 		void allocate_resources_memory

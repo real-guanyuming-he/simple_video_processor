@@ -35,22 +35,24 @@ namespace ff
 		* 
 		* @param allocate_packet decides whether the packet will be allocated.
 		*/
-		packet(bool allocate_packet = false);
+		explicit packet(bool allocate_packet = false);
 
 		/*
 		* Takes ownership of the incoming in_packet.
 		* Typically the packet comes from a demuxer.
 		* 
-		* @param in_packet the incoming packet
+		* @param in_packet the incoming packet. Cannot be nullptr.
 		* @param stream the stream to link it with. Such packets usually come from a demuxer,
 		* and it's natural to link it with an output av stream.
 		* @param has_data: set it to true if in_packet has data stored. 
 		If so the object's state will be ready.
+		* @throws std::invalid_argument if in_packet is nullptr.
 		*/
-		packet(::AVPacket* in_packet, const stream* stream = nullptr, bool has_data = true) noexcept;
+		packet(::AVPacket* in_packet, const stream* stream = nullptr, bool has_data = true);
 
 		/*
-		* Copies other with av_packet_clone().
+		* Copies other with av_packet_clone(), which makes this refer to the same data as other.
+		* NOTE: it does NOT copy other's data!
 		* If other's avpkt is nullptr, set this's to nullptr as well.
 		*/
 		packet(const packet& other);
@@ -59,7 +61,7 @@ namespace ff
 		* Calls base's move ctor to handle the state.
 		*/
 		packet(packet&& other) noexcept
-			: ff_object(other), p_av_packet(other.p_av_packet), p_stream(other.p_stream)
+			: ff_object(std::move(other)), p_av_packet(other.p_av_packet), p_stream(other.p_stream)
 		{
 			other.p_av_packet = nullptr;
 			other.p_stream = nullptr;

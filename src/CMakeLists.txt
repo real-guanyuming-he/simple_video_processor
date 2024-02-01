@@ -46,6 +46,8 @@ set(FFWrapperSourceFiles
 # Data
     "${SrcFFWrapperDataPath}/packet.h"
     "${SrcFFWrapperDataPath}/packet.cpp"
+    "${SrcFFWrapperDataPath}/frame.h"
+    "${SrcFFWrapperDataPath}/frame.cpp"
 # Formats
     "${SrcFFWrapperFormatsPath}/stream.h"
     "${SrcFFWrapperFormatsPath}/stream.cpp"

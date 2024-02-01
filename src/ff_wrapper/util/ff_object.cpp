@@ -38,6 +38,12 @@ namespace ff
 		return *this;
 	}
 
+	/*
+	* Users may cause state errors, too.
+	* But the primary reason why the assertions here is to check my own logical errors.
+	* Hence still assertions here.
+	*/
+
 	void ff_object::allocate_object_memory()
 	{
 		FF_ASSERT
@@ -97,8 +103,8 @@ namespace ff
 		case ff_object_state::OBJECT_CREATED:
 			internal_release_object_memory();
 			state = ff_object_state::DESTROYED;
-			//case ff_object_state::READY:
-				// do nothing
+		//case ff_object_state::DESTROYED:
+			// do nothing
 		}
 	}
 }
