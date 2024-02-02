@@ -186,13 +186,17 @@ add_executable(test_time
 # Test demuxer
 add_executable(test_demuxer
     "${TestSrcFFWrapperPath}/test_demuxer.cpp")
+# Test frame
+add_executable(test_frame
+    "${TestSrcFFWrapperPath}/test_frame.cpp")
 
 set(ListTestTargets
     "test_ff_object"
     "test_dict"
     "test_rational"
     "test_time"
-    "test_demuxer")
+    "test_demuxer"
+    "test_frame")
 
 ################################# Common Test Settings #################################
 
@@ -239,6 +243,10 @@ set(MyFFmpegExecutablePath "\"${MyFFmpegExecutablePath}\"")
 # Define the macro for all the tests that use FFmpeg CLI
 target_compile_definitions("test_demuxer"
     PRIVATE "FFMPEG_EXECUTABLE_PATH=${MyFFmpegExecutablePath}")
+
+# Needs to use some FFmpeg API in this test
+target_link_libraries("test_frame" PRIVATE
+    $<IF:$<CONFIG:Debug>,${avutil_PathDbg},${avutil_Path}>)
 
 # Debug Output
 #message("VcpkgIncludePath=${VcpkgIncludePath}")

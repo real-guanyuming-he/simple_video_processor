@@ -68,7 +68,7 @@ namespace ff
 		state = ff_object_state::READY;
 	}
 
-	void ff_object::release_resources_memory()
+	void ff_object::release_resources_memory() noexcept(FF_ASSERTION_DISABLED)
 	{
 		FF_ASSERT
 		(
@@ -80,7 +80,7 @@ namespace ff
 		state = ff_object_state::OBJECT_CREATED;
 	}
 
-	void ff_object::release_object_memory()
+	void ff_object::release_object_memory() noexcept(FF_ASSERTION_DISABLED)
 	{
 		FF_ASSERT
 		(

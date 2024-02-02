@@ -124,7 +124,7 @@ namespace ff
 		* @param timestamp seek to where, in the time base of the stream.
 		* @param direction ture=forward;false=backward
 		* 
-		* @throws std::invalid_argument if stream ind is wrong
+		* @throws std::out_of_range if stream ind is wrong
 		*/
 		void seek(int stream_ind, int64_t timestamp, bool direction = true);
 
@@ -135,13 +135,13 @@ namespace ff
 
 		/*
 		* @returns the stream specified by the index.
-		* @throws std::invalid_argument if the index is out of range
+		* @throws std::out_of_range if the index is out of range
 		*/
 		inline stream get_stream(int index) const
 		{
 			if (index < 0 || index >= num_streams())
 			{
-				throw std::invalid_argument("Stream index out of range.");
+				throw std::out_of_range("Stream index out of range.");
 			}
 
 			return streams[index];
@@ -153,39 +153,39 @@ namespace ff
 
 		/*
 		* @returns the stream index of the i^th video stream.
-		* @throws std::invalid_argument if the index is out of range
+		* @throws std::std::out_of_range if the index is out of range
 		*/
 		inline int get_video_ind(int i) const
 		{
 			if (i < 0 || i >= num_videos())
 			{
-				throw std::invalid_argument("Stream index out of range.");
+				throw std::out_of_range("Stream index out of range.");
 			}
 
 			return v_indices[i];
 		}
 		/*
 		* @returns the stream index of the i^th audio stream.
-		* @throws std::invalid_argument if the index is out of range
+		* @throws std::std::out_of_range if the index is out of range
 		*/
 		inline int get_audio_ind(int i) const
 		{
 			if (i < 0 || i >= num_audios())
 			{
-				throw std::invalid_argument("Stream index out of range.");
+				throw std::out_of_range("Stream index out of range.");
 			}
 
 			return a_indices[i];
 		}
 		/*
 		* @returns the stream index of the i^th subtitle stream.
-		* @throws std::invalid_argument if the index is out of range
+		* @throws std::std::out_of_range if the index is out of range
 		*/
 		inline int get_subtitle_ind(int i) const
 		{
 			if (i < 0 || i >= num_subtitles())
 			{
-				throw std::invalid_argument("Stream index out of range.");
+				throw std::out_of_range("Stream index out of range.");
 			}
 
 			return s_indices[i];

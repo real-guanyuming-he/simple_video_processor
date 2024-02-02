@@ -201,7 +201,7 @@ namespace ff
 		*
 		* @note assertion fails if the state is not ff_object_state::READY
 		*/
-		void release_resources_memory();
+		void release_resources_memory() noexcept(FF_ASSERTION_DISABLED);
 
 		/*
 		* If the object is OBJECT_CREATED, then releases the memory allocated for the resources
@@ -209,7 +209,7 @@ namespace ff
 		*
 		* @note assertion fails if the state is not ff_object_state::OBJECT_CREATED
 		*/
-		void release_object_memory();
+		void release_object_memory() noexcept(FF_ASSERTION_DISABLED);
 
 		/*
 		* Destroys the object by releasing all memory allocated for it and its resources.

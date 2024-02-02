@@ -31,6 +31,22 @@ namespace ff
 	/*
 	* Represents either a video or an audio frame.
 	* 
+	* In order to access the data stored in a frame, you have to understand some terminologies 
+	* and how a video/audio frame is stored in memory.
+	* 
+	* A piece of audio may be planar, then a frame for it has multiple planes of the same size.
+	* A video frame may divide data into planes by pixel components (e.g. a plane of Y/U/V each).
+	* Therefore, a video plane still has the same dimensions as the picture.
+	* However, for better performance, each row (line) of a plane may be padded with extra bits.
+	* Hence, a new variable, line_size is introduced to measure the length of a padded row (line).
+	* You may get it by calling line_size().
+	* Some texts may call the line_size stride. Here I call it line_size to concur with FFmpeg.
+	* For audio, only line_size(0) is valid. Each plane is of the same size, so only line_size(0) is used.
+	* 
+	* Some video frames may be stored up-side-down (bottom-up), as if flipped along the central horizontal axis.
+	* For such frame data, the pointer returned by data() points to the end of a data plane,
+	* and line_size() returns a negative number, so that ptr+line_size always navigates to the next line.
+	* 
 	* Invariants: 
 	*	those of ff_object, and
 	*	if READY, then data is ref counted through AVBuffer (i.e. it cannot store custom data).
@@ -110,30 +126,61 @@ namespace ff
 		*/
 		frame(frame&& other) noexcept;
 
+		frame& operator=(const frame& right);
+		frame& operator=(frame&& right) noexcept;
+
 		/*
 		* Destroys everything related to the frame and the frame itself.
 		*/
 		inline ~frame() noexcept { destroy(); }
 
 	public:
+		AVFrame* av_frame() noexcept { return p_frame; }
+		const AVFrame* av_frame() const noexcept { return p_frame; }
+
 		bool v_or_a() const noexcept { return video_or_audio; }
 
 		/*
-		* Clears all data it stores so it can be reused to store some other data.
+		* @returns number of data planes.
+		* @throws std::logic_error if the frame is not ready.
 		*/
-		void clear_data() noexcept { release_resources_memory(); }
+		int number_planes() const;
 
 		/*
-		* Allocates data for the frame.
-		* @param dp properties of the data.
-		* @throws std::logic_error if the frame is not CREATED.
+		* See the comment for the class for more about how data is stored.
+		* 
+		* @param ind the index of the data plane.
+		* @throws std::logic_error if the frame is not ready.
+		* @throws std::out_of_range if ind is out of range.
+		* @returns the line size (stride) of the ind^th data plane.
+		* If the frame is stored up-side-down, then a negative number
+		* whose absolute value is the length is returned.
 		*/
-		inline void allocate_data(const data_properties& dp)
-		{
-			allocate_resources_memory(0, const_cast<data_properties*>(&dp));
-		}
+		int line_size(int ind = 0) const;
 
-	public:
+		/*
+		* Gets one of the data plane that the frame stores.
+		* For audio, pass 0 to get the entire data.
+		* See the comment for the class for more about how data is stored.
+		* 
+		* @param ind index of the data plane.
+		* @returns a pointer to the start/end of the data plane.
+		* @throws std::logic_error if the frame is not READY.
+		* @throws std::out_of_range if ind is out of range
+		*/
+		void* data(int ind = 0);
+
+		/*
+		* Gets one of the data plane that the frame stores.
+		* For audio, pass 0 to get the entire data.
+		* 
+		* @param ind index of the data plane.
+		* @returns a const pointer to the start/end of the data plane.
+		* @throws std::logic_error if the frame is not READY.
+		* @throws std::out_of_range if ind is out of range
+		*/
+		const void* data(int ind = 0) const;
+
 		/*
 		* Note: the info returned does not include the alignment of the data.
 		* 
@@ -142,11 +189,39 @@ namespace ff
 		*/
 		data_properties get_data_properties() const;
 
-	private:
-		// Inherited via ff_object
+		/*
+		* Note: It is highly recommended to use the copy ctor/ass operator to copy a frame.
+		*
+		* @returns a frame that references the same data as this does.
+		* @throws std::logic_error if this isn't ready.
+		*/
+		frame shared_ref() const;
+
+	public:
+		/*
+		* Clears all data it stores so it can be reused to store some other data.
+		*/
+		inline void clear_data() noexcept
+		{
+			release_resources_memory();
+		}
+
+		/*
+		* Allocates data for the frame given the properties of the frame.
+		* @param dp properties of the frame.
+		* @throws std::logic_error if the frame is not CREATED.
+		*/
+		inline void allocate_data(const data_properties& dp)
+		{
+			allocate_resources_memory(0, const_cast<data_properties*>(&dp));
+		}
+		
+
+	private: // Inherited through ff_object.
 		void internal_allocate_object_memory() override;
 
 		/*
+		* Allocates a buffer for the frame given the properties of the frame.
 		* @param size not used
 		* @param additional_information a pointer to data_properties
 		*/
@@ -157,10 +232,25 @@ namespace ff
 		void internal_release_resources_memory() noexcept override;
 
 	private:
+		/*
+		* Finds the number of planes for me when the class takes over external data.
+		*/
+		void internal_find_num_planes() noexcept(FF_ASSERTION_DISABLED);
+
+	private:
 		::AVFrame* p_frame;
+
+		// Number of picture/channel planes. Only meaningful when the frame is READY.
+		int num_planes = 0;
 
 		// Only meaningful when the frame is READY.
 		bool video_or_audio = true;
+
+//////////////////////////////////////// TESTING ONLY ////////////////////////////////////////
+#ifdef FF_TESTING
+	public:
+		auto& t_get_ref_frame() { return p_frame; }
+#endif // FF_TESTING
 
 	};
 }

@@ -20,7 +20,6 @@
 * If a file in the library needs these things, it should include this file.
 */
 
-
 // Creating a dynamic library on different platforms require different attribute settings
 // These macros handle that.
 // Put FF_WRAPPER_EXPORT before all APIs that are to be exposed in this dynamic library.
@@ -82,7 +81,7 @@ static constexpr const auto FF_ASSERTION_LOG_FILE_NAME = "ff_assertion_log.log";
 			msg;\
 		log_file.flush();\
 		log_file.close();\
-		throw std::logic_error(msg);\
+		std::terminate();\
 	}
 #else // Assertion during testing
 	#define FF_ASSERT(expr, msg)\
@@ -104,6 +103,15 @@ static constexpr const auto FF_ASSERTION_LOG_FILE_NAME = "ff_assertion_log.log";
 #else
 	#define FF_ASSERT(expr, msg)
 #endif // !NDEBUG
+
+// FF_ASSERT may throw. Need a constexpr to indicate noexcept when assertion is not enabled (e.g. Release build)
+#ifdef NDEBUG
+#define FF_ASSERTION_ENABLED false
+#define FF_ASSERTION_DISABLED true
+#else
+#define FF_ASSERTION_ENABLED true
+#define FF_ASSERTION_DISABLED false
+#endif // NDEBUG
 
 // Will be used to turn path macros that I predefine by CMake into string literals.
 #ifndef FF_STRINGIFY

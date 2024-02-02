@@ -49,6 +49,22 @@ ff::frame::data_properties ff::frame::get_data_properties() const
 	}
 }
 
+ff::frame ff::frame::shared_ref() const
+{
+	if (!ready())
+	{
+		throw std::logic_error("The frame is not ready to be shared.");
+	}
+
+	auto* shared = av_frame_clone(p_frame);
+	if (!shared)
+	{
+		throw std::bad_alloc();
+	}
+
+	return ff::frame(shared, video_or_audio);
+}
+
 void ff::frame::internal_allocate_object_memory()
 {
 	p_frame = av_frame_alloc();
@@ -96,6 +112,8 @@ void ff::frame::internal_allocate_resources_memory(uint64_t size, void* addition
 			ON_FF_ERROR_WITH_CODE("Unexpected error: could not allocate buffer for avframe", ret);
 		}
 	}
+
+	internal_find_num_planes();
 }
 
 void ff::frame::internal_release_object_memory() noexcept
@@ -109,8 +127,28 @@ void ff::frame::internal_release_resources_memory() noexcept
 	av_frame_unref(p_frame);
 }
 
+void ff::frame::internal_find_num_planes() noexcept(FF_ASSERTION_DISABLED)
+{
+	// Can call it when
+	// 1. Created (only inside internal_allocate_resources_memory())
+	// 2. Ready (after a copy, resource take over, etc.)
+	FF_ASSERT(!destroyed(), "I should not call it when destroyed.");
+
+	// AV_NUM_DATA_POINTERS = max number of possible planes
+	for (num_planes = 0; num_planes < AV_NUM_DATA_POINTERS; ++num_planes)
+	{
+		if (nullptr == p_frame->data[num_planes])
+		{
+			// Found the first invalid plane.
+			break;
+		}
+	}
+
+	FF_ASSERT(0 != num_planes, "Should have some data.");
+}
+
 ff::frame::frame(bool allocate_frame) :
-	ff_object(), p_frame(nullptr)
+	ff_object(), p_frame(nullptr), num_planes(0)
 {
 	if (allocate_frame)
 	{
@@ -125,6 +163,7 @@ ff::frame::frame(::AVFrame* p_frame, bool v_or_a, bool has_data)
 	{
 		state = ff::ff_object::ff_object_state::READY;
 		video_or_audio = v_or_a;
+		internal_find_num_planes();
 	}
 	else
 	{
@@ -133,14 +172,15 @@ ff::frame::frame(::AVFrame* p_frame, bool v_or_a, bool has_data)
 }
 
 ff::frame::frame(const frame& other)
-	: ff_object(other), p_frame(nullptr)
+	: ff_object(other), p_frame(nullptr), 
+	video_or_audio(other.video_or_audio), num_planes(other.num_planes)
 {
 	if (other.destroyed())
 	{
 		return;
 	}
 
-	allocate_object_memory();
+	internal_allocate_object_memory();
 	// Copy properties that do not affect the data.
 	// Its comment/doc does not specify that this may fail.
 	av_frame_copy_props(p_frame, other.p_frame);
@@ -150,6 +190,9 @@ ff::frame::frame(const frame& other)
 		return;
 	}
 
+	// Must allocate memory as av_frame_copy doesn't allocate anything.
+	auto dp = other.get_data_properties();
+	internal_allocate_resources_memory(0, const_cast<data_properties*>(&dp));
 	int ret = av_frame_copy(p_frame, other.p_frame);
 	if (ret < 0)
 	{
@@ -165,7 +208,120 @@ ff::frame::frame(const frame& other)
 }
 
 ff::frame::frame(frame&& other) noexcept
-	: ff_object(std::move(other)), p_frame(other.p_frame), video_or_audio(other.video_or_audio)
+	: ff_object(std::move(other)), p_frame(other.p_frame), 
+	video_or_audio(other.video_or_audio), num_planes(other.num_planes)
 {
 	other.p_frame = nullptr;
+}
+
+ff::frame& ff::frame::operator=(const frame& right)
+{
+	ff_object::operator=(right);
+
+	if (right.destroyed())
+	{
+		return *this;
+	}
+
+	internal_allocate_object_memory();
+	// Copy properties that do not affect the data.
+	// Its comment/doc does not specify that this may fail.
+	av_frame_copy_props(p_frame, right.p_frame);
+
+	if (right.created())
+	{
+		return *this;
+	}
+
+	video_or_audio = right.video_or_audio;
+	num_planes = right.num_planes;
+
+	// Must allocate memory as av_frame_copy doesn't allocate anything.
+	auto dp = right.get_data_properties();
+	internal_allocate_resources_memory(0, const_cast<data_properties*>(&dp));
+	int ret = av_frame_copy(p_frame, right.p_frame);
+	if (ret < 0)
+	{
+		switch (ret)
+		{
+		case AVERROR(ENOMEM):
+			throw std::bad_alloc();
+			break;
+		default:
+			ON_FF_ERROR_WITH_CODE("Unexpected error: could not copy avframe's data", ret);
+		}
+	}
+
+	return *this;
+}
+
+ff::frame& ff::frame::operator=(frame&& right) noexcept
+{
+	ff_object::operator=(std::move(right));
+
+	p_frame = right.p_frame;
+	video_or_audio = right.video_or_audio;
+	num_planes = right.num_planes;
+
+	right.p_frame = nullptr;
+
+	return *this;
+}
+
+int ff::frame::number_planes() const
+{
+	if (!ready())
+	{
+		throw std::logic_error("The frame is not ready");
+	}
+
+	return num_planes;
+}
+
+int ff::frame::line_size(int ind) const
+{
+	if (!ready())
+	{
+		throw std::logic_error("The frame is not ready");
+	}
+
+	if (!video_or_audio && ind != 0)
+	{
+		throw std::out_of_range("audio frame may only have line_size[0].");
+	}
+
+	if (ind < 0 || ind >= num_planes)
+	{
+		throw std::out_of_range("ind is out of range.");
+	}
+
+	return p_frame->linesize[ind];
+}
+
+void* ff::frame::data(int ind)
+{
+	if (!ready())
+	{
+		throw std::logic_error("The frame is not ready");
+	}
+	if (ind < 0 || ind >= num_planes)
+	{
+		throw std::out_of_range("ind is out of range.");
+	}
+
+	return p_frame->data[ind];
+}
+
+const void* ff::frame::data(int ind) const
+{
+	if (!ready())
+	{
+		throw std::logic_error("The frame is not ready");
+	}
+	if (ind < 0 || ind >= num_planes)
+	{
+		throw std::out_of_range("ind is out of range.");
+	}
+
+	return p_frame->data[ind];
 }

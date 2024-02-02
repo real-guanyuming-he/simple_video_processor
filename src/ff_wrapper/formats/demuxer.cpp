@@ -154,7 +154,7 @@ void ff::demuxer::seek(int stream_ind, int64_t timestamp, bool direction)
 {
 	if (stream_ind < 0 || stream_ind >= p_fmt_ctx->nb_streams)
 	{
-		throw std::invalid_argument("Stream index is out of range.");
+		throw std::out_of_range("Stream index is out of range.");
 	}
 
 	int ret = av_seek_frame

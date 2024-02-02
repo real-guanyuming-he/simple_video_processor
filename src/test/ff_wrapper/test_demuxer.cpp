@@ -108,8 +108,8 @@ int main()
 		// stream information
 		TEST_ASSERT_EQUALS(1, d1.num_streams(), "should get num streams right");
 		TEST_ASSERT_EQUALS(1, d1.num_videos(), "should get num streams of specific type right");
-		TEST_ASSERT_THROWS(d1.get_stream(-1), std::invalid_argument);
-		TEST_ASSERT_THROWS(d1.get_stream(1), std::invalid_argument);
+		TEST_ASSERT_THROWS(d1.get_stream(-1), std::out_of_range);
+		TEST_ASSERT_THROWS(d1.get_stream(1), std::out_of_range);
 		ff::stream s1 = d1.get_stream(0);
 		TEST_ASSERT_TRUE(s1.is_video() && (!s1.is_audio()) && (!s1.is_subtitle()), "should get the type right");
 		// EOF
@@ -162,9 +162,9 @@ int main()
 		TEST_ASSERT_EQUALS(2, d1.num_streams(), "should get num streams right");
 		TEST_ASSERT_EQUALS(1, d1.num_videos(), "should get num streams of specific type right");
 		TEST_ASSERT_EQUALS(1, d1.num_audios(), "should get num streams of specific type right");
-		TEST_ASSERT_THROWS(d1.get_video(-1), std::invalid_argument);
-		TEST_ASSERT_THROWS(d1.get_audio(1), std::invalid_argument);
-		TEST_ASSERT_THROWS(d1.get_subtitle(0), std::invalid_argument);
+		TEST_ASSERT_THROWS(d1.get_video(-1), std::out_of_range);
+		TEST_ASSERT_THROWS(d1.get_audio(1), std::out_of_range);
+		TEST_ASSERT_THROWS(d1.get_subtitle(0), std::out_of_range);
 		ff::stream v1 = d1.get_video(0);
 		ff::stream a1 = d1.get_audio(0);
 		int v1i = d1.get_video_ind(0);
