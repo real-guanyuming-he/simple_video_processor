@@ -6,7 +6,48 @@ The project consists of two pieces of software.
 The whole software is completely free and open source (in `GNU GPL v3`).
 
 # Motivation
-TO BE WRITTEN.
+Initially, I wanted to create a simple video processor for my daily processing tasks, like resizing, compressing, reformating, and clipping. Later, I decided to learn the FFmpeg APIs and create a C++ wrapper for them.
+
+This section elaborates on my motivation for both.
+
+## Motivation for the video processor
+As I entered university, I had more need to perform basic video-processing tasks. Sometimes I need to submit a video and make sure its size/length/format is within the limit.
+
+As I searched for a suitable tool for these tasks, I noticed a sad trend of the video editors available --- that they had taken divergent paths based on their purpose.
+
+1. Professional editors like Adobe Premiere became more and more professional and were obviously unsuitable for my tasks then.
+
+2. General editors for the public have shifted their focus on assisting in the making of short videos, and have neglected to perform the simple yet fundamental tasks cleanly and well (e.g. they may integrate such tasks into a short-video production pipeline and you cannot just do that one task that you want).
+
+Therefore, I decided to fill the gap by developing a free and open-source video processor that focuses on doing these tasks cleanly and well.
+
+## Motivation for the wrapper
+I started a precursor of the project one year and some months ago.
+
+However, at that time I had yet to complete the software engineering modules at my university. After the completion of a few such modules and as I gained more experience in programming, I started to recognise many serious design flaws and bad development practices in that project. After thorough contemplation, I decided to abandon that project and start anew from the beginning.
+
+In the new project, I can practice more on the theories I learned from my university modules. In addition, simultaneously studying the use of FFmpeg APIs and encapsulating them presents a substantial yet exciting challenge that I'd like to take. Besides programming, I am thrilled to employ my UX designing and prototyping knowledge taught in an HCI module at my university. Working on both creates a valuable opportunity for me to assess, challenge, and improve my abilities.
+
+# Features
+## Currently available features:
+1. Encapsulation of `FFmpeg` C APIs done in modern C++ (C++ 20). Error handling by exceptions and assertions. Constexper math. Clean and reasonable access control. The encapsulation tries to preserve as much of `FFmpeg`'s power as possible while providing object-oriented access to it.
+
+2. Thorough specification through comments.
+
+3. Automatic unit testing and integration testing done with `CTest`.
+
+4. The development of the whole project is carried out with good practices. `Git` is used to manage the source code. `CMake` is used to easily configure and build the project across platforms.
+
+## Planned features:
+1. Perform simple video processing tasks:
+    - Reformating
+    - Clipping
+    - Concatenation
+    - Resizing
+    - Compressing
+    - and more...
+
+2. Have a modern GUI made in `WinUI 3`.
 
 # Configuration and Building
 This project uses `vcpkg` and `CMake` to manage the build. Before you can build this project, you must have the two installed on your system and configured as follows:
@@ -15,6 +56,11 @@ This project uses `vcpkg` and `CMake` to manage the build. Before you can build 
 - Install the latest `vcpkg` and
     - use it to install `FFmpeg` x64 through `vcpkg install`
     - set the environment variable `VCPKG_ROOT` to its root directory
+- Create a binary folder somewhere (recommended to be outside of src) and cd into it. For example,
+```
+mkdir bin
+cd bin
+```
 
 Then, you can let CMake generate the project files from the `bin/` directory by invoking
 ```
