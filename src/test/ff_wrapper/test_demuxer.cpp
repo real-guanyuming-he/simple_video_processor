@@ -128,7 +128,6 @@ int main()
 				break;
 			}
 
-			TEST_ASSERT_TRUE(pkt.linked_to_stream(), "packets coming from a demuxer should be linked to its stream.");
 			TEST_ASSERT_EQUALS(0, pkt->stream_index, "stream index should match");
 
 			cur_pts = pkt.pts(); 
@@ -186,8 +185,6 @@ int main()
 			{
 				break;
 			}
-
-			TEST_ASSERT_TRUE(pkt.linked_to_stream(), "packets coming from a demuxer should be linked to its stream.");
 
 			if (pkt->stream_index == v1i)
 			{

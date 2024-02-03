@@ -180,10 +180,11 @@ namespace ff
 		constexpr rational_64 timestamp_accurate() const noexcept { return t; }
 		/*
 		* @returns the relative timestamp rounded to int64_t
+		* by using ff::rational_64::to_int64()
 		*/
 		constexpr int64_t timestamp_approximate() const noexcept
 		{
-			return static_cast<int64_t>(t.get_num() / t.get_den());
+			return t.to_int64();
 		}
 
 		/*

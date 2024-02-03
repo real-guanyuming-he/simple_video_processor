@@ -44,6 +44,9 @@ namespace ff
 		const ::AVStream* av_stream() const noexcept { return p_stream; }
 		::AVStream* av_stream() noexcept { return p_stream; }
 
+		const ::AVStream* operator->() const noexcept { return p_stream; }
+		::AVStream* operator->() noexcept { return p_stream; }
+
 		bool is_video() const noexcept;
 		bool is_audio() const noexcept;
 		bool is_subtitle() const noexcept;

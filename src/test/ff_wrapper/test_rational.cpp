@@ -283,5 +283,57 @@ int main()
 		TEST_ASSERT_EQUALS(ff::rational_64(1, 1e13), big4 / big3, "Should not overflow and should be correct");
 	}
 
+	// Test rounding
+	{
+		// Is an integer
+		ff::rational r1(1, 1);
+		TEST_ASSERT_EQUALS(1, r1.to_int64(), "should be equal if the rational is also an integer");
+
+		ff::rational r2(4, 2);
+		TEST_ASSERT_EQUALS(2, r2.to_int64(), "should be equal if the rational is also an integer");
+
+		// Positive, decimal < .5
+		ff::rational r3(1, 3);
+		TEST_ASSERT_EQUALS(0, r3.to_int64(), "should be rounded to the nearest");
+
+		ff::rational r4(8, 6);
+		TEST_ASSERT_EQUALS(1, r4.to_int64(), "should be rounded to the nearest");
+
+		// Positive, decimal = .5
+		ff::rational r5(1, 2);
+		TEST_ASSERT_EQUALS(1, r5.to_int64(), "should be rounded away from 0 when decimal is half");
+
+		ff::rational r6(20, 8);
+		TEST_ASSERT_EQUALS(3, r6.to_int64(), "should be rounded away from 0 when decimal is half");
+
+		// Positive, decimal > .5
+		ff::rational r7(8, 5);
+		TEST_ASSERT_EQUALS(2, r7.to_int64(), "should be rounded to the nearest");
+
+		ff::rational r8(793, 5);
+		TEST_ASSERT_EQUALS(159, r8.to_int64(), "should be rounded to the nearest");
+
+		// Negative, decimal > -.5
+		ff::rational r9(-1, 7);
+		TEST_ASSERT_EQUALS(0, r9.to_int64(), "should be rounded to the nearest");
+
+		ff::rational r10(-30, 13);
+		TEST_ASSERT_EQUALS(-2, r10.to_int64(), "should be rounded to the nearest");
+
+		// Negative, decimal = .5
+		ff::rational r11(-1, 2);
+		TEST_ASSERT_EQUALS(-1, r11.to_int64(), "should be rounded away from 0 when decimal is half");
+
+		ff::rational r12(-21, 6);
+		TEST_ASSERT_EQUALS(-4, r12.to_int64(), "should be rounded away from 0 when decimal is half");
+
+		// Negative, decimal < -.5
+		ff::rational r13(-13, 7);
+		TEST_ASSERT_EQUALS(-2, r13.to_int64(), "should be rounded to the nearest");
+
+		ff::rational r14(-821, 3);
+		TEST_ASSERT_EQUALS(-274, r14.to_int64(), "should be rounded to the nearest");
+	}
+
 	return 0;
 }

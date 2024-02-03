@@ -15,7 +15,7 @@
 */
 
 /*
-* Because a frame is more complicated than a packet,
+* Because a frame is fairly complicated,
 * I create dedicated tests just for it, instead of testing it in the integration tests of the codecs.
 */
 

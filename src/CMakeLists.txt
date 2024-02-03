@@ -189,6 +189,9 @@ add_executable(test_demuxer
 # Test frame
 add_executable(test_frame
     "${TestSrcFFWrapperPath}/test_frame.cpp")
+# Test packet
+add_executable(test_packet
+    "${TestSrcFFWrapperPath}/test_packet.cpp")
 
 set(ListTestTargets
     "test_ff_object"
@@ -196,7 +199,8 @@ set(ListTestTargets
     "test_rational"
     "test_time"
     "test_demuxer"
-    "test_frame")
+    "test_frame"
+    "test_packet")
 
 ################################# Common Test Settings #################################
 
@@ -244,9 +248,11 @@ set(MyFFmpegExecutablePath "\"${MyFFmpegExecutablePath}\"")
 target_compile_definitions("test_demuxer"
     PRIVATE "FFMPEG_EXECUTABLE_PATH=${MyFFmpegExecutablePath}")
 
-# Needs to use some FFmpeg API in this test
+# Needs to use some FFmpeg API in these tests
 target_link_libraries("test_frame" PRIVATE
     $<IF:$<CONFIG:Debug>,${avutil_PathDbg},${avutil_Path}>)
+target_link_libraries("test_packet" PRIVATE
+    $<IF:$<CONFIG:Debug>,${avcodec_PathDbg},${avcodec_Path}>)
 
 # Debug Output
 #message("VcpkgIncludePath=${VcpkgIncludePath}")

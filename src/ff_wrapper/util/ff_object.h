@@ -185,7 +185,8 @@ namespace ff
 		* then the derived class is encouraged to provide a wrapper for allocate_resources_memory()
 		* that directly accepts a parameter of some type related to T.
 		*
-		* @param size: whether used or not depends on the derived class
+		* @param size: whether used or not depends on the derived class. Therefore, 0 may be allowed
+		* or may not be depending on the derived class.
 		* @param additional_information: whether used or not depends on the derived class
 		* @note assertion fails if the state is not ff_object_state::OBJECT_CREATED
 		*/

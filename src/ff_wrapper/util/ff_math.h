@@ -391,6 +391,46 @@ namespace ff
 		}
 
 		/*
+		* Round the rational to nearest integer (with half away from zero).
+		* To round the rational towards 0, simply cast to_double() to int64_t.
+		*/
+		inline constexpr int64_t to_int64() const noexcept
+		{
+			// constexpr since C++ 23
+			// return std::llround(to_double());
+			double db = to_double();
+			int64_t db_rounded_towards_0 = static_cast<int64_t>(db);
+			double decimal = db - static_cast<double>(db_rounded_towards_0);
+
+			if (decimal == .0)
+			{
+				return db_rounded_towards_0;
+			}
+			else if (decimal > .0)
+			{
+				if (decimal < .5)
+				{
+					return db_rounded_towards_0;
+				}
+				else
+				{
+					return db_rounded_towards_0 + 1;
+				}
+			}
+			else // decimal < 0
+			{
+				if (decimal > -.5)
+				{
+					return db_rounded_towards_0;
+				}
+				else
+				{
+					return db_rounded_towards_0 - 1;
+				}
+			}
+		}
+
+		/*
 		* Reduces the rational to lowest terms.
 		*/
 		static constexpr rational_temp reduce(rational_temp r)

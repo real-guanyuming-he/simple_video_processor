@@ -120,7 +120,7 @@ ff::packet ff::demuxer::demux_next_packet()
 	// ret=0 -> success
 	if (0 == ret)
 	{
-		return packet(av_pkt, &streams[av_pkt->stream_index]);
+		return packet(av_pkt, streams[av_pkt->stream_index]->time_base);
 	}
 	// ret<0 -> Error or EOF
 

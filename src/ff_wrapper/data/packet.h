@@ -22,12 +22,24 @@ struct AVPacket;
 
 namespace ff
 {
-	class stream;
-
+	/*
+	* Represents a packet (i.e. compressed multimedia data).
+	* 
+	* I offer flexibility for handling complicated situations. Therefore,
+	* then only invariants are those of ff_object.
+	* You can decide how you are going to use a packet:
+	* Whether you set some fields or not, my methods will detect if the fields are set before using them.
+	* If you call any of them, I assume you have set the corresponding fields so I will throw exceptions if you have not.
+	* 
+	* My methods cover the access to the most important fields:
+	*	1. Time related: time base, pts, dts, and duration.
+	*	2. Data, if the packet comes from a demuxer/encoder or you allocated the data through my method.
+	* Access to other fields are not wrapped and you have to use av_packet() to access them directly.
+	*/
 	class FF_WRAPPER_API packet final : public ff_object
 	{
 	public:
-		~packet() { destroy(); }
+		inline ~packet() { destroy(); }
 
 		/*
 		* Constructs the packet. Optionally allocates memory for the packet
@@ -42,13 +54,18 @@ namespace ff
 		* Typically the packet comes from a demuxer.
 		* 
 		* @param in_packet the incoming packet. Cannot be nullptr.
-		* @param stream the stream to link it with. Such packets usually come from a demuxer,
-		* and it's natural to link it with an output av stream.
+		* @param time_base its time base. Can give it an invalid one (i.e. non-positive)
+		* as my methods will check it. Default is 0.
 		* @param has_data: set it to true if in_packet has data stored. 
 		If so the object's state will be ready.
 		* @throws std::invalid_argument if in_packet is nullptr.
 		*/
-		packet(::AVPacket* in_packet, const stream* stream = nullptr, bool has_data = true);
+		packet
+		(
+			::AVPacket* in_packet, 
+			const ff::rational time_base = ff::zero_rational, 
+			bool has_data = true
+		);
 
 		/*
 		* Copies other with av_packet_clone(), which makes this refer to the same data as other.
@@ -61,10 +78,9 @@ namespace ff
 		* Calls base's move ctor to handle the state.
 		*/
 		packet(packet&& other) noexcept
-			: ff_object(std::move(other)), p_av_packet(other.p_av_packet), p_stream(other.p_stream)
+			: ff_object(std::move(other)), p_packet(other.p_packet)
 		{
-			other.p_av_packet = nullptr;
-			other.p_stream = nullptr;
+			other.p_packet = nullptr;
 		}
 
 		packet& operator=(const packet& right);
@@ -78,10 +94,8 @@ namespace ff
 			// base's already calls destroy().
 			ff_object::operator=(std::move(right));
 
-			p_av_packet = right.p_av_packet;
-			p_stream = right.p_stream;
-			right.p_av_packet = nullptr;
-			right.p_stream = nullptr;
+			p_packet = right.p_packet;
+			right.p_packet = nullptr;
 
 			return *this;
 		}
@@ -97,6 +111,7 @@ namespace ff
 		* 
 		* @param size is the size of the space allocated for the data
 		* @param additional_information is not used.
+		* @throws std::invalid_argument if size = 0.
 		*/
 		virtual void internal_allocate_resources_memory(uint64_t size, void* additional_information = nullptr) override;
 
@@ -111,30 +126,82 @@ namespace ff
 		virtual void internal_release_resources_memory() noexcept override;
 
 	public:
+//////////////////////////////////////// Access to important fields ////////////////////////////////////////
+
+		/*
+		* @returns the size of the data that the packet holds.
+		* @throws std::logic_error if the packet is not READY, if the data does not come from
+		* a demuxer/encoder, or if the data is not allocated through allocate_resources_memory().
+		*/
+		int data_size() const;
+		/*
+		* @returns a pointer to the start of the data the packet holds.
+		* @throws std::logic_error if the packet is not READY, if the data does not come from
+		* a demuxer/encoder, or if the data is not allocated through allocate_resources_memory().
+		*/
+		void* data();
+		/*
+		* @returns a const pointer to the start of the data the packet holds.
+		* @throws std::logic_error if the packet is not READY, or if the data does not come from
+		* a demuxer/encoder.
+		*/
+		const void* data() const;
+
+		/*
+		* @returns the time base. Can be invalid if not set.
+		* @throws std::logic_error if the packet is destroyed.
+		*/
+		ff::rational time_base() const;
+
 		/*
 		* @returns the presentation time of the packet.
-		* @throws std::logic_error if it's not linked to a stream (so timebase cannot be obtained).
+		* @throws std::logic_error if the packet is destroyed.
+		* @throws std::logic_error if its timebase's not valid (i.e. not set yet).
 		*/
 		ff::time pts() const;
 		/*
 		* @returns the decompression time of the packet.
-		* @throws std::logic_error if it's not linked to a stream (so timebase cannot be obtained).
+		* @throws std::logic_error if the packet is destroyed.
+		* @throws std::logic_error if its timebase's not valid (i.e. not set yet).
 		*/
 		ff::time dts() const;
 
+		/*
+		* @returns the duration of the packet. Can be non-positive if the duration is not known.
+		* You should check the return value.
+		* @throws std::logic_error if the packet is destroyed.
+		* @throws std::logic_error if its timebase's not valid (i.e. not set yet).
+		*/
+		ff::time duration() const;
+
+		/*
+		* Changes the time base of the packet so that pts and dts are updated.
+		* In addition, if its duration is set (i.e. > 0), then that's also updated.
+		* 
+		* @param tb the new time base
+		* @throws std::logic_error if the packet is destroyed.
+		* @throws std::logic_error if its current timebase's not valid (i.e. not set yet).
+		* @throws std::invalid_argument if the new time base's not valid (i.e. non-positive).
+		*/
+		void change_time_base(ff::rational new_tb);
+
 	public:
-		const ::AVPacket* get_av_packet() const noexcept { return p_av_packet; }
-		::AVPacket* get_av_packet() noexcept { return p_av_packet; }
+		const ::AVPacket* av_packet() const noexcept { return p_packet; }
+		::AVPacket* av_packet() noexcept { return p_packet; }
 
-		const ::AVPacket* operator->() const noexcept { return p_av_packet; }
-		::AVPacket* operator->()  noexcept { return p_av_packet; }
-
-		const stream* get_stream() const noexcept { return p_stream; }
-		bool linked_to_stream() const noexcept { return nullptr != p_stream; }
-		void link_to_stream(const stream* stream) noexcept { p_stream = stream; }
+		const ::AVPacket* operator->() const noexcept { return p_packet; }
+		::AVPacket* operator->()  noexcept { return p_packet; }
 
 	private:
-		::AVPacket* p_av_packet;
-		const stream* p_stream = nullptr;
+		::AVPacket* p_packet;
+
+	private:
+		/*
+		* NOTE: only call it when ready(). I do not put an assertion in it
+		* so that it can be inline.
+		* 
+		* @returns Whether the buf is ref-counted
+		*/
+		inline bool ref_counted() const noexcept { return nullptr != p_packet->buf; }
 	};
 }

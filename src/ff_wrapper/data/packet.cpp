@@ -27,7 +27,7 @@ extern "C"
 #include <stdexcept>
 
 ff::packet::packet(bool allocate_packet)
-	: ff_object(), p_av_packet(nullptr)
+	: ff_object(), p_packet(nullptr)
 {
 	if (allocate_packet)
 	{
@@ -35,13 +35,15 @@ ff::packet::packet(bool allocate_packet)
 	}
 }
 
-ff::packet::packet(::AVPacket* in_packet, const stream* stream, bool has_data)
-	: p_av_packet(in_packet), p_stream(stream)
+ff::packet::packet(::AVPacket* in_packet, const ff::rational time_base, bool has_data)
+	: p_packet(in_packet)
 {
 	if (nullptr == in_packet)
 	{
 		throw std::invalid_argument("packet cannot be nullptr");
 	}
+
+	p_packet->time_base = time_base.av_rational();
 
 	if (has_data)
 	{
@@ -54,45 +56,43 @@ ff::packet::packet(::AVPacket* in_packet, const stream* stream, bool has_data)
 }
 
 ff::packet::packet(const packet& other)
-	: ff_object(other), p_av_packet(nullptr)
+	: ff_object(other), p_packet(nullptr)
 {
-	if (nullptr == other.p_av_packet)
+	if (nullptr == other.p_packet)
 	{
 		return;
 	}
 	
-	p_av_packet = av_packet_clone(other.p_av_packet);
-	if (nullptr == p_av_packet)
+	p_packet = av_packet_clone(other.p_packet);
+	if (nullptr == p_packet)
 	{
 		throw std::bad_alloc();
 	}
-	p_stream = other.p_stream;
 }
 
 ff::packet& ff::packet::operator=(const packet& right)
 {
 	ff_object::operator=(right);
 
-	if (nullptr == right.p_av_packet)
+	if (nullptr == right.p_packet)
 	{
 		return *this;
 	}
 
-	p_av_packet = av_packet_clone(right.p_av_packet);
-	if (!p_av_packet)
+	p_packet = av_packet_clone(right.p_packet);
+	if (!p_packet)
 	{
 		throw std::bad_alloc();
 	}
-	p_stream = right.p_stream;
 	
 	return *this;
 }
 
 void ff::packet::internal_allocate_object_memory()
 {
-	p_av_packet = av_packet_alloc();
+	p_packet = av_packet_alloc();
 	// Check memory allocation
-	if (nullptr == p_av_packet)
+	if (nullptr == p_packet)
 	{
 		throw std::bad_alloc();
 	}
@@ -100,7 +100,7 @@ void ff::packet::internal_allocate_object_memory()
 
 void ff::packet::internal_allocate_resources_memory(uint64_t size, void * additional_information)
 {
-	auto ret = av_new_packet(p_av_packet, static_cast<int>(size));
+	auto ret = av_new_packet(p_packet, static_cast<int>(size));
 	if (ret != 0)
 	{
 		ON_FF_ERROR_WITH_CODE("Unable to allocate avpacket", ret);
@@ -109,32 +109,166 @@ void ff::packet::internal_allocate_resources_memory(uint64_t size, void * additi
 
 void ff::packet::internal_release_object_memory() noexcept
 {
-	av_packet_free(&p_av_packet);
+	av_packet_free(&p_packet);
 }
 
 void ff::packet::internal_release_resources_memory() noexcept
 {
-	// p_av_packet should not be nullptr
+	// p_packet should not be nullptr
 	// this is ensured by the state machine of ff_object.
-	av_packet_unref(p_av_packet);
+	av_packet_unref(p_packet);
+}
+
+int ff::packet::data_size() const
+{
+	if (!ready())
+	{
+		throw std::logic_error("The packet is not ready.");
+	}
+	// If the data comes from a FFmpeg demuxer/encoder,
+	// then it will be ref-counted and buf will not be nullptr.
+	if (!ref_counted())
+	{
+		throw std::logic_error("The data does not come from a demuxer/encoder.");
+	}
+
+	return p_packet->size;
+}
+
+void* ff::packet::data()
+{
+	if (!ready())
+	{
+		throw std::logic_error("The packet is not ready.");
+	}
+	// If the data comes from a FFmpeg demuxer/encoder,
+	// then it will be ref-counted and buf will not be nullptr.
+	if (!ref_counted())
+	{
+		throw std::logic_error("The data does not come from a demuxer/encoder.");
+	}
+
+	return p_packet->buf;
+}
+
+const void* ff::packet::data() const
+{
+	if (!ready())
+	{
+		throw std::logic_error("The packet is not ready.");
+	}
+	// If the data comes from a FFmpeg demuxer/encoder,
+	// then it will be ref-counted and buf will not be nullptr.
+	if (!ref_counted())
+	{
+		throw std::logic_error("The data does not come from a demuxer/encoder.");
+	}
+
+	return p_packet->buf;
+}
+
+ff::rational ff::packet::time_base() const
+{
+	if (destroyed())
+	{
+		throw std::logic_error("The packet is destroyed.");
+	}
+
+	return ff::rational(p_packet->time_base);
 }
 
 ff::time ff::packet::pts() const
 {
-	if (!linked_to_stream())
+	if (destroyed())
 	{
-		throw std::logic_error("Not linked to any stream.");
+		throw std::logic_error("The packet is destroyed.");
+	}
+	if (p_packet->time_base.den == 0)
+	{
+		throw std::logic_error("Current time base is not valid.");
+	}
+	ff::rational tb(p_packet->time_base);
+	if (tb <= 0)
+	{
+		throw std::logic_error("Current time base is non-positive");
 	}
 
-	return ff::time(p_av_packet->pts, p_stream->time_base());
+	return ff::time(p_packet->pts, tb);
 }
 
 ff::time ff::packet::dts() const
 {
-	if (!linked_to_stream())
+	if (destroyed())
 	{
-		throw std::logic_error("Not linked to any stream.");
+		throw std::logic_error("The packet is destroyed.");
+	}
+	if (p_packet->time_base.den == 0)
+	{
+		throw std::logic_error("Current time base is not valid.");
+	}
+	ff::rational tb(p_packet->time_base);
+	if (tb <= 0)
+	{
+		throw std::logic_error("Current time base is non-positive");
 	}
 
-	return ff::time(p_av_packet->dts, p_stream->time_base());
+	return ff::time(p_packet->dts, tb);
+}
+
+ff::time ff::packet::duration() const
+{
+	if (destroyed())
+	{
+		throw std::logic_error("The packet is destroyed.");
+	}
+	if (p_packet->time_base.den == 0)
+	{
+		throw std::logic_error("Current time base is not valid.");
+	}
+	ff::rational tb(p_packet->time_base);
+	if (tb <= 0)
+	{
+		throw std::logic_error("Current time base is non-positive");
+	}
+
+	return ff::time(p_packet->duration, tb);
+}
+
+void ff::packet::change_time_base(ff::rational new_tb)
+{
+	if (destroyed())
+	{
+		throw std::logic_error("The packet is destroyed.");
+	}
+	if (p_packet->time_base.den == 0)
+	{
+		throw std::logic_error("Current time base is not valid.");
+	}
+	ff::rational tb(p_packet->time_base);
+	if (tb < 0)
+	{
+		throw std::logic_error("Current time base is non-positive.");
+	}
+
+	// Get pts and dts, and additionally duration
+	auto pts = ff::time(p_packet->pts, tb);
+	auto dts = ff::time(p_packet->dts, tb);
+	auto duration = ff::time(p_packet->duration, tb);
+
+	// Update their time base
+	// std::invalid_argument is thrown if new_tb <= 0.
+	pts.change_time_base(new_tb);
+	dts.change_time_base(new_tb);
+
+	// Update the fields
+	p_packet->pts = pts.timestamp_approximate();
+	p_packet->dts = dts.timestamp_approximate();
+	p_packet->time_base = new_tb.av_rational();
+
+	// Do it for duration, too, if it's valid.
+	if (duration > 0)
+	{
+		duration.change_time_base(new_tb);
+		p_packet->duration = duration.timestamp_approximate();
+	}
 }
