@@ -192,6 +192,9 @@ add_executable(test_frame
 # Test packet
 add_executable(test_packet
     "${TestSrcFFWrapperPath}/test_packet.cpp")
+# Test decoder
+add_executable(test_decoder
+    "${TestSrcFFWrapperPath}/test_decoder.cpp")
 
 set(ListTestTargets
     "test_ff_object"
@@ -200,7 +203,8 @@ set(ListTestTargets
     "test_time"
     "test_demuxer"
     "test_frame"
-    "test_packet")
+    "test_packet"
+    "test_decoder")
 
 ################################# Common Test Settings #################################
 

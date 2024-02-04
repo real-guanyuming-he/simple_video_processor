@@ -68,6 +68,10 @@ namespace ff
 		}
 
 	public:
+		inline ::AVCodecParameters* av_codec_parameters() noexcept { return p_params; }
+		inline const ::AVCodecParameters* av_codec_parameters() const noexcept { return p_params; }
+
+	public:
 		inline AVMediaType	type()				const noexcept { return p_params->codec_type; }
 		inline bool			is_video()			const noexcept { return AVMEDIA_TYPE_VIDEO == p_params->codec_type; }
 		inline bool			is_audio()			const noexcept { return AVMEDIA_TYPE_AUDIO == p_params->codec_type; }

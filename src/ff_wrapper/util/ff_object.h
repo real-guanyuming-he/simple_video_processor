@@ -74,7 +74,8 @@ namespace ff
 			: state(other.state) {}
 
 		/*
-		* Does not allocate any memory. Simply copies the state of other.
+		* Does not allocate any memory. Simply copies the state of other
+		* and sets other's to DESTROYED.
 		* Derived class should call this to handle the state.
 		*
 		* Derived classes should copy the pointers.

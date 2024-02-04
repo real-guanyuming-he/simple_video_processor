@@ -64,44 +64,44 @@
 // Use exceptions instead.
 #ifndef NDEBUG
 
-#include <fstream> // For accessing assertion log files
-#include <ctime> // To log time
+	#include <fstream> // For accessing assertion log files
+	#include <ctime> // To log time
 
-static constexpr const auto FF_ASSERTION_LOG_FILE_NAME = "ff_assertion_log.log";
+	static constexpr const auto FF_ASSERTION_LOG_FILE_NAME = "ff_assertion_log.log";
 
-#ifndef FF_TESTING // Normal assertion
-	#define FF_ASSERT(expr, msg)\
-	if (!(expr))\
-	{\
-		auto cur_time = std::time(nullptr);\
-		std::ofstream log_file(FF_ASSERTION_LOG_FILE_NAME, std::ios::app | std::ios::out);\
-		log_file << std::asctime(std::localtime(&cur_time)) <<\
-			" Assertion failed at line " << __LINE__ <<\
-			" in file " << __FILE__ << " with message:\n\t" <<\
-			msg;\
-		log_file.flush();\
-		log_file.close();\
-		std::terminate();\
-	}
-#else // Assertion during testing
-	#define FF_ASSERT(expr, msg)\
-	if (!(expr))\
-	{\
-		auto cur_time = std::time(nullptr);\
-		std::ofstream log_file(FF_ASSERTION_LOG_FILE_NAME, std::ios::app | std::ios::out);\
-		std::cerr << std::asctime(std::localtime(&cur_time)) << " [TESTING] "\
-			"Assertion failed at line " << __LINE__ <<\
-			" in file " << __FILE__ << " with message:\n\t" <<\
-			msg;\
-		log_file.flush();\
-		log_file.close();\
-		FF_DEBUG_BREAK\
-		exit(-1);/* CTest treats non-zero return values as failures. */\
-	}
-#endif // !FF_TESTING
+	#ifndef FF_TESTING // Normal assertion
+		#define FF_ASSERT(expr, msg)\
+		if (!(expr))\
+		{\
+			auto cur_time = std::time(nullptr);\
+			std::ofstream log_file(FF_ASSERTION_LOG_FILE_NAME, std::ios::app | std::ios::out);\
+			log_file << std::asctime(std::localtime(&cur_time)) <<\
+				" Assertion failed at line " << __LINE__ <<\
+				" in file " << __FILE__ << " with message:\n\t" <<\
+				msg << std::endl;\
+			log_file.flush();\
+			log_file.close();\
+			std::terminate();\
+		}
+	#else // Assertion during testing
+		#define FF_ASSERT(expr, msg)\
+		if (!(expr))\
+		{\
+			auto cur_time = std::time(nullptr);\
+			std::ofstream log_file(FF_ASSERTION_LOG_FILE_NAME, std::ios::app | std::ios::out);\
+			std::cerr << std::asctime(std::localtime(&cur_time)) << " [TESTING] "\
+				"Assertion failed at line " << __LINE__ <<\
+				" in file " << __FILE__ << " with message:\n\t" <<\
+				msg << std::endl;\
+			log_file.flush();\
+			log_file.close();\
+			FF_DEBUG_BREAK\
+			exit(-1);/* CTest treats non-zero return values as failures. */\
+		}
+	#endif // !FF_TESTING
 
 #else
-	#define FF_ASSERT(expr, msg)
+	#define FF_ASSERT(expr, msg) if (!(expr)) std::terminate();
 #endif // !NDEBUG
 
 // FF_ASSERT may throw. Need a constexpr to indicate noexcept when assertion is not enabled (e.g. Release build)

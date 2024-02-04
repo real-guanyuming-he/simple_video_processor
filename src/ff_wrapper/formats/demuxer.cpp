@@ -128,6 +128,9 @@ ff::packet ff::demuxer::demux_next_packet()
 	if (nullptr == av_pkt->buf && 0 == av_pkt->size)
 	{
 		// Error
+		// Don't forget to free av_pkt first.
+		av_packet_free(&av_pkt);
+
 		switch (ret)
 		{
 		case AVERROR(ENOMEM):
