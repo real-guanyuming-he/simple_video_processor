@@ -18,6 +18,12 @@
 struct AVStream;
 
 #include "../util/ff_time.h"
+#include "../codec/codec_properties.h"
+
+extern "C"
+{
+#include <libavcodec/codec_id.h> // For AVCodecID
+}
 
 namespace ff
 {
@@ -47,6 +53,7 @@ namespace ff
 		const ::AVStream* operator->() const noexcept { return p_stream; }
 		::AVStream* operator->() noexcept { return p_stream; }
 
+		AVMediaType type() const noexcept;
 		bool is_video() const noexcept;
 		bool is_audio() const noexcept;
 		bool is_subtitle() const noexcept;
@@ -63,9 +70,14 @@ namespace ff
 		*/
 		ff::rational time_base() const noexcept;
 
+		/*
+		* @returns the properties of how the stream is, or is to be, encodeded.
+		*/
+		ff::codec_properties properties() const noexcept;
+
 /////////////////////////////// Codec related ///////////////////////////////
 	public:
-		const int codec_id() const noexcept;
+		const AVCodecID codec_id() const noexcept;
 
 	private:
 		::AVStream* p_stream;

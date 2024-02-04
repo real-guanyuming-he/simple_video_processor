@@ -42,6 +42,8 @@ namespace ff
 	* DESTROYED: both the description and the context are not created/are destroyed.
 	* OBJECT_CREATED: only the description is created. The decoder can be identified now.
 	* READY: both the description and the context are created. The decoder is ready for use now.
+	* NOTE: DO NOT use the decoder again after a call to release_resources_memory(), which closes the context created.
+	* Due the the design of FFmpeg, a decoder is not supported to be reused after its context is closed.
 	* 
 	* This class uses the void pointer parameter of allocate_resources_memory()
 	* to pass in a dict of options. For type-safety, I provide a wrapper,
@@ -59,8 +61,9 @@ namespace ff
 	*	5. When a decoder is full, you must start decoding frames by calling decode_frame(), which will cancel being full.
 	You can immediately try to feed it again after you have decoded one frame, but the attempt may discover
 	that the decoder is still full and set full back. The FFmpeg documentation suggests that you decode until it is hungry again.
-	*	6. After you have no packets to send, you should tell the decoder that you have no more for it by calling 
-	signal_no_more_packets(). After that, repeatedly call decode_frame() for it to pop out what's left in its stomach 
+	*	6. After you have no packets to send, check if the decoder already knows that by calling no_more_packets().
+	Sometimes it does not know, and then you should tell the decoder so by calling signal_no_more_packets(). 
+	After that, repeatedly call decode_frame() for it to pop out what's left in its stomach 
 	until that returns a DESTROYED frame (then it has no more in its stomach).
 	*
 	* Invariants:
@@ -164,12 +167,14 @@ namespace ff
 
 		/*
 		* Sets the properties of the decoder.
+		* You can only set the properties when the decoder is created yet not ready.
+		* That is, before you create the context.
 		* 
 		* @param p the properties. It is highly recommended to mannually set only
 		* the needed fields of codec_properties instead of using one directly obtained from
 		* sources that seems to be compatiable (e.g. an encoder). That's because some options 
 		* may not be compatible between encoders and decoders or between codecs and de/muxers.
-		* @throws std::logic_error if not ready.
+		* @throws std::logic_error if not created.
 		*/
 		void set_codec_properties(const codec_properties& p);
 
@@ -202,7 +207,7 @@ namespace ff
 		* @returns true if the packet has been fed successfully. false if 
 		* the decoder is full or you have already declared no more packets will be fed.
 		* @throws std::logic_error if the decoder is not ready.
-		* @throws std::invalid_argument if the packet does not agree with 
+		* @throws std::invalid_argument if the packet is not ready or if the packet does not agree with 
 		* the properties of the decoder or with previous packets fed to it.
 		*/
 		bool feed_packet(const packet& pkt);

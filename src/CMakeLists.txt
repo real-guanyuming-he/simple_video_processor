@@ -112,7 +112,9 @@ set(FFmpegLibNames
     "swresample"
     "swscale")
 set(ThirdPartyLibNames
-    "ass")
+    "ass"
+    "libx264"
+    "libx265")
 set(AllLibNames
     ${FFmpegLibNames} ${ThirdPartyLibNames})
 
@@ -225,9 +227,8 @@ foreach(test IN LISTS ListTestTargets)
     set_property(TARGET ${test}
         PROPERTY CXX_STANDARD 20)
 
-    # As long as ff_math.h is included,
-    # the include dir has to be added because AVRational is used
-    # For convenience, just add the dir to all tests' include paths
+    # Many need FFmpeg headers for their types.
+    # Include this for all for convenience.
     target_include_directories(${test}
         PRIVATE ${VcpkgIncludePath})
 endforeach()
@@ -251,8 +252,10 @@ set(MyFFmpegExecutablePath "\"${MyFFmpegExecutablePath}\"")
 # Define the macro for all the tests that use FFmpeg CLI
 target_compile_definitions("test_demuxer"
     PRIVATE "FFMPEG_EXECUTABLE_PATH=${MyFFmpegExecutablePath}")
+target_compile_definitions("test_decoder"
+    PRIVATE "FFMPEG_EXECUTABLE_PATH=${MyFFmpegExecutablePath}")
 
-# Needs to use some FFmpeg API in these tests
+# Needs to use some FFmpeg APIs in these tests
 target_link_libraries("test_frame" PRIVATE
     $<IF:$<CONFIG:Debug>,${avutil_PathDbg},${avutil_Path}>)
 target_link_libraries("test_packet" PRIVATE

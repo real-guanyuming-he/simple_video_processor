@@ -21,6 +21,11 @@ extern "C"
 #include <libavformat/avformat.h>
 }
 
+AVMediaType ff::stream::type() const noexcept
+{
+    return p_stream->codecpar->codec_type;
+}
+
 bool ff::stream::is_video() const noexcept
 {
     return AVMEDIA_TYPE_VIDEO == p_stream->codecpar->codec_type;
@@ -53,7 +58,12 @@ ff::rational ff::stream::time_base() const noexcept
     return ff::rational(p_stream->time_base);
 }
 
-const int ff::stream::codec_id() const noexcept
+ff::codec_properties ff::stream::properties() const noexcept
 {
-    return int(p_stream->codecpar->codec_id);
+    return ff::codec_properties(p_stream->codecpar);
+}
+
+const AVCodecID ff::stream::codec_id() const noexcept
+{
+    return p_stream->codecpar->codec_id;
 }

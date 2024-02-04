@@ -70,6 +70,12 @@ namespace ff
 				: v_or_a(false), fmt(f), align(align),
 				details(num, ch_layout) {}
 
+			constexpr int v_width()			const noexcept { return details.v.width; }
+			constexpr int v_height()		const noexcept { return details.v.height; }
+
+			int						a_num_samples()	const noexcept { return details.a.num_samples; }
+			const AVChannelLayout*	a_ch_layout()	const noexcept { return details.a.ch_layout_ref; }
+
 			union d
 			{
 				inline constexpr d(int w, int h)

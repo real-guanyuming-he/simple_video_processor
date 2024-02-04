@@ -88,7 +88,7 @@ int create_test_av
 
 int main()
 {
-	// The demux requires the absolute path to files,
+	// The demuxer requires the absolute path to files,
 	// hence obtain this.
 	fs::path working_dir(fs::current_path());
 

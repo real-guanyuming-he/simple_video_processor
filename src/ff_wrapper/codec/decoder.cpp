@@ -134,11 +134,6 @@ void ff::decoder::internal_allocate_object_memory()
 	{
 		codec_name = p_codec_desc->name;
 	}
-}
-
-void ff::decoder::internal_allocate_resources_memory(uint64_t size, void *additional_information)
-{
-	auto ppavd = static_cast<::AVDictionary**>(additional_information);
 
 	// Allocate the context.
 	p_codec_ctx = avcodec_alloc_context3(p_codec_desc);
@@ -148,6 +143,11 @@ void ff::decoder::internal_allocate_resources_memory(uint64_t size, void *additi
 		// So errors can only be caused by memory allocation.
 		throw std::bad_alloc();
 	}
+}
+
+void ff::decoder::internal_allocate_resources_memory(uint64_t size, void *additional_information)
+{
+	auto ppavd = static_cast<::AVDictionary**>(additional_information);
 
 	// Open the decoder in the context with the options.
 	int ret = avcodec_open2(p_codec_ctx, p_codec_desc, ppavd);
@@ -169,13 +169,15 @@ void ff::decoder::internal_allocate_resources_memory(uint64_t size, void *additi
 
 void ff::decoder::internal_release_object_memory() noexcept
 {
-	// Just reset the desc.
+	// Completely destroy the context.
+	ffhelpers::safely_free_codec_context(&p_codec_ctx);
+	// Reset the desc.
 	p_codec_desc = nullptr;
 }
 
 void ff::decoder::internal_release_resources_memory() noexcept
 {
-	ffhelpers::safely_free_codec_context(&p_codec_ctx);
+	avcodec_close(p_codec_ctx);
 }
 
 ff::codec_properties ff::decoder::get_decoder_properties() const
@@ -190,9 +192,9 @@ ff::codec_properties ff::decoder::get_decoder_properties() const
 
 void ff::decoder::set_codec_properties(const codec_properties& p)
 {
-	if (!ready())
+	if (!created())
 	{
-		throw std::logic_error("Properties can only be set when the decoder is ready.");
+		throw std::logic_error("Properties can only be set when the decoder is just created.");
 	}
 
 	avcodec_parameters_to_context(p_codec_ctx, p.av_codec_parameters());
@@ -203,6 +205,10 @@ bool ff::decoder::feed_packet(const packet& pkt)
 	if (!ready())
 	{
 		throw std::logic_error("The decoder is not ready.");
+	}
+	if (!pkt.ready())
+	{
+		throw std::invalid_argument("The packet is not ready.");
 	}
 
 	// Full can only be set here and cancelled in decode_frame().
@@ -264,15 +270,21 @@ ff::frame ff::decoder::decode_frame()
 		return ff::frame(false);
 	}
 
-	ff::frame f(true);
-	int ret = avcodec_receive_frame(p_codec_ctx, f.av_frame());
+	AVFrame* pf = av_frame_alloc();
+	if (nullptr == pf)
+	{
+		throw std::bad_alloc();
+	}
+	int ret = avcodec_receive_frame(p_codec_ctx, pf);
 	if (0 == ret) // Success
 	{
 		cancel_full();
-		return f;
+		return ff::frame(pf, p_codec_desc->type == AVMEDIA_TYPE_VIDEO);
 	}
 
 	// Failure
+	// First free the AVFrame
+	av_frame_free(&pf);
 	switch (ret)
 	{
 	case AVERROR(EAGAIN):
@@ -281,9 +293,11 @@ ff::frame ff::decoder::decode_frame()
 
 		become_hungry();
 		return ff::frame(false);
+		break;
 	case AVERROR_EOF:
-		// The draining has completed.
+		// Called during draining.
 		return ff::frame(false);
+		break;
 	case AVERROR(EINVAL):
 		throw std::runtime_error("The decoder has not been set up correctly. This should not happen.");
 		break;

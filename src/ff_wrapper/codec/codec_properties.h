@@ -50,6 +50,15 @@ namespace ff
 		~codec_properties();
 
 		/*
+		* Inits from a pointer of the internal AVCodecParameters.
+		* 
+		* @param p a pointer of the internal AVCodecParameters
+		* @param take_over if true then I will simply copy the pointer, which means the life
+		* of the object is in this class's hand. If false I will make a copy of the parameters.
+		*/
+		explicit codec_properties(::AVCodecParameters* p, bool take_over = false);
+
+		/*
 		* Copies properties from an existing decoder/encoder
 		*/
 		explicit codec_properties(const ::AVCodecContext* codec_ctx);
@@ -101,7 +110,32 @@ namespace ff
 			}
 			// Unknown.
 			return ff::rational(-1, 1);
-		}		
+		}
+
+	public:
+		inline void set_type(AVMediaType type)	noexcept { p_params->codec_type = type; }
+		inline void set_type_video()			noexcept { p_params->codec_type = AVMEDIA_TYPE_VIDEO; }
+		inline void	set_type_audio()			noexcept { p_params->codec_type = AVMEDIA_TYPE_AUDIO; }
+		inline void	set_type_subtitle()			noexcept { p_params->codec_type = AVMEDIA_TYPE_SUBTITLE; }
+
+		inline void set_v_pixel_format(AVPixelFormat f)			noexcept { p_params->format = f; }
+		inline void set_v_width(int w)							noexcept { p_params->width = w; }
+		inline void set_v_height(int h)							noexcept { p_params->height = h; }
+		inline void set_v_field_order(AVFieldOrder fo)			noexcept { p_params->field_order = fo; }
+		inline void set_v_color_range(AVColorRange cr)			noexcept { p_params->color_range = cr; }
+		inline void set_v_color_space(AVColorSpace cs)			noexcept { p_params->color_space = cs; }
+		inline void set_v_color_primaries(AVColorPrimaries cp)	noexcept { p_params->color_primaries = cp; }
+		inline void set_v_chroma_location(AVChromaLocation cl)	noexcept { p_params->chroma_location = cl; }
+		inline void set_v_aspect_ratio(ff::rational ar)			noexcept { p_params->sample_aspect_ratio = ar.av_rational(); }
+
+		inline void set_a_sample_format(AVSampleFormat f)	noexcept { p_params->format = f; }
+		inline void set_a_sample_rate(int sr)				noexcept { p_params->sample_rate = sr; }
+		
+		/*
+		* Frees current ch layout and copies ch to it.
+		* @param ch the new channel layout.
+		*/
+		void set_a_channel_layout(const AVChannelLayout& ch);
 
 	private:
 		class ::AVCodecParameters* p_params;

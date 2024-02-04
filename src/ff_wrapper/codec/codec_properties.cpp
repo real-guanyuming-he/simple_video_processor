@@ -37,6 +37,37 @@ ff::codec_properties::~codec_properties()
 	ffhelpers::safely_free_codec_parameters(&p_params);
 }
 
+ff::codec_properties::codec_properties(::AVCodecParameters* p, bool take_over)
+{
+	if (take_over)
+	{
+		p_params = p;
+		return;
+	}
+
+	// No taking over, so make a copy.
+	// Allocates the parameters first.
+	p_params = avcodec_parameters_alloc();
+	if (nullptr == p_params)
+	{
+		throw std::bad_alloc();
+	}
+
+	int ret = avcodec_parameters_copy(p_params, p);
+	if (ret < 0)
+	{
+		switch (ret)
+		{
+		case AVERROR(ENOMEM):
+			throw std::bad_alloc();
+			break;
+		default:
+			ON_FF_ERROR_WITH_CODE("Unexpected error: Could not copy AVCodecParameters", ret);
+			break;
+		}
+	}
+}
+
 ff::codec_properties::codec_properties(const::AVCodecContext* codec_ctx)
 	: codec_properties() // Must allocate the properties first
 {
@@ -68,6 +99,24 @@ ff::codec_properties::codec_properties(const codec_properties& other)
 			break;
 		default:
 			ON_FF_ERROR_WITH_CODE("Unexpected error: Could not copy AVCodecParameters", ret);
+			break;
+		}
+	}
+}
+
+void ff::codec_properties::set_a_channel_layout(const AVChannelLayout& ch)
+{
+	// This does free its destination.
+	int ret = av_channel_layout_copy(&p_params->ch_layout, &ch);
+	if (ret < 0)
+	{
+		switch (ret)
+		{
+		case AVERROR(ENOMEM):
+			throw std::bad_alloc();
+			break;
+		default:
+			ON_FF_ERROR_WITH_CODE("Unexpected error: Could not copy AVChannelLayout", ret);
 			break;
 		}
 	}
