@@ -58,6 +58,8 @@ set(FFWrapperSourceFiles
     "${SrcFFWrapperFormatsPath}/media_base.h"
     "${SrcFFWrapperFormatsPath}/media_base.cpp"
 # Codec
+    "${SrcFFWrapperCodecPath}/codec_base.h"
+    "${SrcFFWrapperCodecPath}/codec_base.cpp"
     "${SrcFFWrapperCodecPath}/decoder.h"
     "${SrcFFWrapperCodecPath}/decoder.cpp"
     "${SrcFFWrapperCodecPath}/codec_properties.h"

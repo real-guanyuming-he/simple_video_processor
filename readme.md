@@ -54,7 +54,8 @@ This project uses `vcpkg` and `CMake` to manage the build. Before you can build 
 
 - Install `CMake` 3.27 or later
 - Install the latest `vcpkg` and
-    - use it to install `FFmpeg` x64 through `vcpkg install`
+    - use it to install `FFmpeg` x64 through `vcpkg install` with the components that you'd like to include. My current installation on Windows is from this command:
+    `vcpkg install ffmpeg[core,avdevice,swresample,swscale,postproc,ffmpeg,ffprobe,version3,gpl,ass,fdk-aac,opus,vorbis,mp3lame,x264,x265,dav1d,aom,openjpeg,webp]:x64-windows`.
     - set the environment variable `VCPKG_ROOT` to its root directory
 - Create a binary folder somewhere (recommended to be outside of src) and cd into it. For example,
 ```

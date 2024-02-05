@@ -23,7 +23,6 @@ extern "C"
 #include <libavutil/frame.h> // For those enums
 }
 
-class AVFrame;
 struct AVChannelLayout;
 
 namespace ff

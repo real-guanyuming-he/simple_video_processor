@@ -71,7 +71,7 @@ namespace ff
 		ff::rational time_base() const noexcept;
 
 		/*
-		* @returns the properties of how the stream is, or is to be, encodeded.
+		* @returns a copy of the properties of how the stream is, or is to be, encodeded.
 		*/
 		ff::codec_properties properties() const noexcept;
 

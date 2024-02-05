@@ -24,43 +24,27 @@ extern "C"
 }
 
 ff::decoder::decoder(AVCodecID ID)
-	: codec_id(ID)
+	: codec_base(ID)
 {
 	// Find the description.
 	allocate_object_memory();
 }
 
 ff::decoder::decoder(const char* name)
-	: codec_name(name)
+	: codec_base(name)
 {
 	// Find the description.
 	allocate_object_memory();
 }
 
 ff::decoder::decoder(decoder&& other) noexcept
-	: ff_object(std::move(other)),
-	codec_id(other.codec_id), codec_name(other.codec_name),
-	p_codec_desc(other.p_codec_desc), p_codec_ctx(other.p_codec_ctx),
-	is_full(other.is_full), is_hungry(other.is_hungry), no_more_food(other.no_more_food)
+	: codec_base(std::move(other))
 {
-	other.p_codec_ctx = nullptr;
-	other.p_codec_desc = nullptr;
 }
 
 ff::decoder& ff::decoder::operator=(decoder&& right) noexcept
 {
-	ff_object::operator=(std::move(right));
-
-	codec_id = right.codec_id;
-	codec_name = right.codec_name;
-	p_codec_desc = right.p_codec_desc;
-	p_codec_ctx = right.p_codec_ctx;
-	is_full = right.is_full;
-	is_hungry = right.is_hungry;
-	no_more_food = right.no_more_food;
-
-	right.p_codec_ctx = nullptr;
-	right.p_codec_desc = nullptr;
+	ff::codec_base::operator=(std::move(right));
 
 	return *this;
 }
@@ -68,31 +52,6 @@ ff::decoder& ff::decoder::operator=(decoder&& right) noexcept
 ff::decoder::~decoder() noexcept
 {
 	destroy();
-}
-
-void ff::decoder::create_decoder_context(ff::dict& options)
-{
-	if (options.empty())
-	{
-		throw std::invalid_argument("Dict cannot be empty.");
-	}
-
-	auto* pavd = options.get_av_dict();
-	allocate_resources_memory(0, &pavd);
-	options = pavd;
-}
-
-void ff::decoder::create_decoder_context(const ff::dict& options)
-{
-	AVDictionary** ppavd = nullptr;
-	if (!options.empty())
-	{
-		ff::dict cpy(options);
-		auto* pavd = cpy.get_av_dict();
-		ppavd = &pavd;
-	}
-
-	allocate_resources_memory(0, ppavd);
 }
 
 void ff::decoder::internal_allocate_object_memory()
@@ -145,61 +104,6 @@ void ff::decoder::internal_allocate_object_memory()
 	}
 }
 
-void ff::decoder::internal_allocate_resources_memory(uint64_t size, void *additional_information)
-{
-	auto ppavd = static_cast<::AVDictionary**>(additional_information);
-
-	// Open the decoder in the context with the options.
-	int ret = avcodec_open2(p_codec_ctx, p_codec_desc, ppavd);
-	if (ret < 0)
-	{
-		switch (ret)
-		{
-		case AVERROR(ENOMEM):
-			throw std::bad_alloc();
-			break;
-		case AVERROR(EINVAL):
-			throw std::runtime_error("Could not open a decoder: probably bad/unsupported options");
-			break;
-		default:
-			ON_FF_ERROR_WITH_CODE("Unexpected error happened when opening a decoder: ", ret);
-		}
-	}
-}
-
-void ff::decoder::internal_release_object_memory() noexcept
-{
-	// Completely destroy the context.
-	ffhelpers::safely_free_codec_context(&p_codec_ctx);
-	// Reset the desc.
-	p_codec_desc = nullptr;
-}
-
-void ff::decoder::internal_release_resources_memory() noexcept
-{
-	avcodec_close(p_codec_ctx);
-}
-
-ff::codec_properties ff::decoder::get_decoder_properties() const
-{
-	if (!ready())
-	{
-		throw std::logic_error("Properties can only be obtained when the decoder is ready.");
-	}
-
-	return codec_properties(p_codec_ctx);
-}
-
-void ff::decoder::set_codec_properties(const codec_properties& p)
-{
-	if (!created())
-	{
-		throw std::logic_error("Properties can only be set when the decoder is just created.");
-	}
-
-	avcodec_parameters_to_context(p_codec_ctx, p.av_codec_parameters());
-}
-
 bool ff::decoder::feed_packet(const packet& pkt)
 {
 	if (!ready())
@@ -218,7 +122,7 @@ bool ff::decoder::feed_packet(const packet& pkt)
 	}
 
 	// The user has signaled that no more packet is coming.
-	if (no_more_packets())
+	if (no_more_food())
 	{
 		return false;
 	}
@@ -238,9 +142,9 @@ bool ff::decoder::feed_packet(const packet& pkt)
 		become_full();
 		return false;
 	case AVERROR_EOF:
-		// I detect this already with no_more_packets() earlier.
+		// I detect this already with no_more_food() earlier.
 		// Should never reach here.
-		FF_ASSERT(false, "Did I forget to set no_more_food?");
+		FF_ASSERT(false, "Did I forget to set signaled_no_more_food?");
 		return false;
 	case AVERROR(ENOMEM):
 		throw std::bad_alloc();
@@ -289,7 +193,7 @@ ff::frame ff::decoder::decode_frame()
 	{
 	case AVERROR(EAGAIN):
 		// Needs more packets.
-		FF_ASSERT(!no_more_food, "After draining has started, EAGAIN can never be returned.");
+		FF_ASSERT(!signaled_no_more_food, "After draining has started, EAGAIN can never be returned.");
 
 		become_hungry();
 		return ff::frame(false);
@@ -310,40 +214,14 @@ ff::frame ff::decoder::decode_frame()
 	return ff::frame(false);
 }
 
-void ff::decoder::signal_no_more_packets()
+void ff::decoder::signal_no_more_food()
 {
-	if (!ready())
-	{
-		throw std::logic_error("The decoder is not ready.");
-	}
-
-	if (no_more_food)
-	{
-		// The user already signaled no more packets.
-		throw std::logic_error("You can only signal no more packets once per decoding.");
-	}
-
-	// Set the states
-	no_more_food = true;
-	is_hungry = false;
-
-	// Start draining the decoder.
-	start_draining();
+	codec_base::signal_no_more_food();
 }
 
 void ff::decoder::reset()
 {
-	if (!ready())
-	{
-		throw std::logic_error("The decoder is not ready.");
-	}
-
-	// Set the states
-	cancel_hungry();
-	no_more_food = true;
-
-	// Reset the decoder.
-	avcodec_flush_buffers(p_codec_ctx);
+	codec_base::reset();
 }
 
 void ff::decoder::start_draining()

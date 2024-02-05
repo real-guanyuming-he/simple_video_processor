@@ -102,7 +102,7 @@ namespace ff
 		/*
 		* @returns The sample aspect ratio (w/h). Or -1/1 if unknown.
 		*/
-		inline ff::rational v_aspect_ratio() const noexcept
+		inline ff::rational v_sar() const noexcept
 		{
 			if (p_params->sample_aspect_ratio.den != 0)
 			{

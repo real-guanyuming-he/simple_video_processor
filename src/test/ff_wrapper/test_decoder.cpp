@@ -112,6 +112,13 @@ int create_test_av
 
 int main()
 {
+	/*
+	* No dedicated tests for codec_base, because
+	* that's an abstract class and decoder and encoder are the only possible implementations of it.
+	* 
+	* The tests for class decoder and encoder cover all of codec_base's methods.
+	*/
+
 	// Test creation
 	{
 		// The default constructor is deleted.
@@ -127,7 +134,9 @@ int main()
 		ff::decoder d5(AVCodecID::AV_CODEC_ID_AV1);
 		TEST_ASSERT_TRUE(d5.created(), "Should be created.");
 		TEST_ASSERT_EQUALS(AVCodecID::AV_CODEC_ID_AV1, d5.get_id(), "Should be created with the ID.");
-		TEST_ASSERT_EQUALS(std::string("av1"), d5.get_name(), "Should fill the name.");
+		// Different decoder may be used depending on the FFmpeg build.
+		// Could be av1, dav1d, etc. Only assert that it's not empty.
+		TEST_ASSERT_FALSE(std::string(d5.get_name()).empty(), "Should fill the name.");
 
 		ff::decoder d6("flac");
 		TEST_ASSERT_TRUE(d6.created(), "Should be created.");
@@ -135,20 +144,25 @@ int main()
 		TEST_ASSERT_EQUALS(std::string("flac"), d6.get_name(), "Should be created with the same name.");
 	}
 
-	// Test setting up a decoder/allocate_resources_memory()/create_decoder_context()
+	// Test setting up a decoder/allocate_resources_memory()/create_codec_context()
+	// and calling methods at wrong times.
 	{
 		ff::decoder d1(AVCodecID::AV_CODEC_ID_MPEG4);
-		d1.create_decoder_context();
+		d1.create_codec_context();
+		// Can only set properties when created()
+		TEST_ASSERT_THROWS(d1.set_codec_properties(ff::codec_properties()), std::logic_error);
 
 		TEST_ASSERT_TRUE(d1.ready(), "Should be ready.");
-		auto p1 = d1.get_decoder_properties();
+		auto p1 = d1.get_codec_properties();
 		TEST_ASSERT_TRUE(p1.is_video(), "Should be created with correct properties.");
 
 		ff::decoder d2("aac");
-		d2.create_decoder_context();
+		// Can only get properties when ready()
+		TEST_ASSERT_THROWS(d2.get_codec_properties(), std::logic_error);
+		d2.create_codec_context();
 
 		TEST_ASSERT_TRUE(d2.ready(), "Should be ready.");
-		auto p2 = d2.get_decoder_properties();
+		auto p2 = d2.get_codec_properties();
 		TEST_ASSERT_TRUE(p2.is_audio(), "Should be created with correct properties.");
 	}
 
@@ -157,6 +171,7 @@ int main()
 	fs::path working_dir(fs::current_path());
 
 	// Actual decoding test.
+	// Decoding video with libx265 (hevc).
 	{
 		fs::path test1_path(working_dir / "decoder_test1.mp4");
 		std::string test1_path_str(test1_path.generic_string());
@@ -165,6 +180,7 @@ int main()
 
 		// Create the decoder from ID.
 		ff::stream vs = dem1.get_stream(0);
+		TEST_ASSERT_TRUE(vs.is_video(), "Should be a video stream.");
 		ff::decoder dec1(vs.codec_id());
 		TEST_ASSERT_EQUALS(vs.codec_id(), dec1.get_id(), "Should be equal");
 		TEST_ASSERT_TRUE(dec1.created(), "The decoder should be created now.");
@@ -173,23 +189,27 @@ int main()
 		// libx265 really needs some extra data that is hard to copy by hand.
 		// So I make a full copy here.
 		auto sp = vs.properties();
+		// Should not stretch samples.
+		TEST_ASSERT_EQUALS(ff::rational(1, 1), sp.v_sar(), "Should be equal");
+		TEST_ASSERT_EQUALS(800, sp.v_width(), "Should be equal");
+		TEST_ASSERT_EQUALS(600, sp.v_height(), "Should be equal");
 		dec1.set_codec_properties(sp);
 
 		// Create the decoder context so it can be ready.
-		dec1.create_decoder_context();
+		dec1.create_codec_context();
 		TEST_ASSERT_TRUE(dec1.ready(), "The decoder should be ready now.");
 		// Test if the properties really have changed to what's set.
-		auto dp = dec1.get_decoder_properties();
+		auto dp = dec1.get_codec_properties();
 		TEST_ASSERT_EQUALS(sp.type(), dp.type(), "Should really have set the properties.");
 		TEST_ASSERT_EQUALS(sp.v_pixel_format(), dp.v_pixel_format(), "Should really have set the properties.");
 		TEST_ASSERT_EQUALS(sp.v_width(), dp.v_width(), "Should really have set the properties.");
 		TEST_ASSERT_EQUALS(sp.v_height(), dp.v_height(), "Should really have set the properties.");
-		TEST_ASSERT_EQUALS(sp.v_aspect_ratio(), dp.v_aspect_ratio(), "Should really have set the properties.");
+		TEST_ASSERT_EQUALS(sp.v_sar(), dp.v_sar(), "Should really have set the properties.");
 
 		// The decoding process.
 		TEST_ASSERT_TRUE(dec1.hungry(), "Should be hungry initially.");
 		TEST_ASSERT_FALSE(dec1.full(), "Should not be full initially.");
-		TEST_ASSERT_FALSE(dec1.no_more_packets(), "I have not signaled it.");
+		TEST_ASSERT_FALSE(dec1.no_more_food(), "I have not signaled it.");
 
 		ff::packet pkt;
 		do
@@ -198,6 +218,7 @@ int main()
 
 			if (pkt.destroyed())
 			{
+				// The demuxer has run out of packets.
 				break;
 			}
 
@@ -228,9 +249,9 @@ int main()
 		} while (!dem1.eof());
 
 		// EOF from the demuxer. No more packets will be fed to the decoder.
-		dec1.signal_no_more_packets();
+		dec1.signal_no_more_food();
 		
-		TEST_ASSERT_TRUE(dec1.no_more_packets(), "It must have responded to my signal.");
+		TEST_ASSERT_TRUE(dec1.no_more_food(), "It must have responded to my signal.");
 		TEST_ASSERT_FALSE(dec1.hungry(), "It cannot be hungry at this state.");
 
 		// Drain all frames from its stomach.
@@ -252,11 +273,296 @@ int main()
 		} while (!f.destroyed());
 	}
 
-	// Copying a decoder is forbidden/deleted
+	// Decoding audio with aac decoder
+	{
+		fs::path test1_path(working_dir / "decoder_test2.m4a");
+		std::string test1_path_str(test1_path.generic_string());
+		create_test_audio(test1_path_str, "aac", 3, 48000, 96000);
 
+		ff::demuxer dem1(test1_path_str.c_str());
+
+		auto as = dem1.get_stream(0);
+		TEST_ASSERT_TRUE(as.is_audio(), "Should be an audio stream.");
+		ff::decoder dec1(as.codec_id());
+		TEST_ASSERT_EQUALS(as.codec_id(), dec1.get_id(), "Should be equal");
+		TEST_ASSERT_TRUE(dec1.created(), "The decoder should be created now.");
+		
+		// the recommendation is to only set the needed ones and leave others their default values
+		auto ap = as.properties();
+		TEST_ASSERT_EQUALS(96000, ap.a_sample_rate(), "Should be equal");
+		ff::codec_properties temp;
+		temp.set_type(ap.type());
+		temp.set_a_sample_rate(ap.a_sample_rate());
+		temp.set_a_sample_format(ap.a_sample_format());
+		temp.set_a_channel_layout(ap.a_channel_layout());
+		dec1.set_codec_properties(temp);
+
+		dec1.create_codec_context();
+		TEST_ASSERT_TRUE(dec1.ready(), "The decoder should be ready now.");
+		// Test if the properties really have changed to what's set.
+		auto dp = dec1.get_codec_properties();
+		TEST_ASSERT_EQUALS(ap.type(), dp.type(), "Should really have set the properties.");
+		TEST_ASSERT_EQUALS(ap.a_sample_format(), dp.a_sample_format(), "Should really have set the properties.");
+		TEST_ASSERT_EQUALS(ap.a_sample_rate(), dp.a_sample_rate(), "Should really have set the properties.");
+		TEST_ASSERT_EQUALS(ap.a_channel_layout().nb_channels, dp.a_channel_layout().nb_channels, "Should really have set the properties.");
+	
+		// The decoding process.
+		TEST_ASSERT_TRUE(dec1.hungry(), "Should be hungry initially.");
+		TEST_ASSERT_FALSE(dec1.full(), "Should not be full initially.");
+		TEST_ASSERT_FALSE(dec1.no_more_food(), "I have not signaled it.");
+
+		ff::packet pkt;
+		do
+		{
+			pkt = dem1.demux_next_packet();
+
+			if (pkt.destroyed())
+			{
+				// The demuxer has run out of packets.
+				break;
+			}
+
+			bool full = !dec1.feed_packet(pkt);
+			TEST_ASSERT_EQUALS(full, dec1.full(), "Should be consistent");
+
+			// Whether full or not, decode until it is hungry.
+			ff::frame f;
+			do
+			{
+				f = dec1.decode_frame();
+				// Check successfully decoded frames
+				if (!f.destroyed())
+				{
+					TEST_ASSERT_TRUE(f.ready(), "Decoded frames should be ready.");
+					// Check the properties
+					auto fdp = f.get_data_properties();
+					TEST_ASSERT_TRUE(!fdp.v_or_a, "Should got the type right.");
+					TEST_ASSERT_EQUALS(dp.a_sample_format(), fdp.fmt, "Should get the properties right.");
+					TEST_ASSERT_EQUALS(dp.a_channel_layout().nb_channels, fdp.a_ch_layout()->nb_channels, "Should get the properties right.");
+					TEST_ASSERT_EQUALS(dp.a_channel_layout().order, fdp.a_ch_layout()->order, "Should get the properties right.");
+				}
+			} while (!dec1.hungry()); 
+			// Note the above loop uses hungry() while the one in the video decoding test
+			// uses f.destroyed(). They should mean the same now.
+
+			// the decoder must be hungry again.
+			TEST_ASSERT_TRUE(f.destroyed() && !dec1.full(), "Must be hungry now.");
+
+		} while (!dem1.eof());
+
+		// EOF from the demuxer. No more packets will be fed to the decoder.
+		dec1.signal_no_more_food();
+
+		TEST_ASSERT_TRUE(dec1.no_more_food(), "It must have responded to my signal.");
+		TEST_ASSERT_FALSE(dec1.hungry(), "It cannot be hungry at this state.");
+
+		// Drain all frames from its stomach.
+		ff::frame f;
+		do
+		{
+			f = dec1.decode_frame();
+			// Check successfully decoded frames
+			if (!f.destroyed())
+			{
+				TEST_ASSERT_TRUE(f.ready(), "Decoded frames should be ready.");
+				// Check the properties
+				auto fdp = f.get_data_properties();
+				TEST_ASSERT_TRUE(!fdp.v_or_a, "Should got the type right.");
+				TEST_ASSERT_EQUALS(dp.a_sample_format(), fdp.fmt, "Should get the properties right.");
+				TEST_ASSERT_EQUALS(dp.a_channel_layout().nb_channels, fdp.a_ch_layout()->nb_channels, "Should get the properties right.");
+				TEST_ASSERT_EQUALS(dp.a_channel_layout().order, fdp.a_ch_layout()->order, "Should get the properties right.");
+			}
+		} while (!f.destroyed());
+	}
+
+	// Copying a decoder is forbidden/deleted
+	
 	// Test moving
 	{
+		// moving a created decoder
+		ff::decoder d1("opus");
+		ff::decoder m1(std::move(d1));
+		TEST_ASSERT_TRUE(m1.created(), "Should get the status.");
+		TEST_ASSERT_EQUALS(AVCodecID::AV_CODEC_ID_OPUS, m1.get_id(), "Should get the desc.");
+		TEST_ASSERT_EQUALS(std::string("opus"), m1.get_name(), "Should get the desc.");
+		TEST_ASSERT_TRUE(d1.destroyed(), "Moved should be destroyed");
 
+		// moving a ready decoder
+		ff::decoder d2(AVCodecID::AV_CODEC_ID_JPEG2000);
+		d2.create_codec_context();
+		ff::decoder m2(std::move(d2));
+		TEST_ASSERT_TRUE(m2.ready(), "Should get the status.");
+		TEST_ASSERT_EQUALS(AVCodecID::AV_CODEC_ID_JPEG2000, m2.get_id(), "Should get the desc.");
+		TEST_ASSERT_TRUE(d2.destroyed(), "Moved should be destroyed");
+
+		m2 = std::move(m1);
+		TEST_ASSERT_TRUE(m2.created(), "Should get the status.");
+		TEST_ASSERT_EQUALS(AVCodecID::AV_CODEC_ID_OPUS, m2.get_id(), "Should get the desc.");
+		TEST_ASSERT_EQUALS(std::string("opus"), m2.get_name(), "Should get the desc.");
+		TEST_ASSERT_TRUE(d1.destroyed(), "Moved should be destroyed");
+	}
+
+	// Test resetting
+	{
+		fs::path test1_path(working_dir / "decoder_test1.mp4");
+		std::string test1_path_str(test1_path.generic_string());
+		// Already created.
+		//create_test_video(test1_path_str, "libx265", "green", 800, 600, 24, 5);
+		ff::demuxer dem1(test1_path_str.c_str());
+
+		// Create the decoder from ID.
+		ff::stream vs = dem1.get_stream(0);
+		ff::decoder dec1(vs.codec_id());
+
+		// Although the recommendation is to only set the needed ones and leave others their default values,
+		// libx265 really needs some extra data that is hard to copy by hand.
+		// So I make a full copy here.
+		auto sp = vs.properties();
+		dec1.set_codec_properties(sp);
+
+		// Create the decoder context so it can be ready.
+		dec1.create_codec_context();
+		auto dp = dec1.get_codec_properties();
+
+		// Test resetting after draining is completed
+		
+		// First decoding 
+		ff::packet pkt;
+		do
+		{
+			pkt = dem1.demux_next_packet();
+
+			if (pkt.destroyed())
+			{
+				// The demuxer has run out of packets.
+				break;
+			}
+
+			bool full = !dec1.feed_packet(pkt);
+
+			// Whether full or not, decode until it is hungry.
+			ff::frame f;
+			do
+			{
+				f = dec1.decode_frame();
+			} while (!f.destroyed());
+
+		} while (!dem1.eof());
+
+		// EOF from the demuxer. No more packets will be fed to the decoder.
+		dec1.signal_no_more_food();
+
+		// Drain all frames from its stomach.
+		ff::frame f;
+		do
+		{
+			f = dec1.decode_frame();
+		} while (!f.destroyed());
+
+		// Now reset the decoder.
+		dec1.reset();
+		// Let the demuxer seek backwards to somewhere near the start
+		dem1.seek(0, 1, false);
+
+		TEST_ASSERT_TRUE(dec1.hungry(), "Should be hungry after a reset.");
+		TEST_ASSERT_FALSE(dec1.full(), "Should not be full after a reset.");
+		TEST_ASSERT_FALSE(dec1.no_more_food(), "I have not signaled it after a reset.");
+
+		// decode again and test the decoded frames
+		bool first_frame = true;
+		do
+		{
+			pkt = dem1.demux_next_packet();
+
+			if (pkt.destroyed())
+			{
+				// The demuxer has run out of packets.
+				break;
+			}
+
+			bool full = !dec1.feed_packet(pkt);
+			TEST_ASSERT_EQUALS(full, dec1.full(), "Should be consistent");
+
+			// Whether full or not, decode until it is hungry.
+			ff::frame f;
+			do
+			{
+				f = dec1.decode_frame();
+				// Check successfully decoded frames
+				if (!f.destroyed())
+				{
+					TEST_ASSERT_TRUE(f.ready(), "Decoded frames should be ready.");
+					// Check the properties
+					auto fdp = f.get_data_properties();
+					if (first_frame)
+					{
+						TEST_ASSERT_TRUE(f.av_frame()->pts <= 1, "Should start after the seeked position.");
+						first_frame = false;
+					}
+					TEST_ASSERT_TRUE(fdp.v_or_a, "Should got the type right.");
+					TEST_ASSERT_EQUALS(dp.v_pixel_format(), fdp.fmt, "Should get the properties right.");
+					TEST_ASSERT_EQUALS(dp.v_width(), fdp.v_width(), "Should get the properties right.");
+					TEST_ASSERT_EQUALS(dp.v_height(), fdp.v_height(), "Should get the properties right.");
+				}
+			} while (!dec1.hungry());
+
+			// the decoder must be hungry again.
+			TEST_ASSERT_TRUE(f.destroyed() && !dec1.full(), "Must be hungry now.");
+
+		} while (!dem1.eof());
+		
+		// Now without signaling no_more_food,
+		// reset the decoder.
+		dec1.reset();
+		// Seek the demuxer again.
+		dem1.seek(0, 24, false);
+
+		TEST_ASSERT_TRUE(dec1.hungry(), "Should be hungry after a reset.");
+		TEST_ASSERT_FALSE(dec1.full(), "Should not be full after a reset.");
+		TEST_ASSERT_FALSE(dec1.no_more_food(), "I have not signaled it after a reset.");
+
+		// Decode again and test the decoded frames
+		first_frame = true;
+		do
+		{
+			pkt = dem1.demux_next_packet();
+
+			if (pkt.destroyed())
+			{
+				// The demuxer has run out of packets.
+				break;
+			}
+
+			bool full = !dec1.feed_packet(pkt);
+			TEST_ASSERT_EQUALS(full, dec1.full(), "Should be consistent");
+
+			// Whether full or not, decode until it is hungry.
+			ff::frame f;
+			do
+			{
+				f = dec1.decode_frame();
+				// Check successfully decoded frames
+				if (!f.destroyed())
+				{
+					TEST_ASSERT_TRUE(f.ready(), "Decoded frames should be ready.");
+					// Check the properties
+					auto fdp = f.get_data_properties();
+					if (first_frame)
+					{
+						TEST_ASSERT_TRUE(f.av_frame()->pts <= 1, "Should start after the seeked position.");
+						first_frame = false;
+					}
+					TEST_ASSERT_TRUE(fdp.v_or_a, "Should got the type right.");
+					TEST_ASSERT_EQUALS(dp.v_pixel_format(), fdp.fmt, "Should get the properties right.");
+					TEST_ASSERT_EQUALS(dp.v_width(), fdp.v_width(), "Should get the properties right.");
+					TEST_ASSERT_EQUALS(dp.v_height(), fdp.v_height(), "Should get the properties right.");
+				}
+			} while (!f.destroyed());
+
+			// the decoder must be hungry again.
+			TEST_ASSERT_TRUE(dec1.hungry() && !dec1.full(), "Must be hungry now.");
+
+		} while (!dem1.eof());
 	}
 
 	return 0;
