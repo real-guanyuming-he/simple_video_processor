@@ -238,8 +238,8 @@ int main()
 					auto fdp = f.get_data_properties();
 					TEST_ASSERT_TRUE(fdp.v_or_a, "Should got the type right.");
 					TEST_ASSERT_EQUALS(dp.v_pixel_format(), fdp.fmt, "Should get the properties right.");
-					TEST_ASSERT_EQUALS(dp.v_width(), fdp.v_width(), "Should get the properties right.");
-					TEST_ASSERT_EQUALS(dp.v_height(), fdp.v_height(), "Should get the properties right.");
+					TEST_ASSERT_EQUALS(dp.v_width(), fdp.width, "Should get the properties right.");
+					TEST_ASSERT_EQUALS(dp.v_height(), fdp.height, "Should get the properties right.");
 				}
 			} while (!f.destroyed());
 
@@ -267,8 +267,8 @@ int main()
 				auto fdp = f.get_data_properties();
 				TEST_ASSERT_TRUE(fdp.v_or_a, "Should got the type right.");
 				TEST_ASSERT_EQUALS(dp.v_pixel_format(), fdp.fmt, "Should get the properties right.");
-				TEST_ASSERT_EQUALS(dp.v_width(), fdp.v_width(), "Should get the properties right.");
-				TEST_ASSERT_EQUALS(dp.v_height(), fdp.v_height(), "Should get the properties right.");
+				TEST_ASSERT_EQUALS(dp.v_width(), fdp.width, "Should get the properties right.");
+				TEST_ASSERT_EQUALS(dp.v_height(), fdp.height, "Should get the properties right.");
 			}
 		} while (!f.destroyed());
 	}
@@ -304,7 +304,7 @@ int main()
 		TEST_ASSERT_EQUALS(ap.type(), dp.type(), "Should really have set the properties.");
 		TEST_ASSERT_EQUALS(ap.a_sample_format(), dp.a_sample_format(), "Should really have set the properties.");
 		TEST_ASSERT_EQUALS(ap.a_sample_rate(), dp.a_sample_rate(), "Should really have set the properties.");
-		TEST_ASSERT_EQUALS(ap.a_channel_layout().nb_channels, dp.a_channel_layout().nb_channels, "Should really have set the properties.");
+		TEST_ASSERT_EQUALS(ap.a_channel_layout(), dp.a_channel_layout(), "Should really have set the properties.");
 	
 		// The decoding process.
 		TEST_ASSERT_TRUE(dec1.hungry(), "Should be hungry initially.");
@@ -338,8 +338,7 @@ int main()
 					auto fdp = f.get_data_properties();
 					TEST_ASSERT_TRUE(!fdp.v_or_a, "Should got the type right.");
 					TEST_ASSERT_EQUALS(dp.a_sample_format(), fdp.fmt, "Should get the properties right.");
-					TEST_ASSERT_EQUALS(dp.a_channel_layout().nb_channels, fdp.a_ch_layout()->nb_channels, "Should get the properties right.");
-					TEST_ASSERT_EQUALS(dp.a_channel_layout().order, fdp.a_ch_layout()->order, "Should get the properties right.");
+					TEST_ASSERT_EQUALS(dp.a_channel_layout(), fdp.ch_layout, "Should get the properties right.");
 				}
 			} while (!dec1.hungry()); 
 			// Note the above loop uses hungry() while the one in the video decoding test
@@ -369,8 +368,7 @@ int main()
 				auto fdp = f.get_data_properties();
 				TEST_ASSERT_TRUE(!fdp.v_or_a, "Should got the type right.");
 				TEST_ASSERT_EQUALS(dp.a_sample_format(), fdp.fmt, "Should get the properties right.");
-				TEST_ASSERT_EQUALS(dp.a_channel_layout().nb_channels, fdp.a_ch_layout()->nb_channels, "Should get the properties right.");
-				TEST_ASSERT_EQUALS(dp.a_channel_layout().order, fdp.a_ch_layout()->order, "Should get the properties right.");
+				TEST_ASSERT_EQUALS(dp.a_channel_layout(), fdp.ch_layout, "Should get the properties right.");
 			}
 		} while (!f.destroyed());
 	}
@@ -501,8 +499,8 @@ int main()
 					}
 					TEST_ASSERT_TRUE(fdp.v_or_a, "Should got the type right.");
 					TEST_ASSERT_EQUALS(dp.v_pixel_format(), fdp.fmt, "Should get the properties right.");
-					TEST_ASSERT_EQUALS(dp.v_width(), fdp.v_width(), "Should get the properties right.");
-					TEST_ASSERT_EQUALS(dp.v_height(), fdp.v_height(), "Should get the properties right.");
+					TEST_ASSERT_EQUALS(dp.v_width(), fdp.width, "Should get the properties right.");
+					TEST_ASSERT_EQUALS(dp.v_height(), fdp.height, "Should get the properties right.");
 				}
 			} while (!dec1.hungry());
 
@@ -554,8 +552,8 @@ int main()
 					}
 					TEST_ASSERT_TRUE(fdp.v_or_a, "Should got the type right.");
 					TEST_ASSERT_EQUALS(dp.v_pixel_format(), fdp.fmt, "Should get the properties right.");
-					TEST_ASSERT_EQUALS(dp.v_width(), fdp.v_width(), "Should get the properties right.");
-					TEST_ASSERT_EQUALS(dp.v_height(), fdp.v_height(), "Should get the properties right.");
+					TEST_ASSERT_EQUALS(dp.v_width(), fdp.width, "Should get the properties right.");
+					TEST_ASSERT_EQUALS(dp.v_height(), fdp.height, "Should get the properties right.");
 				}
 			} while (!f.destroyed());
 

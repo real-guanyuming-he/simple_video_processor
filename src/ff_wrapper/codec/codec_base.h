@@ -30,6 +30,8 @@ struct AVCodecContext;
 
 namespace ff
 {
+	class channel_layout;
+
 	/*
 	* Encapsulates the basic functions of a FFmpeg codec.
 	* Derived classes can only be either a decoder or an encoder.
@@ -200,9 +202,7 @@ namespace ff
 		* @throws std::logic_error if the codec is not for audios.
 		* @throws std::domain_error if the codec does not know the supported values.
 		*/
-		bool is_a_channel_layout_supported(const ::AVChannelLayout& layout) const;
-
-		
+		bool is_a_channel_layout_supported(const channel_layout& layout) const;
 
 		/*
 		* @returns the properties of the codec, which describes how decoding/encoding is done.

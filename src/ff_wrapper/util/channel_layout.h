@@ -28,7 +28,15 @@ namespace ff
 	* 
 	* IT CAN BE RATHER INCONVENIENT TO USE SOMETIMES.
 	* CHOOSE TO USE IT OR NOT YOURSELF DEPENDING ON THE SITUATION.
-	* AT LEAST I DON'T USE IT IN MY WRAPPER'S INTERNAL CODE.
+	* To give an example of the inconvenience,
+	* FFmpeg internal structs like AVCodecParameters store an object of AVChannelLayout directly inside.
+	* To make an object of my wrapper out of one these AVChannelLayout objects,
+	* I must make a copy, because I cannot directly reinterpret_cast a ptr/ref to the object.
+	* Accessing such a ptr/ref would be an undefined behaviour, 
+	as this wrapper is not similar to AVChannelLayout and the access is not one of 
+	* [basic.lval/11] in ISO/IEC 14882:2020.
+	* DON'T USE IT WHEN UNNECESSARY. E.g. I provide a_channel_layout_ref in codec_properties
+	* that returns a ref to AVChannelLayout directly.
 	* 
 	* Represents an audio channel layout.
 	* Encapsulates AVChannelLayout.
@@ -145,14 +153,33 @@ namespace ff
 		*/
 		channel_layout& operator=(const channel_layout& right);
 
-		// Does not support moving.
-		channel_layout(channel_layout&&) = delete;
-		channel_layout& operator=(channel_layout&&) = delete;
+		/*
+		* Takes over other, and set other's order to native,
+		* so that other won't be uninited by av_channel_layout_uninit(&cl).
+		*/
+		inline channel_layout(channel_layout&& other) noexcept
+			: cl(other.cl)
+		{
+			other.cl.order = AV_CHANNEL_ORDER_NATIVE;
+		}
+
+		/*
+		* Uninits self,
+		* takes over right, and set right's order to native,
+		* so that right won't be uninited by av_channel_layout_uninit(&cl).
+		*/
+		inline channel_layout& operator=(channel_layout&& right) noexcept
+		{
+			av_channel_layout_uninit(&cl);
+			cl = right.cl;
+			right.cl.order = AV_CHANNEL_ORDER_NATIVE;
+			return *this;
+		}
 
 		/*
 		* The channel layout must be unitialized with av_channel_layout_uninit()
 		*/
-		inline ~channel_layout()
+		inline ~channel_layout() noexcept
 		{
 			av_channel_layout_uninit(&cl);
 		}
@@ -160,11 +187,30 @@ namespace ff
 	public:
 		// @returns if the two channel layouts are equal
 		bool operator==(const channel_layout& right) const noexcept(FF_ASSERTION_DISABLED);
+		// @returns if the two channel layouts are equal
+		bool operator==(const AVChannelLayout& right) const noexcept;
 
 		AVChannelLayout& av_ch_layout() { return cl; }
 		const AVChannelLayout& av_ch_layout() const { return cl; }
 
+	public:
+		/*
+		* Copy this to dst.
+		* Does free dst before copying.
+		*/
+		inline void set_av_channel_layout(AVChannelLayout& dst) const;
+
 	private:
 		AVChannelLayout cl;
 	};
+}
+
+// Some global operators
+inline bool FF_WRAPPER_API operator==(const AVChannelLayout& left, const ff::channel_layout& right) noexcept
+{
+	return right == left;
+}
+inline bool FF_WRAPPER_API operator==(const AVChannelLayout& left, const AVChannelLayout& right) noexcept
+{
+	return !av_channel_layout_compare(&left, &right);
 }

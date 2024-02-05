@@ -229,3 +229,33 @@ bool ff::channel_layout::operator==(const channel_layout& right) const noexcept(
 
 	return false;
 }
+
+bool ff::channel_layout::operator==(const AVChannelLayout& right) const noexcept
+{
+	int ret = av_channel_layout_compare(&cl, &right);
+
+	if (0 == ret) // Equal
+	{
+		return true;
+	}
+	else // Nonequal or error.
+	{
+		// But I don't care about errors in this method.
+		return false;
+	}
+}
+
+inline void ff::channel_layout::set_av_channel_layout(AVChannelLayout& dst) const
+{
+	int ret = av_channel_layout_copy(&dst, &cl);
+	if (ret < 0)
+	{
+		switch (ret)
+		{
+		case AVERROR(ENOMEM):
+			throw std::bad_alloc();
+		default:
+			ON_FF_ERROR_WITH_CODE("Unexpected error: could not copy channel layout", ret);
+		}
+	}
+}

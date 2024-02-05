@@ -17,13 +17,12 @@
 
 #include "../util/util.h"
 #include "../util/ff_object.h"
+#include "../util/channel_layout.h"
 
 extern "C"
 {
 #include <libavutil/frame.h> // For those enums
 }
-
-struct AVChannelLayout;
 
 namespace ff
 {
@@ -53,53 +52,37 @@ namespace ff
 	class FF_WRAPPER_API frame : public ff_object
 	{
 	public:
+		/*
+		* This struct independently determines how much space is needed for the data of a frame.
+		*/
 		struct data_properties
 		{
+			data_properties() = delete;
+
 			/*
 			* Set up properties for video frame data.
 			*/
-			inline constexpr data_properties(int f, int w, int h, int align = 0) noexcept
+			inline data_properties(int f, int w, int h, int align = 0) noexcept
 				: v_or_a(true), fmt(f), align(align),
-				details(w, h) {}
+				width(w), height(h) {}
 
 			/*
 			* Set up properties for audio sample data.
 			*/
-			inline data_properties(int f, int num, const AVChannelLayout& ch_layout, int align = 0) noexcept
+			inline data_properties(int f, int num, const channel_layout& ch_layout, int align = 0) noexcept
 				: v_or_a(false), fmt(f), align(align),
-				details(num, ch_layout) {}
-
-			constexpr int v_width()			const noexcept { return details.v.width; }
-			constexpr int v_height()		const noexcept { return details.v.height; }
-
-			int						a_num_samples()	const noexcept { return details.a.num_samples; }
-			const AVChannelLayout*	a_ch_layout()	const noexcept { return details.a.ch_layout_ref; }
-
-			union d
-			{
-				inline constexpr d(int w, int h)
-					: v{ .width = w,.height = h } {}
-				inline d(int num, const AVChannelLayout& ch)
-					: a{ .ch_layout_ref = &ch, .num_samples = num } {}
-
-				struct
-				{
-					const AVChannelLayout* ch_layout_ref;
-					int num_samples;
-				} a;
-
-				struct
-				{
-					int width;
-					int height;
-				} v;
-			} details;
+				num_samples(num), ch_layout(ch_layout) {}
 
 			// Pixel format or audio sample format, depending on v_or_a.
 			int fmt;
 			// Alignment of the buffer. Set to 0 to automatically choose one for the current CPU. 
 			// It is highly recommended to give 0 here unless you know what you are doing.
 			int align;
+
+			// Video only
+			int width = 0, height = 0;
+			// Audio only
+			channel_layout ch_layout; int num_samples = 0;
 
 			bool v_or_a;
 		};

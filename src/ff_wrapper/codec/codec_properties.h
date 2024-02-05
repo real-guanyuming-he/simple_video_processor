@@ -17,6 +17,7 @@
 
 #include "../util/util.h"
 #include "../util/ff_math.h"
+#include "../util/channel_layout.h"
 
 extern "C"
 {
@@ -97,7 +98,8 @@ namespace ff
 
 		inline AVSampleFormat			a_sample_format()	const noexcept { return (AVSampleFormat)p_params->format; }
 		inline int						a_sample_rate()		const noexcept { return p_params->sample_rate; }
-		inline const AVChannelLayout&	a_channel_layout()	const noexcept { return p_params->ch_layout; }
+		inline const AVChannelLayout&	a_channel_layout_ref()	const noexcept { return p_params->ch_layout; }
+		inline channel_layout			a_channel_layout()		const noexcept { return ff::channel_layout(p_params->ch_layout); }
 
 		/*
 		* @returns The sample aspect ratio (w/h). Or -1/1 if unknown.
@@ -135,7 +137,7 @@ namespace ff
 		* Frees current ch layout and copies ch to it.
 		* @param ch the new channel layout.
 		*/
-		void set_a_channel_layout(const AVChannelLayout& ch);
+		void set_a_channel_layout(const channel_layout& ch);
 
 	private:
 		class ::AVCodecParameters* p_params;

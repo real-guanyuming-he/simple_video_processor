@@ -43,6 +43,9 @@ set(FFWrapperSourceFiles
     "${SrcFFWrapperUtilPath}/util.h"
     "${SrcFFWrapperUtilPath}/dict.h"
     "${SrcFFWrapperUtilPath}/dict.cpp"
+    # Put these two here because FFmpeg put channel layout in libavutil
+    "${SrcFFWrapperUtilPath}/channel_layout.h"
+    "${SrcFFWrapperUtilPath}/channel_layout.cpp"
 # Data
     "${SrcFFWrapperDataPath}/packet.h"
     "${SrcFFWrapperDataPath}/packet.cpp"

@@ -15,6 +15,7 @@
 */
 #include "codec_properties.h"
 #include "../util/ff_helpers.h"
+#include "../util/channel_layout.h"
 
 extern "C"
 {
@@ -104,20 +105,7 @@ ff::codec_properties::codec_properties(const codec_properties& other)
 	}
 }
 
-void ff::codec_properties::set_a_channel_layout(const AVChannelLayout& ch)
+void ff::codec_properties::set_a_channel_layout(const channel_layout& ch)
 {
-	// This does free its destination.
-	int ret = av_channel_layout_copy(&p_params->ch_layout, &ch);
-	if (ret < 0)
-	{
-		switch (ret)
-		{
-		case AVERROR(ENOMEM):
-			throw std::bad_alloc();
-			break;
-		default:
-			ON_FF_ERROR_WITH_CODE("Unexpected error: Could not copy AVChannelLayout", ret);
-			break;
-		}
-	}
+	ch.set_av_channel_layout(p_params->ch_layout);
 }

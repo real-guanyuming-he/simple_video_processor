@@ -44,7 +44,7 @@ ff::frame::data_properties ff::frame::get_data_properties() const
 		return data_properties
 		(
 			p_frame->format,
-			p_frame->nb_samples, p_frame->ch_layout
+			p_frame->nb_samples, ff::channel_layout(p_frame->ch_layout)
 		);
 	}
 }
@@ -82,19 +82,13 @@ void ff::frame::internal_allocate_resources_memory(uint64_t size, void* addition
 	p_frame->format = dp.fmt;
 	if (dp.v_or_a) // Video
 	{
-		p_frame->width = dp.details.v.width;
-		p_frame->height = dp.details.v.height;
+		p_frame->width = dp.width;
+		p_frame->height = dp.height;
 	}
 	else // Audio
 	{
-		p_frame->nb_samples = dp.details.a.num_samples;
-		// The doc forbids copying by assignment.
-		// p_frame->ch_layout = dp.details.a.ch_layout;
-		// Instead, use
-		if (av_channel_layout_copy(&p_frame->ch_layout, dp.details.a.ch_layout_ref) < 0)
-		{
-			throw std::bad_alloc();
-		}
+		p_frame->nb_samples = dp.num_samples;
+		dp.ch_layout.set_av_channel_layout(p_frame->ch_layout);
 	}
 
 	int ret = av_frame_get_buffer(p_frame, dp.align);

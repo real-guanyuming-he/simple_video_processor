@@ -80,8 +80,8 @@ int main()
 		TEST_ASSERT_EQUALS(f3np, m3np, "Should equal");
 		TEST_ASSERT_EQUALS(f3dp.v_or_a, m3dp.v_or_a, "Should equal");
 		TEST_ASSERT_EQUALS(f3dp.fmt, m3dp.fmt, "Should equal");
-		TEST_ASSERT_EQUALS(f3dp.details.v.height, m3dp.details.v.height, "Should equal");
-		TEST_ASSERT_EQUALS(f3dp.details.v.width, m3dp.details.v.width, "Should equal");
+		TEST_ASSERT_EQUALS(f3dp.height, m3dp.height, "Should equal");
+		TEST_ASSERT_EQUALS(f3dp.width, m3dp.width, "Should equal");
 
 		// Move ass operator
 		m3 = std::move(m2);
@@ -123,8 +123,8 @@ int main()
 		TEST_ASSERT_EQUALS(f3np, c3np, "Should equal");
 		TEST_ASSERT_EQUALS(f3dp.v_or_a, c3dp.v_or_a, "Should equal");
 		TEST_ASSERT_EQUALS(f3dp.fmt, c3dp.fmt, "Should equal");
-		TEST_ASSERT_EQUALS(f3dp.details.v.height, c3dp.details.v.height, "Should equal");
-		TEST_ASSERT_EQUALS(f3dp.details.v.width, c3dp.details.v.width, "Should equal");
+		TEST_ASSERT_EQUALS(f3dp.height, c3dp.height, "Should equal");
+		TEST_ASSERT_EQUALS(f3dp.width, c3dp.width, "Should equal");
 		auto c3d = c3.data();
 		for (int i = 0; i < 800; ++i)
 		{
@@ -135,8 +135,8 @@ int main()
 		TEST_ASSERT_EQUALS(f3np, f3np_now, "Should not change the copied");
 		TEST_ASSERT_EQUALS(f3dp.v_or_a, f3dp_now.v_or_a, "Should not change the copied");
 		TEST_ASSERT_EQUALS(f3dp.fmt, f3dp_now.fmt, "Should not change the copied");
-		TEST_ASSERT_EQUALS(f3dp.details.v.height, f3dp_now.details.v.height, "Should not change the copied");
-		TEST_ASSERT_EQUALS(f3dp.details.v.width, f3dp_now.details.v.width, "Should not change the copied");
+		TEST_ASSERT_EQUALS(f3dp.height, f3dp_now.height, "Should not change the copied");
+		TEST_ASSERT_EQUALS(f3dp.width, f3dp_now.width, "Should not change the copied");
 		*(static_cast<uint8_t*>(c3d) + 5) = 9;
 		TEST_ASSERT_EQUALS((5 + 1) % 256, *(static_cast<uint8_t*>(f3.data()) + 5), "Should deeply copy the data");
 	}
@@ -159,8 +159,8 @@ int main()
 		TEST_ASSERT_TRUE(f1.ready(), "Should be ready now");
 		TEST_ASSERT_EQUALS(dp1.v_or_a, f1dp.v_or_a, "Should equal");
 		TEST_ASSERT_EQUALS(dp1.fmt, f1dp.fmt, "Should equal");
-		TEST_ASSERT_EQUALS(dp1.details.v.height, f1dp.details.v.height, "Should equal");
-		TEST_ASSERT_EQUALS(dp1.details.v.width, f1dp.details.v.width, "Should equal");
+		TEST_ASSERT_EQUALS(dp1.height, f1dp.height, "Should equal");
+		TEST_ASSERT_EQUALS(dp1.width, f1dp.width, "Should equal");
 
 		TEST_ASSERT_TRUE(f1.number_planes() > 0, "Should have data.");
 		TEST_ASSERT_TRUE(std::abs(f1.line_size()) >= 1280, "Should have data");
@@ -173,8 +173,8 @@ int main()
 		// Audio allocation
 		ff::frame::data_properties dp2
 		(
-			AVSampleFormat::AV_SAMPLE_FMT_S16, 144, 
-			AVChannelLayout AV_CHANNEL_LAYOUT_STEREO
+			AVSampleFormat::AV_SAMPLE_FMT_S16, 144,
+			ff::channel_layout(AV_CHANNEL_LAYOUT_STEREO)
 		);
 		ff::frame f2(true);
 
@@ -184,9 +184,9 @@ int main()
 		TEST_ASSERT_TRUE(f2.ready(), "Should be ready now");
 		TEST_ASSERT_EQUALS(dp2.v_or_a, f2dp.v_or_a, "Should equal");
 		TEST_ASSERT_EQUALS(dp2.fmt, f2dp.fmt, "Should equal");
-		TEST_ASSERT_EQUALS(dp2.details.a.num_samples, f2dp.details.a.num_samples, "Should equal");
+		TEST_ASSERT_EQUALS(dp2.num_samples, f2dp.num_samples, "Should equal");
 		// Can't assert so
-		//TEST_ASSERT_EQUALS(dp2.details.a.ch_layout_ref, f2dp.details.a.ch_layout_ref, "Should equal");
+		//TEST_ASSERT_EQUALS(dp2.ch_layout_ref, f2dp.ch_layout_ref, "Should equal");
 
 		TEST_ASSERT_TRUE(f2.number_planes() > 0, "Should have data.");
 		TEST_ASSERT_TRUE(f2.line_size() != 0, "Should have data");
@@ -221,8 +221,8 @@ int main()
 		TEST_ASSERT_EQUALS(f3np, r3np, "Should equal");
 		TEST_ASSERT_EQUALS(f3dp.v_or_a, r3dp.v_or_a, "Should equal");
 		TEST_ASSERT_EQUALS(f3dp.fmt, r3dp.fmt, "Should equal");
-		TEST_ASSERT_EQUALS(f3dp.details.v.height, r3dp.details.v.height, "Should equal");
-		TEST_ASSERT_EQUALS(f3dp.details.v.width, r3dp.details.v.width, "Should equal");
+		TEST_ASSERT_EQUALS(f3dp.height, r3dp.height, "Should equal");
+		TEST_ASSERT_EQUALS(f3dp.width, r3dp.width, "Should equal");
 		auto r3d = r3.data();
 		for (int i = 0; i < 1920; ++i)
 		{
@@ -235,8 +235,8 @@ int main()
 		TEST_ASSERT_EQUALS(f3np, f3np_now, "Should not change the src's state");
 		TEST_ASSERT_EQUALS(f3dp.v_or_a, f3dp_now.v_or_a, "Should not change the src's state");
 		TEST_ASSERT_EQUALS(f3dp.fmt, f3dp_now.fmt, "Should not change the src's state");
-		TEST_ASSERT_EQUALS(f3dp.details.v.height, f3dp_now.details.v.height, "Should not change the src's state");
-		TEST_ASSERT_EQUALS(f3dp.details.v.width, f3dp_now.details.v.width, "Should not change the src's state");
+		TEST_ASSERT_EQUALS(f3dp.height, f3dp_now.height, "Should not change the src's state");
+		TEST_ASSERT_EQUALS(f3dp.width, f3dp_now.width, "Should not change the src's state");
 
 		auto f3d = f3.data();
 		for (int i = 0; i < 1920; ++i)
@@ -252,7 +252,7 @@ int main()
 		ff::frame::data_properties dp1
 		(
 			AVSampleFormat::AV_SAMPLE_FMT_DBL, 1200,
-			AVChannelLayout AV_CHANNEL_LAYOUT_SURROUND
+			ff::channel_layout(AV_CHANNEL_LAYOUT_SURROUND)
 		);
 		f1.allocate_data(dp1);
 		f1.clear_data();
