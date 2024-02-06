@@ -54,10 +54,17 @@ namespace ff
 		* Inits from a pointer of the internal AVCodecParameters.
 		* 
 		* @param p a pointer of the internal AVCodecParameters
+		* @param time_base the time base for a codec. Can be zero. Default it zero.
+		* Decoders mostly do not use a time base, but most encoders do.
 		* @param take_over if true then I will simply copy the pointer, which means the life
 		* of the object is in this class's hand. If false I will make a copy of the parameters.
 		*/
-		explicit codec_properties(::AVCodecParameters* p, bool take_over = false);
+		explicit codec_properties
+		(
+			::AVCodecParameters* p, 
+			ff::rational time_base = ff::zero_rational, 
+			bool take_over = false
+		);
 
 		/*
 		* Copies properties from an existing decoder/encoder
@@ -72,7 +79,7 @@ namespace ff
 		* Takes other's pointer and set other's to nullptr
 		*/
 		inline codec_properties(codec_properties&& other) noexcept
-			: p_params(other.p_params)
+			: p_params(other.p_params), tb(other.tb)
 		{
 			other.p_params = nullptr;
 		}
@@ -82,10 +89,15 @@ namespace ff
 		inline const ::AVCodecParameters* av_codec_parameters() const noexcept { return p_params; }
 
 	public:
+		// Get common fields
+
 		inline AVMediaType	type()				const noexcept { return p_params->codec_type; }
 		inline bool			is_video()			const noexcept { return AVMEDIA_TYPE_VIDEO == p_params->codec_type; }
 		inline bool			is_audio()			const noexcept { return AVMEDIA_TYPE_AUDIO == p_params->codec_type; }
 		inline bool			is_subtitle()		const noexcept { return AVMEDIA_TYPE_SUBTITLE == p_params->codec_type; }
+		inline ff::rational time_base()			const noexcept { return tb; }
+
+		// Get video related fields
 
 		inline AVPixelFormat	v_pixel_format()	const noexcept { return (AVPixelFormat)p_params->format; }
 		inline int				v_width()			const noexcept { return p_params->width; }
@@ -95,6 +107,8 @@ namespace ff
 		inline AVColorSpace		v_color_space()		const noexcept { return p_params->color_space; }
 		inline AVColorPrimaries	v_color_primaries()	const noexcept { return p_params->color_primaries; }
 		inline AVChromaLocation	v_chroma_location()	const noexcept { return p_params->chroma_location; }
+
+		// Get audio related fields
 
 		inline AVSampleFormat			a_sample_format()	const noexcept { return (AVSampleFormat)p_params->format; }
 		inline int						a_sample_rate()		const noexcept { return p_params->sample_rate; }
@@ -115,10 +129,15 @@ namespace ff
 		}
 
 	public:
-		inline void set_type(AVMediaType type)	noexcept { p_params->codec_type = type; }
-		inline void set_type_video()			noexcept { p_params->codec_type = AVMEDIA_TYPE_VIDEO; }
-		inline void	set_type_audio()			noexcept { p_params->codec_type = AVMEDIA_TYPE_AUDIO; }
-		inline void	set_type_subtitle()			noexcept { p_params->codec_type = AVMEDIA_TYPE_SUBTITLE; }
+		// Set common fields
+
+		inline void set_type(AVMediaType type)		noexcept { p_params->codec_type = type; }
+		inline void set_type_video()				noexcept { p_params->codec_type = AVMEDIA_TYPE_VIDEO; }
+		inline void	set_type_audio()				noexcept { p_params->codec_type = AVMEDIA_TYPE_AUDIO; }
+		inline void	set_type_subtitle()				noexcept { p_params->codec_type = AVMEDIA_TYPE_SUBTITLE; }
+		inline void set_time_base(ff::rational b)	noexcept { tb = b; }
+
+		// Set video related fields
 
 		inline void set_v_pixel_format(AVPixelFormat f)			noexcept { p_params->format = f; }
 		inline void set_v_width(int w)							noexcept { p_params->width = w; }
@@ -129,6 +148,8 @@ namespace ff
 		inline void set_v_color_primaries(AVColorPrimaries cp)	noexcept { p_params->color_primaries = cp; }
 		inline void set_v_chroma_location(AVChromaLocation cl)	noexcept { p_params->chroma_location = cl; }
 		inline void set_v_aspect_ratio(ff::rational ar)			noexcept { p_params->sample_aspect_ratio = ar.av_rational(); }
+
+		// Set audio related fields
 
 		inline void set_a_sample_format(AVSampleFormat f)	noexcept { p_params->format = f; }
 		inline void set_a_sample_rate(int sr)				noexcept { p_params->sample_rate = sr; }
@@ -141,6 +162,8 @@ namespace ff
 
 	private:
 		class ::AVCodecParameters* p_params;
+		// Decoders mostly do not use a time base, but most encoders do.
+		ff::rational tb;
 	};
 
 }

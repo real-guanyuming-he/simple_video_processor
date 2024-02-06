@@ -36,7 +36,7 @@ namespace ff
 	public:
 		// Constructors must provide identification info for the decoder.
 		decoder() = delete;
-		
+
 		/*
 		* Identify the decoder by ID and find the description of the decoder.
 		* @throws std::invalid_argument if the no decoder of the ID can be found.
@@ -67,6 +67,30 @@ namespace ff
 		*/
 		~decoder() noexcept;
 
+	public:
+/////////////////////////////// The decoding process ///////////////////////////////
+		/*
+		* Feeds a packet (food) into the decoder.
+		* See the comments for codec_base for how to feed a decoder.
+		*
+		* @returns true if the packet has been fed successfully. false if
+		* the decoder is full or you have already declared no more packets will be fed.
+		* @throws std::logic_error if the decoder is not ready.
+		* @throws std::invalid_argument if the packet is not ready or if the packet does not agree with
+		* the properties of the decoder or with previous packets fed to it.
+		*/
+		bool feed_packet(const packet& pkt);
+
+		/*
+		* Decodes the next frame from the packets it has been fed.
+		* See the comments for codec_base for when to decode frames.
+		*
+		* @returns a frame decoded; a DESTROYED frame if the decoder is hungry, or
+		* if the decoder has nothing left in its stomach after you started draining it.
+		* @throws std::logic_error if the decoder is not ready.
+		*/
+		frame decode_frame();
+
 	private:
 /////////////////////////////// Derived from ff_object ///////////////////////////////
 		/*
@@ -77,54 +101,6 @@ namespace ff
 
 /////////////////////////////// Derived from codec_base ///////////////////////////////
 		void start_draining() override;
-
-	public:
-		/*
-		* Tell the decoder that no more packets will be fed to it.
-		*
-		* @throws std::logic_error if it's not ready().
-		* @throws std::logic_error if you have already signaled it.
-		* You can only signal it once per decoding.
-		*/
-		void signal_no_more_food() override;
-
-		/*
-		* After you believe a decoding process has completed or you no longer need it,
-		* call this to reset the decoder so that it can start decoding packets
-		* from a new stream with the same properties as the current decoder's codec_properties.
-		*
-		* You can call it even if you have not signal_no_more_food() --- if you
-		* just want to discard the current progress.
-		*
-		* After the call, hungry() = true, full() = false, and no_more_food() = false.
-		*
-		* @throws std::logic_error if it's not ready.
-		*/
-		void reset() override;
-
-	public:
-/////////////////////////////// The decoding process ///////////////////////////////
-		/*
-		* Feeds a packet into the decoder.
-		* See the comments for this class for how to feed a decoder.
-		* 
-		* @returns true if the packet has been fed successfully. false if 
-		* the decoder is full or you have already declared no more packets will be fed.
-		* @throws std::logic_error if the decoder is not ready.
-		* @throws std::invalid_argument if the packet is not ready or if the packet does not agree with 
-		* the properties of the decoder or with previous packets fed to it.
-		*/
-		bool feed_packet(const packet& pkt);
-
-		/*
-		* Decodes the next frame from the packets it has been fed.
-		* See the comments for this class for when to decode frames.
-		* 
-		* @returns a frame decoded; a DESTROYED frame if the decoder is hungry, or
-		* if the decoder has nothing left in its stomach after you started draining it.
-		* @throws std::logic_error if the decoder is not ready.
-		*/
-		frame decode_frame();
 	};
-	
+
 }

@@ -508,7 +508,7 @@ int main()
 			TEST_ASSERT_TRUE(f.destroyed() && !dec1.full(), "Must be hungry now.");
 
 		} while (!dem1.eof());
-		
+
 		// Now without signaling no_more_food,
 		// reset the decoder.
 		dec1.reset();
@@ -561,6 +561,132 @@ int main()
 			TEST_ASSERT_TRUE(dec1.hungry() && !dec1.full(), "Must be hungry now.");
 
 		} while (!dem1.eof());
+	}
+
+	// Full and hungry tests
+	{
+		fs::path test1_path(working_dir / "decoder_test1.mp4");
+		std::string test1_path_str(test1_path.generic_string());
+		// Already created.
+		//create_test_video(test1_path_str, "libx265", "green", 800, 600, 24, 5);
+		ff::demuxer dem1(test1_path_str.c_str());
+
+		// Create the decoder from ID.
+		ff::stream vs = dem1.get_stream(0);
+		ff::decoder dec1(vs.codec_id());
+
+		// Although the recommendation is to only set the needed ones and leave others their default values,
+		// libx265 really needs some extra data that is hard to copy by hand.
+		// So I make a full copy here.
+		auto sp = vs.properties();
+		dec1.set_codec_properties(sp);
+
+		// Create the decoder context so it can be ready.
+		dec1.create_codec_context();
+		auto dp = dec1.get_codec_properties();
+
+		// First, feed a decoder until it's full.
+		// And keep feeding it after that.
+		ff::packet pkt;
+		bool full = false;
+		do
+		{
+			pkt = dem1.demux_next_packet();
+
+			// If the demuxer reaches the end, seek to the start to keep feeding.
+			if (dem1.eof()) 
+			{
+				FF_ASSERT(pkt.destroyed(), "Should return a destroyed pkt when EOF.");
+				dem1.seek(0, 1, false);
+				continue;
+			}
+
+			full = !dec1.feed_packet(pkt);
+
+		} while (!dec1.full());
+
+		TEST_ASSERT_TRUE(full, "should be consistent");
+		// Now dec1.feed_packet(pkt); should keep returning false.
+		for (int i = 0; i < 10; ++i)
+		{
+			TEST_ASSERT_FALSE(dec1.feed_packet(pkt), "should not accept food while full.");
+		}
+		TEST_ASSERT_FALSE(dec1.hungry(), "Should not be hungry when full.");
+
+		// Now decode until it is hungry
+		ff::frame f;
+		while (!dec1.hungry())
+		{
+			f = dec1.decode_frame();
+		}
+		TEST_ASSERT_TRUE(dec1.hungry() && f.destroyed(), "should be hungry and return a destroyed frame.");
+
+		// Now keep decoding. It should keep returning a destroyed frame.
+		for (int i = 0; i < 10; ++i)
+		{
+			TEST_ASSERT_TRUE(dec1.decode_frame().destroyed(), "should not be able to decode when hungry.");
+		}
+		TEST_ASSERT_FALSE(dec1.full(), "Should not be full when hungry.");
+	}
+
+	// Test giving invalid packets
+	{
+		fs::path test1_path(working_dir / "decoder_test1.mp4");
+		std::string test1_path_str(test1_path.generic_string());
+		// Already created.
+		//create_test_video(test1_path_str, "libx265", "green", 800, 600, 24, 5);
+		ff::demuxer dem1(test1_path_str.c_str());
+
+		// Create the decoder from ID.
+		ff::stream vs = dem1.get_stream(0);
+		ff::decoder dec1(vs.codec_id());
+
+		// Although the recommendation is to only set the needed ones and leave others their default values,
+		// libx265 really needs some extra data that is hard to copy by hand.
+		// So I make a full copy here.
+		auto sp = vs.properties();
+		dec1.set_codec_properties(sp);
+
+		// Create the decoder context so it can be ready.
+		dec1.create_codec_context();
+		auto dp = dec1.get_codec_properties();
+
+		// First feed some valid packets and decode all of them to prevent the decoder from being full.
+		constexpr int num_decodings = 3;
+		int i = 0;
+		ff::packet pkt;
+		do
+		{
+			if (i >= num_decodings)
+			{
+				break;
+			}
+
+			pkt = dem1.demux_next_packet();
+
+			if (pkt.destroyed())
+			{
+				// The demuxer has run out of packets.
+				break;
+			}
+
+			// Whether full or not, decode until it is hungry.
+			do
+			{
+				dec1.decode_frame();
+			} while (!dec1.hungry());
+
+			++i;
+
+		} while (!dem1.eof());
+
+		// now feed invalid packets to it.
+		ff::packet inv_pkt(true);
+		inv_pkt.allocate_resources_memory(16);
+		inv_pkt->pts = -1;
+
+		// Try to feed the invalid pkt to the decoder.
+		TEST_ASSERT_THROWS(dec1.feed_packet(inv_pkt), std::invalid_argument);
 	}
 
 	return 0;

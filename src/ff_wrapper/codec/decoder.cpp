@@ -150,7 +150,7 @@ bool ff::decoder::feed_packet(const packet& pkt)
 		throw std::bad_alloc();
 		break;
 	case AVERROR(EINVAL):
-		throw std::runtime_error("The decoder has not been set up correctly. This should not happen.");
+		FF_ASSERT(false, "The decoder has not been set up correctly. This should not happen.");
 		break;
 	default:
 		// Other decoding errors.
@@ -203,7 +203,7 @@ ff::frame ff::decoder::decode_frame()
 		return ff::frame(false);
 		break;
 	case AVERROR(EINVAL):
-		throw std::runtime_error("The decoder has not been set up correctly. This should not happen.");
+		FF_ASSERT(false, "The decoder has not been set up correctly. This should not happen.");
 		break;
 	default:
 		// Other decoding errors.
@@ -212,16 +212,6 @@ ff::frame ff::decoder::decode_frame()
 	}
 	
 	return ff::frame(false);
-}
-
-void ff::decoder::signal_no_more_food()
-{
-	codec_base::signal_no_more_food();
-}
-
-void ff::decoder::reset()
-{
-	codec_base::reset();
 }
 
 void ff::decoder::start_draining()

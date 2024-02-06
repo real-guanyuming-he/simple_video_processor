@@ -43,7 +43,11 @@ ff::packet::packet(::AVPacket* in_packet, const ff::rational time_base, bool has
 		throw std::invalid_argument("packet cannot be nullptr");
 	}
 
-	p_packet->time_base = time_base.av_rational();
+	// If the packet's time base is invalid or zero, set its time base to the argument.
+	if (ff::av_rational_invalid_or_zero(p_packet->time_base))
+	{
+		p_packet->time_base = time_base.av_rational();
+	}
 
 	if (has_data)
 	{

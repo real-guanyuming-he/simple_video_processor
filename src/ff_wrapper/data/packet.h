@@ -50,11 +50,12 @@ namespace ff
 		explicit packet(bool allocate_packet = false);
 
 		/*
-		* Takes ownership of the incoming in_packet.
+		* Takes ownership of the incoming in_packet,
+		* and additionally sets its time_base if its is invalid or 0.
 		* Typically the packet comes from a demuxer.
 		* 
 		* @param in_packet the incoming packet. Cannot be nullptr.
-		* @param time_base its time base. Can give it an invalid one (i.e. non-positive)
+		* @param time_base its new time base. Can give it an invalid one (i.e. non-positive)
 		* as my methods will check it. Default is 0.
 		* @param has_data: set it to true if in_packet has data stored. 
 		If so the object's state will be ready.

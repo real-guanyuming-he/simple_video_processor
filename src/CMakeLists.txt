@@ -65,6 +65,8 @@ set(FFWrapperSourceFiles
     "${SrcFFWrapperCodecPath}/codec_base.cpp"
     "${SrcFFWrapperCodecPath}/decoder.h"
     "${SrcFFWrapperCodecPath}/decoder.cpp"
+    "${SrcFFWrapperCodecPath}/encoder.h"
+    "${SrcFFWrapperCodecPath}/encoder.cpp"
     "${SrcFFWrapperCodecPath}/codec_properties.h"
     "${SrcFFWrapperCodecPath}/codec_properties.cpp")
     
@@ -110,16 +112,27 @@ message("MyVcpkgLibPathDbg=${MyVcpkgLibPathDbg}")
 # Search for the libs only in the vcpkg/installed dir
 set(FFmpegLibNames
     "avcodec"
-    "avdevice"
+#    "avdevice"
     "avfilter"
     "avformat"
     "avutil"
+#    "postproc"
     "swresample"
-    "swscale")
+    "swscale"
+)
 set(ThirdPartyLibNames
-    "ass"
+# Subtitle
+#    "ass"
+# Audio
+    "opus"
+    "vorbis"
+    "libmp3lame"
+# Video
     "libx264"
-    "libx265")
+    "libx265"
+    "dav1d"
+    "libwebp"
+    "libpng16")
 set(AllLibNames
     ${FFmpegLibNames} ${ThirdPartyLibNames})
 
@@ -130,7 +143,7 @@ foreach(LibName IN LISTS AllLibNames)
         PATHS ${MyVcpkgLibPath}
         NO_DEFAULT_PATH)
     find_library(${LibName}_PathDbg
-        NAMES ${LibName}
+        NAMES ${LibName}d ${LibName}
         PATHS ${MyVcpkgLibPathDbg}
         NO_DEFAULT_PATH)
 endforeach()
@@ -202,6 +215,9 @@ add_executable(test_packet
 # Test decoder
 add_executable(test_decoder
     "${TestSrcFFWrapperPath}/test_decoder.cpp")
+# Test encoder
+add_executable(test_encoder
+    "${TestSrcFFWrapperPath}/test_encoder.cpp")
 
 set(ListTestTargets
     "test_ff_object"
@@ -211,7 +227,8 @@ set(ListTestTargets
     "test_demuxer"
     "test_frame"
     "test_packet"
-    "test_decoder")
+    "test_decoder"
+    "test_encoder")
 
 ################################# Common Test Settings #################################
 
@@ -258,6 +275,8 @@ set(MyFFmpegExecutablePath "\"${MyFFmpegExecutablePath}\"")
 target_compile_definitions("test_demuxer"
     PRIVATE "FFMPEG_EXECUTABLE_PATH=${MyFFmpegExecutablePath}")
 target_compile_definitions("test_decoder"
+    PRIVATE "FFMPEG_EXECUTABLE_PATH=${MyFFmpegExecutablePath}")
+target_compile_definitions("test_encoder"
     PRIVATE "FFMPEG_EXECUTABLE_PATH=${MyFFmpegExecutablePath}")
 
 # Needs to use some FFmpeg APIs in these tests

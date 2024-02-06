@@ -433,11 +433,12 @@ namespace ff
 		/*
 		* Reduces the rational to lowest terms.
 		*/
-		static constexpr rational_temp reduce(rational_temp r)
+		static inline constexpr rational_temp reduce(rational_temp r)
 		{
 			auto gcd = std::gcd(r.num, r.den);
 			return rational_temp(r.num / gcd, r.den / gcd);
 		}
+
 	public:
 ///////////////////////////// Mutators /////////////////////////////
 		/*
@@ -462,6 +463,14 @@ namespace ff
 	// A zero constant.
 	static constexpr rational zero_rational(0, 1);
 	static constexpr rational_64 zero_rational_64(0, 1);
+
+	/*
+	* @returns if the the av rational is invalid or equal to zero
+	*/
+	static inline constexpr bool av_rational_invalid_or_zero(const AVRational r)
+	{
+		return r.den == 0 || zero_rational == r;
+	}
 }
 
 constexpr ff::rational operator*(int n, ff::rational r) noexcept

@@ -35,11 +35,19 @@ namespace ff
 	// Equals to 1/AV_TIME_BASE
 	static constexpr rational av_time_base(1, AV_TIME_BASE);
 
-	// Suitable for 24,25,30,60,120 and many other common fps values.
-	static constexpr rational common_video_time_base(1, 600);
+	// Suitable for ...,144,288,576
+	static constexpr rational common_video_time_base_576(1, 576);
+	// Suitable for ...,24,25,30,60,100,120,200,300,600
+	static constexpr rational common_video_time_base_600(1, 600);
 
-	// Suitable for many common audio sample rates
-	static constexpr rational common_audio_time_base(1, 90000);
+	// Suitable for ..., 14700, 29400, 58800
+	static constexpr rational common_audio_time_base_58800(1, 58800);
+	// Suitable for ..., 16000, 32000, 64000
+	static constexpr rational common_audio_time_base_64000(1, 64000);
+	// Suitable for ..., 44100, 88200
+	static constexpr rational common_audio_time_base_88200(1, 88200);
+	// Suitable for ..., 24000, 48000, 96000
+	static constexpr rational common_audio_time_base_96000(1, 96000);
 
 	/*
 	* Represents a time stamp since the start of some multimedia file.

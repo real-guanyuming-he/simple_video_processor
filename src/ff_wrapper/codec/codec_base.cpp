@@ -69,6 +69,13 @@ void ff::codec_base::set_codec_properties(const codec_properties& p)
 	}
 
 	avcodec_parameters_to_context(p_codec_ctx, p.av_codec_parameters());
+
+	// If the codec's time base is invalid or zero,
+	// then set its <- p's
+	if (ff::av_rational_invalid_or_zero(p_codec_ctx->time_base))
+	{
+		p_codec_ctx->time_base = p.time_base().av_rational();
+	}
 }
 
 void ff::codec_base::internal_allocate_resources_memory(uint64_t size, void* additional_information)

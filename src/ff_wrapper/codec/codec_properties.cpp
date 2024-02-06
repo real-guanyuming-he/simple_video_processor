@@ -25,7 +25,7 @@ extern "C"
 #include <stdexcept>
 
 ff::codec_properties::codec_properties()
-	: p_params(avcodec_parameters_alloc())
+	: p_params(avcodec_parameters_alloc()), tb()
 {
 	if (nullptr == p_params)
 	{
@@ -38,7 +38,8 @@ ff::codec_properties::~codec_properties()
 	ffhelpers::safely_free_codec_parameters(&p_params);
 }
 
-ff::codec_properties::codec_properties(::AVCodecParameters* p, bool take_over)
+ff::codec_properties::codec_properties(::AVCodecParameters* p, ff::rational time_base, bool take_over)
+	: tb(time_base)
 {
 	if (take_over)
 	{
@@ -72,6 +73,8 @@ ff::codec_properties::codec_properties(::AVCodecParameters* p, bool take_over)
 ff::codec_properties::codec_properties(const::AVCodecContext* codec_ctx)
 	: codec_properties() // Must allocate the properties first
 {
+	tb = codec_ctx->time_base;
+
 	int ret = avcodec_parameters_from_context(p_params, codec_ctx);
 	if (ret < 0)
 	{
@@ -90,6 +93,8 @@ ff::codec_properties::codec_properties(const::AVCodecContext* codec_ctx)
 ff::codec_properties::codec_properties(const codec_properties& other)
 	: codec_properties() // must allocate a space first.
 {
+	tb = other.tb;
+
 	int ret = avcodec_parameters_copy(p_params, other.p_params);
 	if (ret < 0)
 	{
