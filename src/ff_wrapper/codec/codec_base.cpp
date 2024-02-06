@@ -144,6 +144,37 @@ bool ff::codec_base::is_v_pixel_format_supported(AVPixelFormat fmt) const
 	return false;
 }
 
+bool ff::codec_base::is_v_frame_rate_supported(ff::rational fr) const
+{
+	if (!created())
+	{
+		throw std::logic_error("The codec is not created.");
+	}
+	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_VIDEO)
+	{
+		throw std::logic_error("The codec is not for videos.");
+	}
+
+	if (!p_codec_desc->supported_framerates) // unknown
+	{
+		throw std::domain_error("Don't know which pix fmts are supported.");
+	}
+	else
+	{
+		const AVRational* pf = p_codec_desc->supported_framerates;
+		while (pf->den != 0) // the array is {0,0}-terminated. And a valid frame rate cannot have den = 0.
+		{
+			if (fr == *pf)
+			{
+				return true;
+			}
+			++pf;
+		}
+	}
+
+	return false;
+}
+
 bool ff::codec_base::is_a_sample_format_supported(AVSampleFormat fmt) const
 {
 	if (!created())
@@ -235,6 +266,151 @@ bool ff::codec_base::is_a_channel_layout_supported(const channel_layout& layout)
 	}
 
 	return false;
+}
+
+std::vector<AVPixelFormat> ff::codec_base::supported_v_pixel_formats() const
+{
+	if (!created())
+	{
+		throw std::logic_error("The codec is not created.");
+	}
+	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_VIDEO)
+	{
+		throw std::logic_error("The codec is not for videos.");
+	}
+
+	if (!p_codec_desc->pix_fmts) // unknown
+	{
+		throw std::domain_error("Don't know which pix fmts are supported.");
+	}
+	else
+	{
+		std::vector<AVPixelFormat> res;
+		const AVPixelFormat* pf = p_codec_desc->pix_fmts;
+		while (*pf != -1) // the array is -1-terminated.
+		{
+			res.push_back(*pf);
+			++pf;
+		}
+
+		return res;
+	}
+}
+
+std::vector<ff::rational> ff::codec_base::supported_v_frame_rates() const
+{
+	if (!created())
+	{
+		throw std::logic_error("The codec is not created.");
+	}
+	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_VIDEO)
+	{
+		throw std::logic_error("The codec is not for videos.");
+	}
+
+	if (!p_codec_desc->supported_framerates) // unknown
+	{
+		throw std::domain_error("Don't know which pix fmts are supported.");
+	}
+	else
+	{
+		std::vector<ff::rational> res;
+		const AVRational* pf = p_codec_desc->supported_framerates;
+		while (pf->den != 0) // the array is {0,0}-terminated. And a valid frame rate cannot have den = 0.
+		{
+			res.emplace_back(*pf);
+			++pf;
+		}
+
+		return res;
+	}
+}
+
+std::vector<AVSampleFormat> ff::codec_base::supported_a_sample_formats() const
+{
+	if (!created())
+	{
+		throw std::logic_error("The codec is not created.");
+	}
+	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_AUDIO)
+	{
+		throw std::logic_error("The codec is not for audios.");
+	}
+
+	if (!p_codec_desc->sample_fmts) // unknown
+	{
+		throw std::domain_error("Don't know which sample fmts are supported.");
+	}
+	else
+	{
+		std::vector<AVSampleFormat> res;
+		const AVSampleFormat* pf = p_codec_desc->sample_fmts;
+		while (*pf != -1) // the array is -1-terminated.
+		{
+			res.push_back(*pf);
+			++pf;
+		}
+
+		return res;
+	}
+}
+
+std::vector<int> ff::codec_base::supported_a_sample_rates() const
+{
+	if (!created())
+	{
+		throw std::logic_error("The codec is not created.");
+	}
+	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_AUDIO)
+	{
+		throw std::logic_error("The codec is not for audios.");
+	}
+
+	if (!p_codec_desc->supported_samplerates) // unknown
+	{
+		throw std::domain_error("Don't know which sample rates are supported.");
+	}
+	else
+	{
+		std::vector<int> res;
+		const int* psr = p_codec_desc->supported_samplerates;
+		while (*psr != 0) // terminated by 0
+		{
+			res.push_back(*psr);
+			++psr;
+		}
+		
+		return res;
+	}
+}
+
+std::vector<const AVChannelLayout*> ff::codec_base::supported_a_channel_layouts() const
+{
+	if (!created())
+	{
+		throw std::logic_error("The codec is not created.");
+	}
+	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_AUDIO)
+	{
+		throw std::logic_error("The codec is not for audios.");
+	}
+
+	if (!p_codec_desc->ch_layouts)
+	{
+		throw std::domain_error("Don't know which channel layouts are supported.");
+	}
+	else
+	{
+		std::vector<const AVChannelLayout*> res;
+		const AVChannelLayout* pcl = p_codec_desc->ch_layouts;
+		while (pcl->nb_channels != 0 || pcl->order != 0) // terminated by a zeroed layout
+		{
+			res.push_back(pcl);
+			++pcl;
+		}
+
+		return res;
+	}
 }
 
 void ff::codec_base::signal_no_more_food()
