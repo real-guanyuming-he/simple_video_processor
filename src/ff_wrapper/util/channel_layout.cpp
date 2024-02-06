@@ -164,49 +164,19 @@ ff::channel_layout::channel_layout(default_layouts l)
 
 ff::channel_layout::channel_layout(const AVChannelLayout& src)
 {
-	int ret = av_channel_layout_copy(&cl, &src);
-	if (ret < 0)
-	{
-		switch (ret)
-		{
-		case AVERROR(ENOMEM):
-			throw std::bad_alloc();
-		default:
-			ON_FF_ERROR_WITH_CODE("Unexpected error: could not copy channel layout", ret);
-		}
-	}
+	channel_layout::av_channel_layout_copy(cl, src);
 }
 
 ff::channel_layout::channel_layout(const channel_layout& other)
 {
-	int ret = av_channel_layout_copy(&cl, &other.cl);
-	if (ret < 0)
-	{
-		switch (ret)
-		{
-		case AVERROR(ENOMEM):
-			throw std::bad_alloc();
-		default:
-			ON_FF_ERROR_WITH_CODE("Unexpected error: could not copy channel layout", ret);
-		}
-	}
+	channel_layout::av_channel_layout_copy(cl, other.cl);
 }
 
 ff::channel_layout& ff::channel_layout::operator=(const channel_layout& right)
 {
 	av_channel_layout_uninit(&cl);
 
-	int ret = av_channel_layout_copy(&cl, &right.cl);
-	if (ret < 0)
-	{
-		switch (ret)
-		{
-		case AVERROR(ENOMEM):
-			throw std::bad_alloc();
-		default:
-			ON_FF_ERROR_WITH_CODE("Unexpected error: could not copy channel layout", ret);
-		}
-	}
+	channel_layout::av_channel_layout_copy(cl, right.cl);
 
 	return *this;
 }
@@ -247,7 +217,12 @@ bool ff::channel_layout::operator==(const AVChannelLayout& right) const noexcept
 
 inline void ff::channel_layout::set_av_channel_layout(AVChannelLayout& dst) const
 {
-	int ret = av_channel_layout_copy(&dst, &cl);
+	channel_layout::av_channel_layout_copy(dst, cl);
+}
+
+void ff::channel_layout::av_channel_layout_copy(AVChannelLayout& dst, const AVChannelLayout& src)
+{
+	int ret = ::av_channel_layout_copy(&dst, &src);
 	if (ret < 0)
 	{
 		switch (ret)

@@ -205,13 +205,21 @@ namespace ff
 		* @throws std::domain_error if the codec does not know the supported values.
 		*/
 		bool is_a_sample_rate_supported(int rate) const;
+
+		/*
+		* Exactly the same as is_a_channel_layout_supported(layout.av_ch_layout());
+		*/
+		inline bool is_a_channel_layout_supported(const channel_layout& layout) const
+		{
+			is_a_channel_layout_supported(layout.av_ch_layout());
+		}
 		/*
 		* @returns if the audio channel layout is supported by this codec
 		* @throws std::logic_error if !created().
 		* @throws std::logic_error if the codec is not for audios.
 		* @throws std::domain_error if the codec does not know the supported values.
 		*/
-		bool is_a_channel_layout_supported(const channel_layout& layout) const;
+		bool is_a_channel_layout_supported(const AVChannelLayout& layout) const;
 
 		/*
 		* @returns the list of all supported video pixel formats

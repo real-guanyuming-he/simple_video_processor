@@ -100,6 +100,7 @@ namespace ff
 		// Get video related fields
 
 		inline AVPixelFormat	v_pixel_format()	const noexcept { return (AVPixelFormat)p_params->format; }
+		inline ff::rational		v_frame_rate()		const noexcept { return p_params->framerate; }
 		inline int				v_width()			const noexcept { return p_params->width; }
 		inline int				v_height()			const noexcept { return p_params->height; }
 		inline AVFieldOrder		v_field_order()		const noexcept { return p_params->field_order; }
@@ -140,6 +141,7 @@ namespace ff
 		// Set video related fields
 
 		inline void set_v_pixel_format(AVPixelFormat f)			noexcept { p_params->format = f; }
+		inline void set_v_frame_rate(ff::rational fr)			noexcept { p_params->framerate = fr.av_rational(); }
 		inline void set_v_width(int w)							noexcept { p_params->width = w; }
 		inline void set_v_height(int h)							noexcept { p_params->height = h; }
 		inline void set_v_field_order(AVFieldOrder fo)			noexcept { p_params->field_order = fo; }
@@ -158,7 +160,15 @@ namespace ff
 		* Frees current ch layout and copies ch to it.
 		* @param ch the new channel layout.
 		*/
-		void set_a_channel_layout(const channel_layout& ch);
+		inline void set_a_channel_layout(const channel_layout& ch)
+		{
+			set_a_channel_layout(ch.av_ch_layout());
+		}
+		/*
+		* Frees current ch layout and copies ch to it.
+		* @param ch the new channel layout.
+		*/
+		void set_a_channel_layout(const AVChannelLayout& ch);
 
 	private:
 		class ::AVCodecParameters* p_params;

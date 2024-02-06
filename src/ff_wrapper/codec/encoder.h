@@ -21,11 +21,13 @@
 namespace ff
 {
 	class frame;
+	class decoder;
 
 	/*
 	* Represents an encoder, which is just an implementation of codec_base,
 	* plus these two methods for encoding: 
-	* feed_frame() and encode_packet()
+	* feed_frame() and encode_packet(),
+	* and some additional for transcoding (i.e. encode frames decoded by a decoder with a different codec).
 	* 
 	* Read the comments for codec_base for how to encode.
 	* 
@@ -55,6 +57,7 @@ namespace ff
 		~encoder() { destroy(); }
 
 	public:
+///////////////////////////// Encoding /////////////////////////////
 		/*
 		* Feeds a frame (food) into the encoder.
 		* See the comments for codec_base for how to feed an encoder.
@@ -79,6 +82,23 @@ namespace ff
 		* @throws std::logic_error if the encoder is not ready.
 		*/
 		ff::packet encode_packet();
+
+	public:
+///////////////////////////// Transcoding /////////////////////////////
+		/*
+		* A convenient helper for transcoding.
+		* It queries if each essential property of the decoder is supported by the encoder.
+		* If so, the decoder's option for the property is used here. 
+		* Otherwise, the encoder automatically selects one from the supported options.
+		* Essential properties (some are not used depending on the type):
+		* format, width, height, frame_rate, sample_rate, channel_layout
+		* 
+		* @throws std::logic_error if dec is not ready or if this is not created.
+		* @throws std::invalid_argument if dec and enc are of different types (e.g. dec is for video but this is for audio).
+		* @throws std::domain_error if this does not support some option used by the decoder but for the property
+		* it does not know which options are supported.
+		*/
+		void set_properties_from_decoder(const decoder& dec);
 
 	private:
 

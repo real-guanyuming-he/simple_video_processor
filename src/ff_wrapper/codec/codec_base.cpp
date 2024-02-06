@@ -236,8 +236,7 @@ bool ff::codec_base::is_a_sample_rate_supported(int rate) const
 
 	return false;
 }
-
-bool ff::codec_base::is_a_channel_layout_supported(const channel_layout& layout) const
+bool ff::codec_base::is_a_channel_layout_supported(const AVChannelLayout& layout) const
 {
 	if (!created())
 	{
@@ -257,7 +256,7 @@ bool ff::codec_base::is_a_channel_layout_supported(const channel_layout& layout)
 		const AVChannelLayout* pcl = p_codec_desc->ch_layouts;
 		while (pcl->nb_channels != 0 || pcl->order != 0) // terminated by a zeroed layout
 		{
-			if (!(layout == *pcl))
+			if (layout == *pcl)
 			{
 				return true;
 			}

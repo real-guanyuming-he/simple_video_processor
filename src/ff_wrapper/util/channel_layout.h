@@ -200,6 +200,13 @@ namespace ff
 		*/
 		inline void set_av_channel_layout(AVChannelLayout& dst) const;
 
+	public:
+		/*
+		* My wrapper for ::av_channel_layout_copy that interprets errors
+		* as exceptions.
+		*/
+		static void av_channel_layout_copy(AVChannelLayout& dst, const AVChannelLayout& src);
+
 	private:
 		AVChannelLayout cl;
 	};

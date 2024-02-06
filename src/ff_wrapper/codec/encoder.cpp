@@ -17,6 +17,7 @@
 
 #include "../data/frame.h"
 #include "../util/ff_helpers.h"
+#include "decoder.h"
 
 extern "C"
 {
@@ -131,6 +132,103 @@ ff::packet ff::encoder::encode_packet()
 	}
 
 	return ff::packet(false);
+}
+
+void ff::encoder::set_properties_from_decoder(const decoder& dec)
+{
+	if (!dec.ready() || !created())
+	{
+		throw std::logic_error("dec must be ready and this must be created.");
+	}
+
+	// Query dp's essential fields one by one
+	// and set ep's accordingly.
+	ff::codec_properties dp = dec.get_codec_properties();
+	ff::codec_properties ep;
+
+	if (dp.type() != p_codec_desc->type)
+	{
+		throw std::invalid_argument("dec must be of the same type as enc's");
+	}
+
+	// Common essential fields for all types
+	ep.set_time_base(dp.time_base());
+
+	// Type related fields
+	if (dp.is_video())
+	{
+		// fmt, w, h, and frame_rate
+
+		ep.set_v_width(dp.v_width());
+		ep.set_v_height(dp.v_height());
+
+		// If dp's fmt is supported
+		if (is_v_pixel_format_supported(dp.v_pixel_format()))
+		{
+			ep.set_v_pixel_format(dp.v_pixel_format());
+		}
+		else // fmt's not supported
+		{
+			auto supported = supported_v_pixel_formats();
+			// Use the first one for now until I have better heuristics.
+			ep.set_v_pixel_format(supported[0]);
+		}
+
+		// If dp's frame rate is supported
+		if (is_v_frame_rate_supported(dp.v_frame_rate()))
+		{
+			ep.set_v_frame_rate(dp.v_frame_rate());
+		}
+		else // fr's not supported
+		{
+			auto supported = supported_v_frame_rates();
+			// Use the first one for now until I have better heuristics.
+			ep.set_v_frame_rate(supported[0]);
+		}
+	}
+	else if(dp.is_audio())
+	{
+		// fmt, sample rate, and channel layout
+
+		// If dp's fmt is supported
+		if (is_a_sample_format_supported(dp.a_sample_format()))
+		{
+			ep.set_a_sample_format(dp.a_sample_format());
+		}
+		else // fmt's not supported
+		{
+			auto supported = supported_a_sample_formats();
+			// Use the first one for now until I have better heuristics.
+			ep.set_a_sample_format(supported[0]);
+		}
+
+		// If dp's sample rate is supported
+		if (is_a_sample_rate_supported(dp.a_sample_rate()))
+		{
+			ep.set_a_sample_rate(dp.a_sample_rate());
+		}
+		else // sr's not supported
+		{
+			auto supported = supported_a_sample_rates();
+			// Use the first one for now until I have better heuristics.
+			ep.set_a_sample_rate(supported[0]);
+		}
+
+		// If dp's channel layout is supported
+		if (is_a_channel_layout_supported(dp.a_channel_layout_ref()))
+		{
+			ep.set_a_channel_layout(dp.a_channel_layout_ref());
+		}
+		else // ch_layout's not supported
+		{
+			auto supported = supported_a_channel_layouts();
+			// Use the first one for now until I have better heuristics.
+			ep.set_a_channel_layout(*supported[0]);
+		}
+	}
+
+	// Don't forget to set ep as this's properties.
+	this->set_codec_properties(ep);
 }
 
 void ff::encoder::internal_allocate_object_memory()

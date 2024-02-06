@@ -110,7 +110,7 @@ ff::codec_properties::codec_properties(const codec_properties& other)
 	}
 }
 
-void ff::codec_properties::set_a_channel_layout(const channel_layout& ch)
+void ff::codec_properties::set_a_channel_layout(const AVChannelLayout& ch)
 {
-	ch.set_av_channel_layout(p_params->ch_layout);
+	channel_layout::av_channel_layout_copy(p_params->ch_layout, ch);
 }
