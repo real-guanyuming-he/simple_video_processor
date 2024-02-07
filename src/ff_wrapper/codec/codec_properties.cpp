@@ -73,7 +73,10 @@ ff::codec_properties::codec_properties(::AVCodecParameters* p, ff::rational time
 ff::codec_properties::codec_properties(const::AVCodecContext* codec_ctx)
 	: codec_properties() // Must allocate the properties first
 {
-	tb = codec_ctx->time_base;
+	if (!ff::av_rational_invalid_or_zero(codec_ctx->time_base))
+	{
+		tb = codec_ctx->time_base;
+	}
 
 	int ret = avcodec_parameters_from_context(p_params, codec_ctx);
 	if (ret < 0)

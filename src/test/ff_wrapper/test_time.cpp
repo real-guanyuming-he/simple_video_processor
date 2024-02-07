@@ -51,7 +51,7 @@ int main()
 		// bases are coprime
 		ff::time t1(971, b1);
 		auto expected = t1.to_absolute();
-		t1.change_time_base(ff::common_audio_time_base);
+		t1.change_time_base(ff::common_audio_time_base_64000);
 		TEST_ASSERT_EQUALS(expected, t1.to_absolute(), "Expect not to change the absolute value.");
 
 		ff::time t2(ff::rational_64(756, 32), b3);

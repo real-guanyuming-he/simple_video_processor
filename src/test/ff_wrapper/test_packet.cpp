@@ -167,15 +167,15 @@ int main()
 		TEST_ASSERT_THROWS(p1.change_time_base(ff::rational(1, 1)), std::logic_error);
 
 		// valid time base
-		p1->time_base = ff::common_video_time_base.av_rational();
-		TEST_ASSERT_EQUALS(ff::common_video_time_base, p1.time_base(), "should be set");
-		TEST_ASSERT_EQUALS(ff::time(3, ff::common_video_time_base), p1.pts(), "should have correct pts");
+		p1->time_base = ff::common_video_time_base_600.av_rational();
+		TEST_ASSERT_EQUALS(ff::common_video_time_base_600, p1.time_base(), "should be set");
+		TEST_ASSERT_EQUALS(ff::time(3, ff::common_video_time_base_600), p1.pts(), "should have correct pts");
 		TEST_ASSERT_EQUALS(0, p1.dts(), "should have correct dts");
 		// Duration not set
 		TEST_ASSERT_EQUALS(0, p1.duration(), "duration not set");
 
 		p1->duration = 17;
-		TEST_ASSERT_EQUALS(ff::time(17, ff::common_video_time_base), p1.duration(), "should have correct duration");
+		TEST_ASSERT_EQUALS(ff::time(17, ff::common_video_time_base_600), p1.duration(), "should have correct duration");
 
 		// change time base with invalid time base
 		TEST_ASSERT_THROWS(p1.change_time_base(ff::rational(0, 1)), std::invalid_argument);
@@ -184,9 +184,9 @@ int main()
 		// should preserve original values if the new time base is a multiple of the other.
 		p1.change_time_base(ff::rational(1, 1200));
 		TEST_ASSERT_EQUALS(ff::rational(1, 1200), p1.time_base(), "should really change the tb.");
-		TEST_ASSERT_EQUALS(ff::time(3, ff::common_video_time_base), p1.pts(), "should preserve pts");
+		TEST_ASSERT_EQUALS(ff::time(3, ff::common_video_time_base_600), p1.pts(), "should preserve pts");
 		TEST_ASSERT_EQUALS(0, p1.dts(), "should preserve dts");
-		TEST_ASSERT_EQUALS(ff::time(17, ff::common_video_time_base), p1.duration(), "should preserve duration");
+		TEST_ASSERT_EQUALS(ff::time(17, ff::common_video_time_base_600), p1.duration(), "should preserve duration");
 
 		// should do what av_packet_rescale_ts the new time base is not a multiple of the other.
 		// That is, rounded to the nearest.

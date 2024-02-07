@@ -247,7 +247,7 @@ namespace ff
 		* @param new_tb the new time base
 		* @throws std::invalid_argument if new_tb <= 0
 		*/
-		constexpr void change_time_base(const rational new_tb)
+		void change_time_base(const rational new_tb)
 		{
 			if (new_tb <= zero_rational)
 			{
@@ -258,6 +258,26 @@ namespace ff
 			t = to_absolute() / new_tb;
 			// Update the time base
 			b = new_tb;
+		}
+		
+		/*
+		* Changes the time base of t to a new one.
+		* The new timestamp and time_base will be different iff new_tb != old tb
+		*
+		* @param t time
+		* @param new_tb the new time base
+		* @throws std::invalid_argument if new_tb <= 0
+		*/
+		static constexpr ff::time change_time_base(const ff::time& t, const rational new_tb)
+		{
+			if (new_tb <= zero_rational)
+			{
+				throw std::invalid_argument("time base must be positive.");
+			}
+
+			// How many new_tb's does the absolute time have?
+			auto ts = t.to_absolute() / new_tb;
+			return ff::time(ts, new_tb);
 		}
 
 

@@ -119,6 +119,16 @@ int main()
 	* The tests for class decoder and encoder cover all of codec_base's methods.
 	*/
 
+	/*
+	* Decoding in this unit is like:
+	* Feed one packet and decode until the decoder is hungry.
+	* Lemma 1: every packet will be fed successfully.
+	* Proof.
+	*	1. Establishment: initially the decoder is hungry so it will succeed.
+	*	2. Maintanence: after a packet is fed, the decoder will be used until it is hungry again, 
+	* which means the next will succeed, too.
+	*/
+
 	// Test creation
 	{
 		// The default constructor is deleted.

@@ -126,6 +126,9 @@ namespace ff
 		AVFrame* av_frame() noexcept { return p_frame; }
 		const AVFrame* av_frame() const noexcept { return p_frame; }
 
+		AVFrame* operator->() noexcept { return p_frame; }
+		const AVFrame* operator->() const noexcept { return p_frame; }
+
 		bool v_or_a() const noexcept { return video_or_audio; }
 
 		/*

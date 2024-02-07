@@ -50,6 +50,20 @@ namespace ff
 		{
 			allocate_object_memory();
 		}
+		
+		// not possible to copy the internal states of an encoder.
+		encoder(const encoder&) = delete;
+		encoder& operator=(const encoder&) = delete;
+
+		inline encoder(encoder&& other) noexcept
+			: codec_base(std::move(other)) {}
+
+		inline encoder& operator=(encoder&& right) noexcept
+		{
+			codec_base::operator=(std::move(right));
+
+			return *this;
+		}
 
 		/*
 		* Destroys the encoder completely.
@@ -91,14 +105,16 @@ namespace ff
 		* If so, the decoder's option for the property is used here. 
 		* Otherwise, the encoder automatically selects one from the supported options.
 		* Essential properties (some are not used depending on the type):
-		* format, width, height, frame_rate, sample_rate, channel_layout
+		* type, format, width, height, frame_rate, sample_rate, channel_layout
 		* 
+		* @returns true if all the options checked are supported by the decoder; false if any of them 
+		* is not supported and is changed to one of the supported.
 		* @throws std::logic_error if dec is not ready or if this is not created.
 		* @throws std::invalid_argument if dec and enc are of different types (e.g. dec is for video but this is for audio).
 		* @throws std::domain_error if this does not support some option used by the decoder but for the property
 		* it does not know which options are supported.
 		*/
-		void set_properties_from_decoder(const decoder& dec);
+		bool set_properties_from_decoder(const decoder& dec);
 
 	private:
 

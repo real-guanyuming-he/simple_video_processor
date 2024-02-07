@@ -30,6 +30,12 @@ In the new project, I can practice more on the theories I learned from my univer
 
 # Features
 ## Currently available features:
+The wrapper is currently being developed. It now has:
+- demuxer
+- decoder
+- encapsulation of various data structures of `FFmpeg`.
+
+It has the following features:
 1. Encapsulation of `FFmpeg` C APIs done in modern C++ (C++ 20). Error handling by exceptions and assertions. Constexper math. Clean and reasonable access control. The encapsulation tries to preserve as much of `FFmpeg`'s power as possible while providing object-oriented access to it.
 
 2. Thorough specification through comments.
@@ -39,6 +45,8 @@ In the new project, I can practice more on the theories I learned from my univer
 4. The development of the whole project is carried out with good practices. `Git` is used to manage the source code. `CMake` is used to easily configure and build the project across platforms.
 
 ## Planned features:
+The GUI is waiting to be developed.
+
 1. Perform simple video processing tasks:
     - Reformating
     - Clipping

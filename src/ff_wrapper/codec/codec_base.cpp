@@ -68,6 +68,11 @@ void ff::codec_base::set_codec_properties(const codec_properties& p)
 		throw std::logic_error("Properties can only be set when the decoder is just created.");
 	}
 
+	if (p.type() != p_codec_desc->type)
+	{
+		throw std::invalid_argument("The codec_properties' type must be the same as the codec's.");
+	}
+
 	avcodec_parameters_to_context(p_codec_ctx, p.av_codec_parameters());
 
 	// If the codec's time base is invalid or zero,
@@ -115,9 +120,9 @@ void ff::codec_base::internal_release_resources_memory() noexcept
 
 bool ff::codec_base::is_v_pixel_format_supported(AVPixelFormat fmt) const
 {
-	if (!created())
+	if (destroyed())
 	{
-		throw std::logic_error("The codec is not created.");
+		throw std::logic_error("The codec is destroyed.");
 	}
 	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_VIDEO)
 	{
@@ -146,9 +151,9 @@ bool ff::codec_base::is_v_pixel_format_supported(AVPixelFormat fmt) const
 
 bool ff::codec_base::is_v_frame_rate_supported(ff::rational fr) const
 {
-	if (!created())
+	if (destroyed())
 	{
-		throw std::logic_error("The codec is not created.");
+		throw std::logic_error("The codec is destroyed.");
 	}
 	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_VIDEO)
 	{
@@ -157,7 +162,7 @@ bool ff::codec_base::is_v_frame_rate_supported(ff::rational fr) const
 
 	if (!p_codec_desc->supported_framerates) // unknown
 	{
-		throw std::domain_error("Don't know which pix fmts are supported.");
+		throw std::domain_error("Don't know which frame rates are supported.");
 	}
 	else
 	{
@@ -177,9 +182,9 @@ bool ff::codec_base::is_v_frame_rate_supported(ff::rational fr) const
 
 bool ff::codec_base::is_a_sample_format_supported(AVSampleFormat fmt) const
 {
-	if (!created())
+	if (destroyed())
 	{
-		throw std::logic_error("The codec is not created.");
+		throw std::logic_error("The codec is destroyed.");
 	}
 	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_AUDIO)
 	{
@@ -208,9 +213,9 @@ bool ff::codec_base::is_a_sample_format_supported(AVSampleFormat fmt) const
 
 bool ff::codec_base::is_a_sample_rate_supported(int rate) const
 {
-	if (!created())
+	if (destroyed())
 	{
-		throw std::logic_error("The codec is not created.");
+		throw std::logic_error("The codec is destroyed.");
 	}
 	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_AUDIO)
 	{
@@ -238,9 +243,9 @@ bool ff::codec_base::is_a_sample_rate_supported(int rate) const
 }
 bool ff::codec_base::is_a_channel_layout_supported(const AVChannelLayout& layout) const
 {
-	if (!created())
+	if (destroyed())
 	{
-		throw std::logic_error("The codec is not created.");
+		throw std::logic_error("The codec is destroyed.");
 	}
 	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_AUDIO)
 	{
@@ -269,9 +274,9 @@ bool ff::codec_base::is_a_channel_layout_supported(const AVChannelLayout& layout
 
 std::vector<AVPixelFormat> ff::codec_base::supported_v_pixel_formats() const
 {
-	if (!created())
+	if (destroyed())
 	{
-		throw std::logic_error("The codec is not created.");
+		throw std::logic_error("The codec is destroyed.");
 	}
 	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_VIDEO)
 	{
@@ -298,9 +303,9 @@ std::vector<AVPixelFormat> ff::codec_base::supported_v_pixel_formats() const
 
 std::vector<ff::rational> ff::codec_base::supported_v_frame_rates() const
 {
-	if (!created())
+	if (destroyed())
 	{
-		throw std::logic_error("The codec is not created.");
+		throw std::logic_error("The codec is destroyed.");
 	}
 	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_VIDEO)
 	{
@@ -309,7 +314,7 @@ std::vector<ff::rational> ff::codec_base::supported_v_frame_rates() const
 
 	if (!p_codec_desc->supported_framerates) // unknown
 	{
-		throw std::domain_error("Don't know which pix fmts are supported.");
+		throw std::domain_error("Don't know which frame_rates are supported.");
 	}
 	else
 	{
@@ -327,9 +332,9 @@ std::vector<ff::rational> ff::codec_base::supported_v_frame_rates() const
 
 std::vector<AVSampleFormat> ff::codec_base::supported_a_sample_formats() const
 {
-	if (!created())
+	if (destroyed())
 	{
-		throw std::logic_error("The codec is not created.");
+		throw std::logic_error("The codec is destroyed.");
 	}
 	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_AUDIO)
 	{
@@ -356,9 +361,9 @@ std::vector<AVSampleFormat> ff::codec_base::supported_a_sample_formats() const
 
 std::vector<int> ff::codec_base::supported_a_sample_rates() const
 {
-	if (!created())
+	if (destroyed())
 	{
-		throw std::logic_error("The codec is not created.");
+		throw std::logic_error("The codec is destroyed.");
 	}
 	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_AUDIO)
 	{
@@ -385,9 +390,9 @@ std::vector<int> ff::codec_base::supported_a_sample_rates() const
 
 std::vector<const AVChannelLayout*> ff::codec_base::supported_a_channel_layouts() const
 {
-	if (!created())
+	if (destroyed())
 	{
-		throw std::logic_error("The codec is not created.");
+		throw std::logic_error("The codec is destroyed.");
 	}
 	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_AUDIO)
 	{

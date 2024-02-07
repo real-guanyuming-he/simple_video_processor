@@ -150,7 +150,7 @@ bool ff::decoder::feed_packet(const packet& pkt)
 		throw std::bad_alloc();
 		break;
 	case AVERROR(EINVAL):
-		FF_ASSERT(false, "The decoder has not been set up correctly. This should not happen.");
+		throw std::invalid_argument("Perhaps a bug in my code. Also a possible defect frame from you.");
 		break;
 	default:
 		// Other decoding errors.

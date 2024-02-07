@@ -92,6 +92,7 @@ namespace ff
 		// Get common fields
 
 		inline AVMediaType	type()				const noexcept { return p_params->codec_type; }
+		inline bool			is_type_valid()		const noexcept { return p_params->codec_type != AVMEDIA_TYPE_UNKNOWN; }
 		inline bool			is_video()			const noexcept { return AVMEDIA_TYPE_VIDEO == p_params->codec_type; }
 		inline bool			is_audio()			const noexcept { return AVMEDIA_TYPE_AUDIO == p_params->codec_type; }
 		inline bool			is_subtitle()		const noexcept { return AVMEDIA_TYPE_SUBTITLE == p_params->codec_type; }
@@ -117,16 +118,16 @@ namespace ff
 		inline channel_layout			a_channel_layout()		const noexcept { return ff::channel_layout(p_params->ch_layout); }
 
 		/*
-		* @returns The sample aspect ratio (w/h). Or -1/1 if unknown.
+		* @returns The sample aspect ratio (w/h). Or 0/1 if unknown.
 		*/
 		inline ff::rational v_sar() const noexcept
 		{
-			if (p_params->sample_aspect_ratio.den != 0)
+			if (!ff::av_rational_invalid_or_zero(p_params->sample_aspect_ratio))
 			{
 				return ff::rational(p_params->sample_aspect_ratio);
 			}
 			// Unknown.
-			return ff::rational(-1, 1);
+			return ff::zero_rational;
 		}
 
 	public:
@@ -149,7 +150,7 @@ namespace ff
 		inline void set_v_color_space(AVColorSpace cs)			noexcept { p_params->color_space = cs; }
 		inline void set_v_color_primaries(AVColorPrimaries cp)	noexcept { p_params->color_primaries = cp; }
 		inline void set_v_chroma_location(AVChromaLocation cl)	noexcept { p_params->chroma_location = cl; }
-		inline void set_v_aspect_ratio(ff::rational ar)			noexcept { p_params->sample_aspect_ratio = ar.av_rational(); }
+		inline void set_v_sar(ff::rational sar)					noexcept { p_params->sample_aspect_ratio = sar.av_rational(); }
 
 		// Set audio related fields
 

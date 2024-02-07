@@ -179,28 +179,28 @@ namespace ff
 /////////////////////////////// codec property methods ///////////////////////////////
 		/*
 		* @returns if the video pixel format is supported by this codec
-		* @throws std::logic_error if !created().
+		* @throws std::logic_error if destroyed().
 		* @throws std::logic_error if the codec is not for videos.
 		* @throws std::domain_error if the codec does not know the supported values.
 		*/
 		bool is_v_pixel_format_supported(AVPixelFormat fmt) const;
 		/*
 		* @returns if the video frame rate is supported by this codec
-		* @throws std::logic_error if !created().
+		* @throws std::logic_error if destroyed().
 		* @throws std::logic_error if the codec is not for videos.
 		* @throws std::domain_error if the codec does not know the supported values.
 		*/
 		bool is_v_frame_rate_supported(ff::rational fr) const;
 		/*
 		* @returns if the audio sample format is supported by this codec
-		* @throws std::logic_error if !created().
+		* @throws std::logic_error if destroyed().
 		* @throws std::logic_error if the codec is not for audios.
 		* @throws std::domain_error if the codec does not know the supported values.
 		*/
 		bool is_a_sample_format_supported(AVSampleFormat fmt) const;
 		/*
 		* @returns if the audio sample rate is supported by this codec
-		* @throws std::logic_error if !created().
+		* @throws std::logic_error if destroyed().
 		* @throws std::logic_error if the codec is not for audios.
 		* @throws std::domain_error if the codec does not know the supported values.
 		*/
@@ -211,11 +211,11 @@ namespace ff
 		*/
 		inline bool is_a_channel_layout_supported(const channel_layout& layout) const
 		{
-			is_a_channel_layout_supported(layout.av_ch_layout());
+			return is_a_channel_layout_supported(layout.av_ch_layout());
 		}
 		/*
 		* @returns if the audio channel layout is supported by this codec
-		* @throws std::logic_error if !created().
+		* @throws std::logic_error if destroyed().
 		* @throws std::logic_error if the codec is not for audios.
 		* @throws std::domain_error if the codec does not know the supported values.
 		*/
@@ -223,28 +223,28 @@ namespace ff
 
 		/*
 		* @returns the list of all supported video pixel formats
-		* @throws std::logic_error if !created().
+		* @throws std::logic_error if destroyed().
 		* @throws std::logic_error if the codec is not for videos.
 		* @throws std::domain_error if the codec does not know the supported values.
 		*/
 		std::vector<AVPixelFormat> supported_v_pixel_formats() const;
 		/*
 		* @returns the list of all supported video frame rates
-		* @throws std::logic_error if !created().
+		* @throws std::logic_error if destroyed().
 		* @throws std::logic_error if the codec is not for videos.
 		* @throws std::domain_error if the codec does not know the supported values.
 		*/
 		std::vector<ff::rational> supported_v_frame_rates() const;
 		/*
 		* @returns the list of all supported audio sample formats
-		* @throws std::logic_error if !created().
+		* @throws std::logic_error if destroyed().
 		* @throws std::logic_error if the codec is not for audios.
 		* @throws std::domain_error if the codec does not know the supported values.
 		*/
 		std::vector<AVSampleFormat> supported_a_sample_formats() const;
 		/*
 		* @returns the list of all supported audio sample rates.
-		* @throws std::logic_error if !created().
+		* @throws std::logic_error if destroyed().
 		* @throws std::logic_error if the codec is not for audios.
 		* @throws std::domain_error if the codec does not know the supported values.
 		*/
@@ -253,7 +253,7 @@ namespace ff
 		* @returns the list of (const pointers to) all supported audio channel layouts.
 		Because these layouts are stored permanently somewhere in the codec desc,
 		I can simply store references (ptrs instead as refs may not have size) to them.
-		* @throws std::logic_error if !created().
+		* @throws std::logic_error if destroyed().
 		* @throws std::logic_error if the codec is not for audios.
 		* @throws std::domain_error if the codec does not know the supported values.
 		*/
@@ -275,6 +275,7 @@ namespace ff
 		sources that seems to be compatiable (use *ALL* the properties of a decoder for an encoder).
 		That's because some options may not be compatible between encoders and decoders or between codecs and de/muxers.
 		* @throws std::logic_error if not created.
+		* @throws std::invalid_argument if p's type is not the same as the codec's
 		*/
 		void set_codec_properties(const codec_properties& p);
 

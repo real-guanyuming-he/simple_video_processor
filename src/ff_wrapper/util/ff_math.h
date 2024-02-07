@@ -74,6 +74,13 @@ namespace ff
 			: num(0), den(1) {}
 
 		/*
+		* Initializes from an integer.
+		* Will set the numerator to the integer and the denominator to 1.
+		*/
+		explicit constexpr rational_temp(T integer)
+			: num(integer), den(1) {}
+
+		/*
 		* Initializes directly from an AVRational
 		* 
 		* @param avr
@@ -91,8 +98,8 @@ namespace ff
 		/*
 		* Initializes the rational with explicit numerator and denominator.
 		* 
-		* @param num numerator
-		* @param den denominator
+		* @param n numerator
+		* @param d denominator
 		* @throws std::invalid_argument if den = 0
 		*/
 		constexpr rational_temp(T n, T d)
@@ -116,6 +123,13 @@ namespace ff
 
 			num = avr.num;
 			den = avr.den;
+			return *this;
+		}
+
+		constexpr rational_temp& operator=(T integer) noexcept
+		{
+			num = T;
+			den = 1;
 			return *this;
 		}
 
