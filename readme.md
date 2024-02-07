@@ -1,3 +1,6 @@
+# Under Development
+The project is currently under heavy development and may be unstable. Wait until the first stable release.
+
 # Introduction
 The project consists of two pieces of software.
 - An encapsulation of `FFmpeg` done in modern C++ (C++ 20), which is designed to be cross-platform.
