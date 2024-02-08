@@ -22,10 +22,19 @@
 
 #include <vector> // Streams are stored in a vector
 
-struct AVFormatContext;
+struct AVInputFormat;
 
 namespace ff
 {
+	/*
+	* Demuxer for local files.
+	* 
+	* Create a useable demuxer by giving it the path to the file you want to demux.
+	* Then, it is ready to be used.
+	* 
+	* Demux by calling demux_next_packet() until eof().
+	* Use seek() to seek.
+	*/
 	class FF_WRAPPER_API demuxer : public media_base
 	{
 	public:
@@ -37,6 +46,7 @@ namespace ff
 
 		/*
 		* Opens a local multimedia file pointed to by path.
+		* The demuxer will be ready after the call.
 		*
 		* @param the absolute path to the multimedia file.
 		* @param probe_stream_info: if set to true, then after the file is opened,
@@ -54,6 +64,7 @@ namespace ff
 
 		/*
 		* Opens a local multimedia file pointed to by path.
+		* The demuxer will be ready after the call.
 		* 
 		* @param the absolute path to the multimedia file.
 		* @param probe_stream_info: if set to true, then after the file is opened,
@@ -113,6 +124,7 @@ namespace ff
 		* @returns the packet demuxed, or a DESTROYED packet if eof has been reached.
 		* Since then, eof() remains true until it is reset by another related method.
 		* If the packet is not DESTROYED, then it is linked to its corresponding stream.
+		* @throws std::logic_error if the demuxer isn't ready (i.e. its ctx is nullptr)
 		*/
 		packet demux_next_packet();
 
@@ -124,6 +136,7 @@ namespace ff
 		* @param timestamp seek to where, in the time base of the stream.
 		* @param direction ture=forward;false=backward
 		* 
+		* @throws std::logic_error if the demuxer isn't ready (i.e. its ctx is nullptr)
 		* @throws std::out_of_range if stream ind is wrong
 		*/
 		void seek(int stream_ind, int64_t timestamp, bool direction = true);
@@ -131,7 +144,8 @@ namespace ff
 		bool eof() const noexcept { return eof_reached; }
 
 	public:
-		const ::AVFormatContext* get_av_fmt_ctx() const noexcept { return p_fmt_ctx; }
+		inline const ::AVInputFormat* av_input_fmt() const noexcept { return p_demuxer_desc; }
+		inline const ::AVInputFormat* av_input_fmt() noexcept { return p_demuxer_desc; }
 
 		/*
 		* @returns the stream specified by the index.
@@ -231,12 +245,14 @@ namespace ff
 		*/
 		// TODO: Add the fields, probably with the decoder information returned by av_find_best_stream()
 
-		private:
-			/*
-			* Set to true during a call to demux_next_packet()
-			* if it detects the eof.
-			*/
-			bool eof_reached = false;
+	private:
+		const AVInputFormat* p_demuxer_desc = nullptr;
+
+		/*
+		* I will set to true during a call to demux_next_packet()
+		* if the demuxer detects the eof.
+		*/
+		bool eof_reached = false;
 
 	private:
 		// Because of the two versions of methods that use dict,
@@ -256,5 +272,5 @@ namespace ff
 		virtual std::string description() const noexcept override;
 		virtual std::vector<std::string> short_names() const noexcept override;
 		virtual std::vector<std::string> extensions() const noexcept override;
-};
+	};
 }

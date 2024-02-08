@@ -113,7 +113,7 @@ namespace ff
 		////////////////////////// State Controls //////////////////////////
 	public:
 		// The class uses states to control the memory allocations.
-		enum class ff_object_state
+		enum ff_object_state
 		{
 			// The object has no memory allocated for it. The value of its pointers are all nullptr.
 			DESTROYED,

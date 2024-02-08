@@ -88,15 +88,69 @@ int create_test_av
 
 int main()
 {
-	// The demuxer requires the absolute path to files,
-	// hence obtain this.
-	fs::path working_dir(fs::current_path());
-
 	/*
 	* Testing to the demuxer is mostly integration test,
 	* as well as some whitebox test.
 	* This is because demuxing a file is quite complex.
+	* 
+	* In addition, media_base isn't tested individually but in here and test_muxer.cpp.
 	*/
+
+	// Test media_base
+	{
+		std::string l1;
+		TEST_ASSERT_TRUE(ff::media_base::string_to_list(l1).empty(), "Should return an empty list.");
+
+		l1 = "abcdefu";
+		TEST_ASSERT_EQUALS
+		(
+			std::vector<std::string>{ l1 }, 
+			ff::media_base::string_to_list(l1), "Should return a list of the only object."
+		);
+
+		l1 = "s1h,9j0;.,0ujhn,{},1()!,2sc";
+		std::vector<std::string> expected
+		{
+			"s1h", "9j0;.", "0ujhn", "{}", "1()!", "2sc"
+		};
+		TEST_ASSERT_EQUALS
+		(
+			expected,
+			ff::media_base::string_to_list(l1), "Should separate successfully despite other characters"
+		);
+
+		l1 = "abcd,efg,,,u";
+		expected = std::vector<std::string>
+		{
+			"abcd", "efg", "u"
+		};
+		TEST_ASSERT_EQUALS
+		(
+			expected,
+			ff::media_base::string_to_list(l1), "Should ignore continuous commas"
+		);
+	}
+
+	// Testing demuxers not created yet
+	{
+		ff::demuxer unusable1;
+
+		TEST_ASSERT_EQUALS(nullptr, unusable1.av_fmt_ctx(), "Should have nullptr ptrs");
+		TEST_ASSERT_EQUALS(nullptr, unusable1.av_input_fmt(), "Should have nullptr ptrs");
+
+		// These methods should not be ready.
+
+		TEST_ASSERT_THROWS(unusable1.description(), std::logic_error);
+		TEST_ASSERT_THROWS(unusable1.short_names(), std::logic_error);
+		TEST_ASSERT_THROWS(unusable1.extensions(), std::logic_error);
+
+		TEST_ASSERT_THROWS(unusable1.demux_next_packet(), std::logic_error);
+		TEST_ASSERT_THROWS(unusable1.seek(0, 0), std::logic_error);
+	}
+
+	// The demuxer requires the absolute path to files,
+	// hence obtain this.
+	fs::path working_dir(fs::current_path());
 	
 	// Some simple video with only 1 video stream
 	{

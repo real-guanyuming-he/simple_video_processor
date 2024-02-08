@@ -21,6 +21,7 @@
 */
 
 #include "../util/util.h"
+#include "../util/ff_time.h"
 
 #include <string>
 #include <vector>
@@ -46,18 +47,30 @@ namespace ff
 			: p_fmt_ctx(fmt_ctx) {}
 
 	public:
+		inline ::AVFormatContext* av_fmt_ctx() noexcept { return p_fmt_ctx; }
+		inline const ::AVFormatContext* av_fmt_ctx() const noexcept { return p_fmt_ctx; }
+
+	public:
+		/*
+		* These don't test if p_fmt_ctx is nullptr for faster accesses.
+		* After all, nullptr access should be captured by the debugger or the OS.
+		*/
+
 		/*
 		* @returns a description of the media file's format.
+		* @throws std::logic_error if the derived class is not ready for this.
 		*/
 		virtual std::string description() const noexcept = 0;
 
 		/*
 		* @returns a list of short names that the format of the media file may be called
+		* @throws std::logic_error if the derived class is not ready for this.
 		*/
 		virtual std::vector<std::string> short_names() const noexcept = 0;
 
 		/*
 		* @returns a list of file extensions that the format of the media file may use
+		* @throws std::logic_error if the derived class is not ready for this.
 		*/
 		virtual std::vector<std::string> extensions() const noexcept = 0;
 
@@ -65,9 +78,14 @@ namespace ff
 		* Converts a list represented by such a string as obtained inside the above two methods
 		* into a vector. The items are assumed to be separated by commas.
 		*/
-		static std::vector<std::string> string_to_list(std::string str, char separator = ',');
+		static std::vector<std::string> string_to_list(const std::string& str, char separator = ',');
 
 	public:
+		/*
+		* These don't test if p_fmt_ctx is nullptr for faster accesses.
+		* After all, nullptr access should be captured by the debugger or the OS.
+		*/
+
 		/*
 		* @returns the path to the file. Set by libavformat when opening the file;
 		* set by the muxer before muxing.
@@ -82,7 +100,7 @@ namespace ff
 		/*
 		* @returns the time of the first frame, in AV_TIME_BASE.
 		*/
-		int64_t start_time() const noexcept;
+		ff::time start_time() const noexcept;
 
 		/*
 		* @returns the bit rate of the file, in bits/sec, or 0 if unavailable.
@@ -92,7 +110,7 @@ namespace ff
 		/*
 		* @returns the duration of the multimedia file, in AV_TIME_BASE, or 0 is unknown.
 		*/
-		int64_t duration() const noexcept;
+		ff::time duration() const noexcept;
 
 	protected:
 		::AVFormatContext* p_fmt_ctx = nullptr;

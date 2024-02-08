@@ -49,6 +49,9 @@ ff::demuxer::demuxer(const char* path, bool probe_stream_info, const dict& optio
 	}
 
 	internal_open_format(path, probe_stream_info, ppavd);
+
+	// Post creation. Set other fields.
+	p_demuxer_desc = p_fmt_ctx->iformat;
 }
 
 ff::demuxer::demuxer(const char* path, dict& options, bool probe_stream_info)
@@ -60,13 +63,16 @@ ff::demuxer::demuxer(const char* path, dict& options, bool probe_stream_info)
 	}
 	if (options.empty())
 	{
-		throw std::invalid_argument("Options cannot be empty. If you want empty options, call the const version.");
+		throw std::invalid_argument("Options cannot be empty. If you want empty options, call the const dict version.");
 	}
 
 	// Open the file
 	AVDictionary* pavd = options.get_av_dict();
 	internal_open_format(path, probe_stream_info, &pavd);
 	options = pavd;
+
+	// Post creation. Set other fields.
+	p_demuxer_desc = p_fmt_ctx->iformat;
 }
 
 ff::demuxer::~demuxer()
@@ -104,6 +110,11 @@ void ff::demuxer::probe_stream_information(dict& options)
 
 ff::packet ff::demuxer::demux_next_packet()
 {
+	if (nullptr == p_fmt_ctx)
+	{
+		throw std::logic_error("Not ready.");
+	}
+
 	// Create an AVPacket inside the function. 
 	// On success, return a ff::packet that takes over the ownership of the AVPacket.
 	// I do this instead of creating a ff::packet directly 
@@ -155,6 +166,11 @@ ff::packet ff::demuxer::demux_next_packet()
 
 void ff::demuxer::seek(int stream_ind, int64_t timestamp, bool direction)
 {
+	if (nullptr == p_fmt_ctx)
+	{
+		throw std::logic_error("Not ready.");
+	}
+
 	if (stream_ind < 0 || stream_ind >= p_fmt_ctx->nb_streams)
 	{
 		throw std::out_of_range("Stream index is out of range.");
@@ -262,15 +278,30 @@ void ff::demuxer::internal_probe_stream_info(::AVDictionary** dict)
 
 std::string ff::demuxer::description() const noexcept
 {
-	return std::string(p_fmt_ctx->iformat->long_name);
+	if (nullptr == p_demuxer_desc)
+	{
+		throw std::logic_error("Not ready.");
+	}
+
+	return std::string(p_demuxer_desc->long_name);
 }
 
 std::vector<std::string> ff::demuxer::short_names() const noexcept
 {
-	return media_base::string_to_list(std::string(p_fmt_ctx->iformat->name));
+	if (nullptr == p_demuxer_desc)
+	{
+		throw std::logic_error("Not ready.");
+	}
+
+	return media_base::string_to_list(std::string(p_demuxer_desc->name));
 }
 
 std::vector<std::string> ff::demuxer::extensions() const noexcept
 {
-	return media_base::string_to_list(std::string(p_fmt_ctx->iformat->extensions));
+	if (nullptr == p_demuxer_desc)
+	{
+		throw std::logic_error("Not ready.");
+	}
+
+	return media_base::string_to_list(std::string(p_demuxer_desc->extensions));
 }
