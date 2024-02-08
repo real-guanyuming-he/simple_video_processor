@@ -60,19 +60,19 @@ namespace ff
 		* @returns a description of the media file's format.
 		* @throws std::logic_error if the derived class is not ready for this.
 		*/
-		virtual std::string description() const noexcept = 0;
+		virtual std::string description() const = 0;
 
 		/*
 		* @returns a list of short names that the format of the media file may be called
 		* @throws std::logic_error if the derived class is not ready for this.
 		*/
-		virtual std::vector<std::string> short_names() const noexcept = 0;
+		virtual std::vector<std::string> short_names() const = 0;
 
 		/*
 		* @returns a list of file extensions that the format of the media file may use
 		* @throws std::logic_error if the derived class is not ready for this.
 		*/
-		virtual std::vector<std::string> extensions() const noexcept = 0;
+		virtual std::vector<std::string> extensions() const = 0;
 
 		/*
 		* Converts a list represented by such a string as obtained inside the above two methods

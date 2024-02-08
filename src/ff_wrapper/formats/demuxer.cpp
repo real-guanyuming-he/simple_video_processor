@@ -276,7 +276,7 @@ void ff::demuxer::internal_probe_stream_info(::AVDictionary** dict)
 	}
 }
 
-std::string ff::demuxer::description() const noexcept
+std::string ff::demuxer::description() const
 {
 	if (nullptr == p_demuxer_desc)
 	{
@@ -286,7 +286,7 @@ std::string ff::demuxer::description() const noexcept
 	return std::string(p_demuxer_desc->long_name);
 }
 
-std::vector<std::string> ff::demuxer::short_names() const noexcept
+std::vector<std::string> ff::demuxer::short_names() const
 {
 	if (nullptr == p_demuxer_desc)
 	{
@@ -296,7 +296,7 @@ std::vector<std::string> ff::demuxer::short_names() const noexcept
 	return media_base::string_to_list(std::string(p_demuxer_desc->name));
 }
 
-std::vector<std::string> ff::demuxer::extensions() const noexcept
+std::vector<std::string> ff::demuxer::extensions() const
 {
 	if (nullptr == p_demuxer_desc)
 	{

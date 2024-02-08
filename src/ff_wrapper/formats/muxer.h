@@ -56,7 +56,8 @@ namespace ff
 		* @param file_path path to the file.
 		* @param fmt_name optional. Unique format name used in FFmpeg for the format.
 		* @param fmt_mime_type optional. MIME type for the format.
-		* @throws std::invalid_argument if the file path provides no information on the format (e.g. no extension).
+		* @throws std::invalid_argument if the file_path is nullptr.
+		* @throws std::invalid_argument if the names together provide no information on the format.
 		*/
 		explicit muxer
 		(
@@ -73,32 +74,33 @@ namespace ff
 	public:
 ////////////////////////// Inherited via media_base //////////////////////////
 
-		std::string description() const noexcept override;
-		std::vector<std::string> short_names() const noexcept override;
-		std::vector<std::string> extensions() const noexcept override;
+		std::string description() const override;
+		std::vector<std::string> short_names() const override;
+		std::vector<std::string> extensions() const override;
 
 	private:
 ////////////////////////// Inherited via ff_object //////////////////////////
 
 		/*
-		* Allocate the fmt ctx.
+		* Allocate the fmt ctx and assigns desc (oformat) to it.
 		*/
 		void internal_allocate_object_memory() override;
 		/*
 		* Assumes that you have filled all the info needed for the muxer.
 		* This methods prepares the fmt ctx and writes the file header.
 		* 
-		* @param TBD: let the parameters decide how the muxer reacts to missing/existing file.
-		* Will it create/overwrite the file or fail?
+		* @param TBD: Decide how the parameters are going to be used.
 		*/
 		void internal_allocate_resources_memory(uint64_t size, void* additional_information) override;
 		/*
-		* Frees the fmt ctx
+		* Closes the file and releases the fmt ctx.
 		*/
 		void internal_release_object_memory() noexcept override;
 		/*
-		* The file opened during muxing is closed. The context is not touched
-		* but you should NOT try to use the muxer again.
+		* Releases all the streams created for the muxer.
+		* You should NOT try to use the muxer again after calling this.
+		* If you call this during muxing, then the resources will be safely released,
+		* but the file written will have undefined content.
 		*/
 		void internal_release_resources_memory() noexcept override;
 
@@ -117,7 +119,7 @@ namespace ff
 		void finalize();
 
 	private:
-		AVOutputFormat* p_muxer_desc = nullptr;
-
+		const AVOutputFormat* p_muxer_desc = nullptr;
+		const char* file_path = nullptr;
 	};
 }
