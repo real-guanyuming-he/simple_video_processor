@@ -36,10 +36,17 @@ In the new project, I can practice more on the theories I learned from my univer
 The wrapper is currently being developed. It now has:
 - demuxer
 - decoder
+- encoder
+- muxer (Not tested yet)
 - encapsulation of various data structures of `FFmpeg`.
 
 It has the following features:
-1. Encapsulation of `FFmpeg` C APIs done in modern C++ (C++ 20). Error handling by exceptions and assertions. Constexper math. Clean and reasonable access control. The encapsulation tries to preserve as much of `FFmpeg`'s power as possible while providing object-oriented access to it.
+1. Encapsulation of `FFmpeg` C APIs done in modern C++ (C++ 20). The encapsulation tries to 
+    - preserve as much of `FFmpeg`'s power as possible while providing object-oriented access to it;
+    - use C++ classes to establish and maintain invariants that would otherwise be maintained by hand in C of the FFmpeg objects;
+    - provide convenient helpers for the most common tasks and scenarios;
+    - handle errors by exceptions and assertions;
+    - provide fast and constexpr math whenever possible.
 
 2. Thorough specification through comments.
 
@@ -50,7 +57,11 @@ It has the following features:
 ## Planned features:
 The GUI is waiting to be developed.
 
-1. Perform simple video processing tasks:
+1. Modern design principles are to be used. You can expect
+    - Requirement Engineering
+    - Prototyping
+    - Usability Testing
+2. Perform simple video processing tasks:
     - Reformating
     - Clipping
     - Concatenation
@@ -58,7 +69,7 @@ The GUI is waiting to be developed.
     - Compressing
     - and more...
 
-2. Have a modern GUI made in `WinUI 3`.
+3. Have a modern GUI made in `WinUI 3`.
 
 # Configuration and Building
 This project uses `vcpkg` and `CMake` to manage the build. Before you can build this project, you must have the two installed on your system and configured as follows:
