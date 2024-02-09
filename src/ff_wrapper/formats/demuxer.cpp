@@ -18,7 +18,7 @@
 
 #include "../util/ff_helpers.h"
 
-#include <filesystem> // For std::filesystem::filesystem_error
+#include <filesystem>
 using filesystem_error = std::filesystem::filesystem_error;
 
 extern "C"
@@ -26,40 +26,42 @@ extern "C"
 #include "libavformat/avformat.h"
 }
 
-ff::demuxer::demuxer(const char* path, bool probe_stream_info, const dict& options)
+ff::demuxer::demuxer(const std::filesystem::path& path, bool probe_stream_info, const dict& options)
 	: media_base(nullptr)
 {
-	if (nullptr == path)
+	const std::string path_str(path.generic_string());
+
+	if (path.empty())
 	{
-		throw std::invalid_argument("Path cannot be nullptr");
+		throw std::invalid_argument("Path cannot be empty");
 	}
 
 	// Open the file
 	int ret = 0;
-	AVDictionary** ppavd;
 	if (options.empty())
 	{
-		ppavd = nullptr;
+		internal_open_format(path_str, probe_stream_info, nullptr);
 	}
 	else
 	{
 		// make a copy lest the dict be changed.
-		dict cpy(options); auto* cpy_avd = cpy.get_av_dict();
-		ppavd = &cpy_avd;
+		dict cpy(options); 
+		auto* cpy_avd = cpy.get_av_dict();
+		internal_open_format(path_str, probe_stream_info, &cpy_avd);
 	}
-
-	internal_open_format(path, probe_stream_info, ppavd);
 
 	// Post creation. Set other fields.
 	p_demuxer_desc = p_fmt_ctx->iformat;
 }
 
-ff::demuxer::demuxer(const char* path, dict& options, bool probe_stream_info)
+ff::demuxer::demuxer(const std::filesystem::path& path, dict& options, bool probe_stream_info)
 	: media_base(nullptr)
 {
-	if (nullptr == path)
+	const std::string path_str(path.generic_string());
+
+	if (path.empty())
 	{
-		throw std::invalid_argument("Path cannot be nullptr");
+		throw std::invalid_argument("Path cannot be empty");
 	}
 	if (options.empty())
 	{
@@ -68,7 +70,7 @@ ff::demuxer::demuxer(const char* path, dict& options, bool probe_stream_info)
 
 	// Open the file
 	AVDictionary* pavd = options.get_av_dict();
-	internal_open_format(path, probe_stream_info, &pavd);
+	internal_open_format(path_str, probe_stream_info, &pavd);
 	options = pavd;
 
 	// Post creation. Set other fields.
@@ -82,18 +84,17 @@ ff::demuxer::~demuxer()
 
 void ff::demuxer::probe_stream_information(const dict& options)
 {
-	AVDictionary** ppavd;
 	if (options.empty())
 	{
-		ppavd = nullptr;
+		internal_probe_stream_info(nullptr);
 	}
 	else
 	{
 		// make a copy lest the dict be changed.
-		dict cpy(options); auto* cpy_avd = cpy.get_av_dict();
-		ppavd = &cpy_avd;
+		dict cpy(options); 
+		auto* cpy_avd = cpy.get_av_dict();
+		internal_probe_stream_info(&cpy_avd);
 	}
-	internal_probe_stream_info(ppavd);
 }
 
 void ff::demuxer::probe_stream_information(dict& options)
@@ -110,10 +111,7 @@ void ff::demuxer::probe_stream_information(dict& options)
 
 ff::packet ff::demuxer::demux_next_packet()
 {
-	if (nullptr == p_fmt_ctx)
-	{
-		throw std::logic_error("Not ready.");
-	}
+	FF_ASSERT(p_fmt_ctx != nullptr, "Must be ready after construction.");
 
 	// Create an AVPacket inside the function. 
 	// On success, return a ff::packet that takes over the ownership of the AVPacket.
@@ -166,10 +164,7 @@ ff::packet ff::demuxer::demux_next_packet()
 
 void ff::demuxer::seek(int stream_ind, int64_t timestamp, bool direction)
 {
-	if (nullptr == p_fmt_ctx)
-	{
-		throw std::logic_error("Not ready.");
-	}
+	FF_ASSERT(p_fmt_ctx != nullptr, "Must be ready after construction.");
 
 	if (stream_ind < 0 || stream_ind >= p_fmt_ctx->nb_streams)
 	{
@@ -207,9 +202,9 @@ void ff::demuxer::seek(int stream_ind, int64_t timestamp, bool direction)
 	}
 }
 
-void ff::demuxer::internal_open_format(const char* path, bool probe_stream_info, ::AVDictionary** dict)
+void ff::demuxer::internal_open_format(const std::string& path, bool probe_stream_info, ::AVDictionary** dict)
 {
-	int ret = avformat_open_input(&p_fmt_ctx, path, nullptr, dict);
+	int ret = avformat_open_input(&p_fmt_ctx, path.c_str(), nullptr, dict);
 
 	if (ret < 0)
 	{

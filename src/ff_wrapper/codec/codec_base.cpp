@@ -466,13 +466,14 @@ void ff::codec_base::create_codec_context(ff::dict& options)
 
 void ff::codec_base::create_codec_context(const ff::dict& options)
 {
-	AVDictionary** ppavd = nullptr;
-	if (!options.empty())
+	if (options.empty())
+	{
+		allocate_resources_memory(0, nullptr);
+	}
+	else
 	{
 		ff::dict cpy(options);
 		auto* pavd = cpy.get_av_dict();
-		ppavd = &pavd;
+		allocate_resources_memory(0, &pavd);
 	}
-
-	allocate_resources_memory(0, ppavd);
 }

@@ -20,9 +20,17 @@
 #include "stream.h" // A demuxer has info about all streams in a file
 #include "../data/packet.h" // A demuxer demuxes a file into packets
 
+#include <string>
 #include <vector> // Streams are stored in a vector
 
 struct AVInputFormat;
+namespace std
+{
+	namespace filesystem
+	{
+		class path;
+	}
+}
 
 namespace ff
 {
@@ -39,25 +47,24 @@ namespace ff
 	{
 	public:
 		/*
-		* Inits all pointers to nullptr.
+		* A demuxer must be associated with an existing local file.
 		*/
-		demuxer() noexcept :
-			media_base() {}
+		demuxer() = delete;
 
 		/*
 		* Opens a local multimedia file pointed to by path.
 		* The demuxer will be ready after the call.
 		*
-		* @param the absolute path to the multimedia file.
+		* @param file_path the absolute path to the multimedia file.
 		* @param probe_stream_info: if set to true, then after the file is opened,
 		the ctor probes the stream information of the file by reading and potentially decoding a few packets.
-		* @param options specifies how the file is opened. Is empty by default.
+		* @param options specifies how the demuxer works. Is empty by default.
 		* @throws std::invalid_argument if path is nullptr.
 		* @throws std::filesystem::filesystem_error if file not found.
 		*/
 		demuxer
 		(
-			const char* path, 
+			const std::filesystem::path& file_path, 
 			bool probe_stream_info = true, 
 			const dict& options = dict()
 		);
@@ -69,14 +76,14 @@ namespace ff
 		* @param the absolute path to the multimedia file.
 		* @param probe_stream_info: if set to true, then after the file is opened,
 		the ctor probes the stream information of the file by reading and potentially decoding a few packets.
-		* @param options specifies how the file is opened. Cannot be empty.
+		* @param options specifies how the demuxer works. Cannot be empty.
 		* After the constructor returns, the options argument will be replaced with a dict containing options that were not found.
 		* @throws std::invalid_argument if path is nullptr or options is empty.
 		* @throws std::filesystem::filesystem_error if file not found.
 		*/
 		demuxer
 		(
-			const char* path,
+			const std::filesystem::path& path,
 			dict& options,
 			bool probe_stream_info = true
 		);
@@ -124,7 +131,6 @@ namespace ff
 		* @returns the packet demuxed, or a DESTROYED packet if eof has been reached.
 		* Since then, eof() remains true until it is reset by another related method.
 		* If the packet is not DESTROYED, then it is linked to its corresponding stream.
-		* @throws std::logic_error if the demuxer isn't ready (i.e. its ctx is nullptr)
 		*/
 		packet demux_next_packet();
 
@@ -136,7 +142,6 @@ namespace ff
 		* @param timestamp seek to where, in the time base of the stream.
 		* @param direction ture=forward;false=backward
 		* 
-		* @throws std::logic_error if the demuxer isn't ready (i.e. its ctx is nullptr)
 		* @throws std::out_of_range if stream ind is wrong
 		*/
 		void seek(int stream_ind, int64_t timestamp, bool direction = true);
@@ -261,7 +266,7 @@ namespace ff
 		/*
 		* common piece of code used in the constructors
 		*/
-		void internal_open_format(const char* path, bool probe_stream_info, ::AVDictionary** dict);
+		void internal_open_format(const std::string& path, bool probe_stream_info, ::AVDictionary** dict);
 		/*
 		* common piece of code used in probe_stream_information()
 		*/

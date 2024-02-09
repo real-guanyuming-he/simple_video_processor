@@ -386,7 +386,7 @@ int main()
 		fs::path test1_path(working_dir / "encoder_test1.mp3");
 		std::string test1_path_str(test1_path.generic_string());
 		create_test_audio(test1_path_str, "libmp3lame", 4, 32000, 64000);
-		ff::demuxer dem1(test1_path_str.c_str());
+		ff::demuxer dem1(test1_path);
 
 		// Create the decoder from ID.
 		ff::stream as = dem1.get_stream(0);

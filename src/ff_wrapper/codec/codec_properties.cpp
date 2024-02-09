@@ -55,19 +55,7 @@ ff::codec_properties::codec_properties(::AVCodecParameters* p, ff::rational time
 		throw std::bad_alloc();
 	}
 
-	int ret = avcodec_parameters_copy(p_params, p);
-	if (ret < 0)
-	{
-		switch (ret)
-		{
-		case AVERROR(ENOMEM):
-			throw std::bad_alloc();
-			break;
-		default:
-			ON_FF_ERROR_WITH_CODE("Unexpected error: Could not copy AVCodecParameters", ret);
-			break;
-		}
-	}
+	avcodec_parameters_copy(*p_params, *p);
 }
 
 ff::codec_properties::codec_properties(const::AVCodecContext* codec_ctx)
@@ -98,7 +86,46 @@ ff::codec_properties::codec_properties(const codec_properties& other)
 {
 	tb = other.tb;
 
-	int ret = avcodec_parameters_copy(p_params, other.p_params);
+	avcodec_parameters_copy(*p_params, *(other.p_params));
+}
+
+void ff::codec_properties::set_a_channel_layout(const AVChannelLayout& ch)
+{
+	channel_layout::av_channel_layout_copy(p_params->ch_layout, ch);
+}
+
+ff::codec_properties ff::codec_properties::essential_properties() const
+{
+	codec_properties ret;
+
+	// Copy the type
+	ret.p_params->codec_type = p_params->codec_type;
+
+	// Copy essential properties of all types.
+	ret.p_params->format = p_params->format;
+	ret.tb = tb;
+	
+	// Copy type specific properties.
+	switch (type())
+	{
+	case AVMEDIA_TYPE_VIDEO: // Video
+		ret.p_params->width = p_params->width;
+		ret.p_params->height = p_params->height;
+		ret.p_params->sample_aspect_ratio = p_params->sample_aspect_ratio;
+		ret.p_params->framerate = p_params->framerate;
+		break;
+	case AVMEDIA_TYPE_AUDIO: // Audio
+		ff::channel_layout::av_channel_layout_copy(ret.p_params->ch_layout, p_params->ch_layout);
+		ret.p_params->sample_rate = p_params->sample_rate;
+		break;
+	}
+
+	return ret;
+}
+
+void ff::codec_properties::avcodec_parameters_copy(AVCodecParameters& dst, const AVCodecParameters& src)
+{
+	int ret = ::avcodec_parameters_copy(&dst, &src);
 	if (ret < 0)
 	{
 		switch (ret)
@@ -111,9 +138,4 @@ ff::codec_properties::codec_properties(const codec_properties& other)
 			break;
 		}
 	}
-}
-
-void ff::codec_properties::set_a_channel_layout(const AVChannelLayout& ch)
-{
-	channel_layout::av_channel_layout_copy(p_params->ch_layout, ch);
 }

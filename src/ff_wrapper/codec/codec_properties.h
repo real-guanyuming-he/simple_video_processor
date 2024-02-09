@@ -171,10 +171,34 @@ namespace ff
 		*/
 		void set_a_channel_layout(const AVChannelLayout& ch);
 
+	public:
+		/*
+		* Essential properties are:
+		*	1. First the type will be copied.
+		*	2. Format and time base for all types.
+		*	3. Width, height, frame rate, and sample aspect ratio for video.
+		*	4. Channel layout and sample rate for audio.
+		* You must ensure that this's type is set correctly.
+		* 
+		* @returns a codec_properties with the same essential properties as this.
+		* All other properties are set to their default values.
+		*/
+		codec_properties essential_properties() const;
+
 	private:
-		class ::AVCodecParameters* p_params;
+		AVCodecParameters* p_params;
 		// Decoders mostly do not use a time base, but most encoders do.
 		ff::rational tb;
+
+	public:
+		/*
+		* A wrapper of ::avcodec_parameters_copy()
+		* Errors are converted to exceptions.
+		* 
+		* @param dst destination
+		* @param src source
+		*/
+		static void avcodec_parameters_copy(AVCodecParameters& dst, const AVCodecParameters& src);
 	};
 
 }

@@ -141,41 +141,27 @@ bool ff::encoder::set_properties_from_decoder(const decoder& dec)
 		throw std::logic_error("dec must be ready and this must be created.");
 	}
 
-	// Query dp's essential fields one by one
-	// and set ep's accordingly.
 	ff::codec_properties dp = dec.get_codec_properties();
-	ff::codec_properties ep;
+	// First copy dp's essential ones.
+	ff::codec_properties ep = dp.essential_properties();
 
 	bool options_changed = false;
-
 	if (dp.type() != p_codec_desc->type)
 	{
 		throw std::invalid_argument("dec must be of the same type as enc's");
 	}
 
-	// Don't forget to set the type.
-	ep.set_type(p_codec_desc->type);
-
-	// Common essential fields for all types
-	ep.set_time_base(dp.time_base());
-
-	// Type related fields
+	// Then query each of the potentially unsupported properties.
 	if (dp.is_video())
 	{
-		// fmt, w, h, and frame_rate
-
-		ep.set_v_width(dp.v_width());
-		ep.set_v_height(dp.v_height());
-
+		// fmt and frame_rate
+		// might be unsupported
 		try
 		{
-			// If dp's fmt is supported
-			if (is_v_pixel_format_supported(dp.v_pixel_format()))
+			// If dp's pixel format is not supported
+			if (!is_v_pixel_format_supported(dp.v_pixel_format()))
 			{
-				ep.set_v_pixel_format(dp.v_pixel_format());
-			}
-			else // fmt's not supported
-			{
+				// Use one of the supported ones
 				options_changed = true;
 
 				auto supported = supported_v_pixel_formats();
@@ -186,19 +172,15 @@ bool ff::encoder::set_properties_from_decoder(const decoder& dec)
 		catch (const std::domain_error&) 
 		{
 			// Don't know which are supported
-			// then just use the decoder's
-			ep.set_v_pixel_format(dp.v_pixel_format());
+			// then just leave it as it is.
 		}
 
 		try
 		{
-			// If dp's frame rate is supported
-			if (is_v_frame_rate_supported(dp.v_frame_rate()))
+			// If dp's frame rate is not supported
+			if (!is_v_frame_rate_supported(dp.v_frame_rate()))
 			{
-				ep.set_v_frame_rate(dp.v_frame_rate());
-			}
-			else // fr's not supported
-			{
+				// Use one of the supported ones
 				options_changed = true;
 
 				auto supported = supported_v_frame_rates();
@@ -209,24 +191,21 @@ bool ff::encoder::set_properties_from_decoder(const decoder& dec)
 		catch (const std::domain_error&)
 		{
 			// Don't know which are supported
-			// then just use the decoder's
-			ep.set_v_frame_rate(dp.v_frame_rate());
+			// then just leave it as it is.
 		}
 
 	}
 	else if(dp.is_audio())
 	{
 		// fmt, sample rate, and channel layout
+		// might be unsupported
 
 		try
 		{
-			// If dp's fmt is supported
-			if (is_a_sample_format_supported(dp.a_sample_format()))
+			// If dp's fmt is not supported
+			if (!is_a_sample_format_supported(dp.a_sample_format()))
 			{
-				ep.set_a_sample_format(dp.a_sample_format());
-			}
-			else // fmt's not supported
-			{
+				// Use one of the supported ones
 				options_changed = true;
 
 				auto supported = supported_a_sample_formats();
@@ -237,19 +216,15 @@ bool ff::encoder::set_properties_from_decoder(const decoder& dec)
 		catch (const std::domain_error&)
 		{
 			// Don't know which are supported
-			// then just use the decoder's
-			ep.set_a_sample_format(dp.a_sample_format());
+			// then just leave it as it is.
 		}
 
 		try
 		{
-			// If dp's sample rate is supported
-			if (is_a_sample_rate_supported(dp.a_sample_rate()))
+			// If dp's sample rate is not supported
+			if (!is_a_sample_rate_supported(dp.a_sample_rate()))
 			{
-				ep.set_a_sample_rate(dp.a_sample_rate());
-			}
-			else // sr's not supported
-			{
+				// Use one of the supported ones
 				options_changed = true;
 
 				auto supported = supported_a_sample_rates();
@@ -260,19 +235,15 @@ bool ff::encoder::set_properties_from_decoder(const decoder& dec)
 		catch (const std::domain_error&)
 		{
 			// Don't know which are supported
-			// then just use the decoder's
-			ep.set_a_sample_rate(dp.a_sample_rate());
+			// then just leave it as it is.
 		}
 
 		try
 		{
-			// If dp's channel layout is supported
-			if (is_a_channel_layout_supported(dp.a_channel_layout_ref()))
+			// If dp's channel layout is not supported
+			if (!is_a_channel_layout_supported(dp.a_channel_layout_ref()))
 			{
-				ep.set_a_channel_layout(dp.a_channel_layout_ref());
-			}
-			else // ch_layout's not supported
-			{
+				// Use one of the supported ones
 				options_changed = true;
 
 				auto supported = supported_a_channel_layouts();
@@ -283,8 +254,7 @@ bool ff::encoder::set_properties_from_decoder(const decoder& dec)
 		catch (const std::domain_error&)
 		{
 			// Don't know which are supported
-			// then just use the decoder's
-			ep.set_a_channel_layout(dp.a_channel_layout_ref());
+			// then just leave it as it is.
 		}
 	}
 

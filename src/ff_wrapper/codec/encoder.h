@@ -104,8 +104,8 @@ namespace ff
 		* It queries if each essential property of the decoder is supported by the encoder.
 		* If so, the decoder's option for the property is used here. 
 		* Otherwise, the encoder automatically selects one from the supported options.
-		* Essential properties (some are not used depending on the type):
-		* type, format, width, height, frame_rate, sample_rate, channel_layout
+		* The definition of essential properties are given in the comment for
+		* codec_properties::essential_properties().
 		* 
 		* @returns true if all the options checked are supported by the decoder; false if any of them 
 		* is not supported and is changed to one of the supported.

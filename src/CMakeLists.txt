@@ -55,7 +55,7 @@ set(FFWrapperSourceFiles
     "${SrcFFWrapperFormatsPath}/stream.h"
     "${SrcFFWrapperFormatsPath}/stream.cpp"
     "${SrcFFWrapperFormatsPath}/muxer.h"
-#    "${SrcFFWrapperFormatsPath}/muxer.cpp"
+    "${SrcFFWrapperFormatsPath}/muxer.cpp"
     "${SrcFFWrapperFormatsPath}/demuxer.h"
     "${SrcFFWrapperFormatsPath}/demuxer.cpp"
     "${SrcFFWrapperFormatsPath}/media_base.h"

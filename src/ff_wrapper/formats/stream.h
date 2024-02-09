@@ -32,18 +32,30 @@ namespace ff
 	* Does not own the stream, because each stream is or will be bound to and managed by
 	* an AVFormatContext (a muxer or demuxer in my wrapper).
 	* 
-	* However, derived classes may have to ability to create a new stream. 
-	* Those things have to be done for muxing.
+	* Therefore, it is essentially a reference to an av stream.
+	* You can choose to pass by reference or value yourself.
+	* 
+	* Invariant: p_stream != nullptr.
 	*/
-	class FF_WRAPPER_API stream
+	class FF_WRAPPER_API stream final
 	{
 	public:
-		stream() noexcept
-			: p_stream(nullptr) {}
+		/*
+		* @throws std::invalid_argument if st is nullptr
+		*/
 		stream(::AVStream* st)
-			: p_stream(st) {}
+			: p_stream(st) 
+		{
+			if (nullptr == p_stream)
+			{
+				throw std::invalid_argument("Cannot initialize with the nullptr.");
+			}
+		}
 
-		virtual ~stream() = default;
+		stream(const stream&) = default;
+		stream& operator=(const stream&) = default;
+
+		~stream() = default;
 
 /////////////////////////////// Stream related ///////////////////////////////
 	public:
@@ -59,6 +71,11 @@ namespace ff
 		bool is_subtitle() const noexcept;
 
 		/*
+		* @returns the index of the stream in the fmt ctx that the stream belongs to.
+		*/
+		int index() const noexcept;
+
+		/*
 		* @returns The duration of the stream.
 		* It is not 100% accurate as it may be calculated from the file size and bitrate.
 		* Can be equal to 0, in which case it is unknown.
@@ -70,14 +87,23 @@ namespace ff
 		*/
 		ff::rational time_base() const noexcept;
 
-		/*
-		* @returns a copy of the properties of how the stream is, or is to be, encodeded.
-		*/
-		ff::codec_properties properties() const noexcept;
-
 /////////////////////////////// Codec related ///////////////////////////////
 	public:
 		const AVCodecID codec_id() const noexcept;
+
+		/*
+		* @returns a copy of the properties of how the packets in the stream are encodeded.
+		*/
+		ff::codec_properties properties() const noexcept;
+
+		/*
+		* Sets the stream's properties to cp.
+		* The properties describe how the packets in the stream are encoded.
+		* Warning: Muxing only.
+		* 
+		* @param cp the properties to be set to this.
+		*/
+		void set_properties(const ff::codec_properties& cp);
 
 	private:
 		::AVStream* p_stream;

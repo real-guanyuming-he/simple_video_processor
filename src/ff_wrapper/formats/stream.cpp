@@ -41,6 +41,11 @@ bool ff::stream::is_subtitle() const noexcept
     return AVMEDIA_TYPE_SUBTITLE == p_stream->codecpar->codec_type;
 }
 
+int ff::stream::index() const noexcept
+{
+    return p_stream->index;
+}
+
 ff::time ff::stream::duration() const noexcept
 {
     // If the time base is not fixed, this value may be nonpositive.
@@ -60,7 +65,17 @@ ff::rational ff::stream::time_base() const noexcept
 
 ff::codec_properties ff::stream::properties() const noexcept
 {
-    return ff::codec_properties(p_stream->codecpar);
+    return ff::codec_properties(p_stream->codecpar, p_stream->time_base);
+}
+
+void ff::stream::set_properties(const ff::codec_properties& cp)
+{
+    if (ff::av_rational_invalid_or_zero(p_stream->time_base))
+    {
+        p_stream->time_base = cp.time_base().av_rational();
+    }
+
+    avcodec_parameters_copy(p_stream->codecpar, cp.av_codec_parameters());
 }
 
 const AVCodecID ff::stream::codec_id() const noexcept

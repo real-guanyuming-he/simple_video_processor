@@ -21,6 +21,7 @@
 namespace ff
 {
 	class packet;
+	class stream;
 
 	/*
 	* Represents a decoder, which is just an implementation of codec_base,
@@ -47,6 +48,17 @@ namespace ff
 		* @throws std::invalid_argument if the no decoder of the name can be found.
 		*/
 		explicit decoder(const char* name);
+
+		/*
+		* Identify the decoder by a stream from a demuxer.
+		* The properties of the stream are also completely copied into the decoder.
+		* 
+		* After this constructor returns, the decoder will immediately be ready.
+		* The behaviour is undefined if the stream does not come from a demuxer.
+		* 
+		* @throws std::invalid_argument if the codec that encoded the stream is not supported.
+		*/
+		explicit decoder(const stream& s);
 
 		// Even if the properties can be copied,
 		// the internal state and buffers of a decoder cannot.

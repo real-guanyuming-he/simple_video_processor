@@ -22,6 +22,8 @@ struct AVPacket;
 
 namespace ff
 {
+	class stream;
+
 	/*
 	* Represents a packet (i.e. compressed multimedia data).
 	* 
@@ -187,11 +189,24 @@ namespace ff
 		void change_time_base(ff::rational new_tb);
 
 	public:
+//////////////////////////////////////// Exposers ////////////////////////////////////////
 		const ::AVPacket* av_packet() const noexcept { return p_packet; }
 		::AVPacket* av_packet() noexcept { return p_packet; }
 
 		const ::AVPacket* operator->() const noexcept { return p_packet; }
 		::AVPacket* operator->()  noexcept { return p_packet; }
+
+	public:
+//////////////////////////////////////// Helpers ////////////////////////////////////////
+		/*
+		* Prepares the packet so that it can be fed into a muxer.
+		* It is a convenient helper that 
+		*	1. change's the packet's time base and time fields
+		*	2. sets its reference to the muxer stream correctly.
+		* 
+		* @param muxer_stream the stream that the packet will belong to.
+		*/
+		void prepare_for_muxing(const stream& muxer_stream);
 
 	private:
 		::AVPacket* p_packet;

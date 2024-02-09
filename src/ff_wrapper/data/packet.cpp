@@ -276,3 +276,16 @@ void ff::packet::change_time_base(ff::rational new_tb)
 		p_packet->duration = duration.timestamp_approximate();
 	}
 }
+
+void ff::packet::prepare_for_muxing(const stream& muxer_stream)
+{
+	// Some formats don't need a fixed time base.
+	// Only changes the time fields if the stream's time base is valid.
+	if (muxer_stream.time_base() > 0)
+	{
+		change_time_base(muxer_stream.time_base());
+	}
+
+	// Don't forget the set the index, too.
+	p_packet->stream_index = muxer_stream.index();
+}

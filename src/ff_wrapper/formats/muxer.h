@@ -16,33 +16,40 @@
 */
 
 #include "media_base.h"
-#include "../util/ff_object.h"
+#include "stream.h"
+#include "../util/dict.h"
+
+#include <string>
 
 struct AVOutputFormat;
+namespace std { namespace filesystem { class path; } }
 
 namespace ff
 {
 	class packet;
+	class encoder;
 
 	/*
 	* A muxer of this class muxes packets into a local file.
 	* 
-	* ff_object states:
-	*	DESTROYED: only has information to identify itself. Its desc may or may not be created
-	* depending on the constructor called.
-	*	OBJECT_CREATED: Its context is created by allocate_object_memory() but cannot be used yet. 
-	 During this time, fill all the necessary info (e.g. stream info).
-	*	READY: The context has been prepared for the info you filled and the file header been written
-	* by calling allocate_resources_memory(). The muxer is ready for packets.
+	* Muxer states:
+	*	1. Can only be constructed if you give a path to the output file.
+	*	2. After that you fill all additional information. Mostly you create the streams.
+	*	3. Then call prepare_muxer() to make it ready. The method also writes the file header.
+	* 
+	* Implementation Notes:
+	* I originally wanted to derive it from ff_object since after construction it's created 
+	* until it's made ready by prepare_muxer().
+	* However, I discovered that that state machine is too much because a muxer will never
+	* exit the ready state.
 	*/
-	class FF_WRAPPER_API muxer : public media_base, public ff_object
+	class FF_WRAPPER_API muxer : public media_base
 	{
 	public:
 		/*
-		* Creates a DESTROYED muxer.
+		* You must provide a path to the output file.
 		*/
-		muxer() noexcept 
-			: media_base(), ff_object() {}
+		muxer() = delete;
 
 		/*
 		* Creates a muxer with the file path.
@@ -61,7 +68,7 @@ namespace ff
 		*/
 		explicit muxer
 		(
-			const char* file_path, 
+			const std::filesystem::path& file_path, 
 			const char* fmt_name = nullptr, 
 			const char* fmt_mime_type = nullptr
 		);
@@ -79,47 +86,221 @@ namespace ff
 		std::vector<std::string> extensions() const override;
 
 	private:
-////////////////////////// Inherited via ff_object //////////////////////////
+		/*
+		* Creates the muxer and its context. Set up a few things in the context.
+		* After a call to this, you should fill additional info before you call
+		* prepare_muxer().
+		*/
+		void internal_create_muxer(const std::string& path);
 
 		/*
-		* Allocate the fmt ctx and assigns desc (oformat) to it.
+		* Closes the output file, and completely destroys the muxer and any resource it holds.
 		*/
-		void internal_allocate_object_memory() override;
-		/*
-		* Assumes that you have filled all the info needed for the muxer.
-		* This methods prepares the fmt ctx and writes the file header.
-		* 
-		* @param TBD: Decide how the parameters are going to be used.
-		*/
-		void internal_allocate_resources_memory(uint64_t size, void* additional_information) override;
-		/*
-		* Closes the file and releases the fmt ctx.
-		*/
-		void internal_release_object_memory() noexcept override;
-		/*
-		* Releases all the streams created for the muxer.
-		* You should NOT try to use the muxer again after calling this.
-		* If you call this during muxing, then the resources will be safely released,
-		* but the file written will have undefined content.
-		*/
-		void internal_release_resources_memory() noexcept override;
+		void destroy();
 
 	public:
 		/*
+		* After construction, call this to add stream info to the muxer
+		* before you call prepare_muxer().
+		* 
+		* @param enc which encoder is used to encode the packets for the stream.
+		* All properties will be copied to the stream.
+		* @returns A ref to the stream added. You can add more information to the stream
+		* through the return value.
+		* @throws std::logic_error if you already called prepare_muxer();
+		*/
+		stream add_stream(const encoder& enc);
+
+		/*
+		* After construction, call this to add stream info to the muxer
+		* before you call prepare_muxer().
+		* 
+		* This version is for remuxing. It determines the properties of 
+		* an output stream by those of an input stream from a demuxer.
+		* 
+		* @param dem_s a stream from a demuxer. 
+		* ONLY Essential properties of the demuxer stream will be copied to the new stream.
+		* This behaviour is recommended by FFmpeg documentation.
+		* The definition of essential properties are given in the comment for
+		* codec_properties::essential_properties().
+		* @returns A ref to the stream added. You can add more information to the stream
+		* through the return value.
+		* @throws std::logic_error if you already called prepare_muxer();
+		*/
+		stream add_stream(const stream& dem_s);
+
+		/*
+		* After you have filled the stream info through add_stream(),
+		* call this the prepare the muxer for muxing.
+		* 
+		* Once it's called, the muxer enters the ready state.
+		* A muxer will never exit the ready state until destroyed.
+		* The ready state can only be entered from here.
+		* 
+		* @param options The options to give the muxer. May be empty.
+		* @throws std::logic_error if you have already called it.
+		* @throws std::filesystem::filesystem_error on I/O error.
+		*/
+		void prepare_muxer(const dict& options = dict());
+
+		/*
+		* After you have filled the stream info through add_stream(),
+		* call this the prepare the muxer for muxing.
+		*
+		* Once it's called, the muxer enters the ready state.
+		* A muxer will never exit the ready state until destroyed.
+		* The ready state can only be entered from here.
+		*
+		* @param options The options to give the muxer. Cannot be empty.
+		* On success the argument will be replaced with a dict of options that were unused.
+		* @throws std::invalid_argument if options is empty
+		* @throws std::logic_error if you have already called it.
+		* @throws std::filesystem::filesystem_error on I/O error.
+		*/
+		void prepare_muxer(dict& options);
+
+		/*
 		* Mux a packet into the file.
 		* 
-		* @throw std::invalid_argument if the packet is invalid.
+		* @param pkt the packet to be fed into the muxer. It must be properly set up.
+		* You can call packet::prepare_for_muxing() and pass the corresponding stream to set it up,
+		* or do what the comment for that method says. The packets must also be coming with increasing dts, 
+		* except in rare situations the dts can be non-decreasing. This parameter is nonconst because 
+		* the underlying FFmpeg function takes a nonconst pointer.
+		* @throws std::invalid_argument if the packet is invalid.
+		* @throws std::logic_error if you have not prepared the demuxer yet.
+		* @throws std::filesystem::filesystem_error on I/O error.
 		*/
-		void mux_packet(const packet& pkt);
+		void mux_packet(packet& pkt);
+
+		/*
+		* Flush any data buffered immediately to the output file.
+		* @throws std::logic_error if you have not prepared the demuxer yet (i.e. muxing has not started yet).
+		* @throws std::filesystem::filesystem_error on I/O error.
+		*/
+		void flush_demuxer();
 
 		/*
 		* After you have no packets to give, you MUST call this method
 		* to finalize the muxing.
+		* 
+		* @throws std::logic_error if you have not called prepare_muxer();
+		* @throws std::filesystem::filesystem_error on I/O error.
 		*/
 		void finalize();
 
+	public:
+		/*
+		* @returns the number of streams you have created.
+		*/
+		int num_streams() const noexcept { return streams.size(); }
+
+		/*
+		* @returns the stream specified by the index.
+		* @throws std::out_of_range if the index is out of range
+		*/
+		inline stream get_stream(int index) const
+		{
+			if (index < 0 || index >= num_streams())
+			{
+				throw std::out_of_range("Stream index out of range.");
+			}
+
+			return streams[index];
+		}
+
+		int num_videos() const noexcept { return v_indices.size(); }
+		int num_audios() const noexcept { return a_indices.size(); }
+		int num_subtitles() const noexcept { return s_indices.size(); }
+
+		/*
+		* @returns the stream index of the i^th video stream.
+		* @throws std::std::out_of_range if the index is out of range
+		*/
+		inline int get_video_ind(int i) const
+		{
+			if (i < 0 || i >= num_videos())
+			{
+				throw std::out_of_range("Stream index out of range.");
+			}
+
+			return v_indices[i];
+		}
+		/*
+		* @returns the stream index of the i^th audio stream.
+		* @throws std::std::out_of_range if the index is out of range
+		*/
+		inline int get_audio_ind(int i) const
+		{
+			if (i < 0 || i >= num_audios())
+			{
+				throw std::out_of_range("Stream index out of range.");
+			}
+
+			return a_indices[i];
+		}
+		/*
+		* @returns the stream index of the i^th subtitle stream.
+		* @throws std::std::out_of_range if the index is out of range
+		*/
+		inline int get_subtitle_ind(int i) const
+		{
+			if (i < 0 || i >= num_subtitles())
+			{
+				throw std::out_of_range("Stream index out of range.");
+			}
+
+			return s_indices[i];
+		}
+		/*
+		* @returns the i^th video stream.
+		* @throws std::invalid_argument if the index is out of range
+		*/
+		inline stream get_video(int i) const
+		{
+			return streams[get_video_ind(i)];
+		}
+		/*
+		* @returns the i^th audio stream.
+		* @throws std::invalid_argument if the index is out of range
+		*/
+		inline stream get_audio(int i) const
+		{
+			return streams[get_audio_ind(i)];
+		}
+		/*
+		* @returns the i^th subtitle stream.
+		* @throws std::invalid_argument if the index is out of range
+		*/
+		inline stream get_subtitle(int i) const
+		{
+			return streams[get_subtitle_ind(i)];
+		}
+
 	private:
+		/*
+		* Streams of the file, in the order they are created and stored in the fmt ctx.
+		*/
+		std::vector<stream> streams;
+		/*
+		* Indices of video, audio, and subtitle streams, respectively,
+		* in the order they appear in streams.
+		*/
+		std::vector<int> v_indices, a_indices, s_indices;
+
 		const AVOutputFormat* p_muxer_desc = nullptr;
-		const char* file_path = nullptr;
+		bool ready = false;
+
+	private:
+		/*
+		* Common piece of code for the two public methods with different dict parameters.
+		* @param ppavd can be nullptr.
+		*/
+		void internal_prepare_muxer(::AVDictionary** ppavd);
+
+		/*
+		* Common piece of code for the two add_stream methods.
+		*/
+		stream internal_create_stream();
 	};
 }

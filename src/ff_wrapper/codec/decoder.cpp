@@ -17,6 +17,7 @@
 #include "decoder.h"
 #include "../util/ff_helpers.h"
 #include "../data/packet.h"
+#include "../formats/stream.h"
 
 extern "C"
 {
@@ -35,6 +36,14 @@ ff::decoder::decoder(const char* name)
 {
 	// Find the description.
 	allocate_object_memory();
+}
+
+ff::decoder::decoder(const stream& s)
+	: decoder(s.codec_id())
+{
+	set_codec_properties(s.properties());
+	// Create the decoder context for it to be ready.
+	create_codec_context();
 }
 
 ff::decoder::decoder(decoder&& other) noexcept

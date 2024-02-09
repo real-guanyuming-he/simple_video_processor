@@ -180,13 +180,64 @@ int main()
 	// hence obtain this.
 	fs::path working_dir(fs::current_path());
 
+	// Test creating decoder directly from demuxer streams
+	{
+		// h.265
+		fs::path test1_path(working_dir / "decoder_creation_x265.mp4");
+		std::string test1_path_str(test1_path.generic_string());
+		create_test_video(test1_path_str, "libx265", "red", 800, 600, 24, 1);
+		ff::demuxer dem1(test1_path);
+		ff::decoder dec1(dem1.get_stream(0));
+
+		TEST_ASSERT_TRUE(dec1.ready(), "Should immediately be ready.");
+		auto sp = dem1.get_stream(0).properties();
+		auto dp = dec1.get_codec_properties();
+		TEST_ASSERT_EQUALS(sp.type(), dp.type(), "Should actually have copied the settings.");
+		TEST_ASSERT_EQUALS(sp.time_base(), dp.time_base(), "Should actually have copied the settings.");
+		TEST_ASSERT_EQUALS(sp.v_pixel_format(), dp.v_pixel_format(), "Should actually have copied the settings.");
+		TEST_ASSERT_EQUALS(sp.v_width(), dp.v_width(), "Should actually have copied the settings.");
+		TEST_ASSERT_EQUALS(sp.v_height(), dp.v_height(), "Should actually have copied the settings.");
+
+		// avi
+		fs::path test2_path(working_dir / "decoder_creation.avi");
+		std::string test2_path_str(test2_path.generic_string());
+		create_test_video(test2_path_str, "mjpeg", "green", 800, 600, 24, 1);
+		ff::demuxer dem2(test2_path);
+		ff::decoder dec2(dem2.get_stream(0));
+
+		TEST_ASSERT_TRUE(dec2.ready(), "Should immediately be ready.");
+		auto sp2 = dem2.get_stream(0).properties();
+		auto dp2 = dec2.get_codec_properties();
+		TEST_ASSERT_EQUALS(sp2.type(), dp2.type(), "Should actually have copied the settings.");
+		TEST_ASSERT_EQUALS(sp2.time_base(), dp2.time_base(), "Should actually have copied the settings.");
+		TEST_ASSERT_EQUALS(sp2.v_pixel_format(), dp2.v_pixel_format(), "Should actually have copied the settings.");
+		TEST_ASSERT_EQUALS(sp2.v_width(), dp2.v_width(), "Should actually have copied the settings.");
+		TEST_ASSERT_EQUALS(sp2.v_height(), dp2.v_height(), "Should actually have copied the settings.");
+
+		// mp3
+		fs::path test3_path(working_dir / "decoder_creation_mp3.mp3");
+		std::string test3_path_str(test3_path.generic_string());
+		create_test_audio(test3_path_str, "libmp3lame", 1, 32000, 64000);
+		ff::demuxer dem3(test3_path);
+		ff::decoder dec3(dem3.get_stream(0));
+
+		TEST_ASSERT_TRUE(dec3.ready(), "Should immediately be ready.");
+		auto sp3 = dem3.get_stream(0).properties();
+		auto dp3 = dec3.get_codec_properties();
+		TEST_ASSERT_EQUALS(sp3.type(), dp3.type(), "Should actually have copied the settings.");
+		TEST_ASSERT_EQUALS(sp3.time_base(), dp3.time_base(), "Should actually have copied the settings.");
+		TEST_ASSERT_EQUALS(sp2.a_sample_format(), dp2.a_sample_format(), "Should actually have copied the settings.");
+		TEST_ASSERT_EQUALS(sp2.a_sample_rate(), dp2.a_sample_rate(), "Should actually have copied the settings.");
+		TEST_ASSERT_EQUALS(sp2.a_channel_layout_ref(), dp2.a_channel_layout_ref(), "Should actually have copied the settings.");
+	}
+
 	// Actual decoding test.
 	// Decoding video with libx265 (hevc).
 	{
 		fs::path test1_path(working_dir / "decoder_test1.mp4");
 		std::string test1_path_str(test1_path.generic_string());
 		create_test_video(test1_path_str, "libx265", "green", 800, 600, 24, 5);
-		ff::demuxer dem1(test1_path_str.c_str());
+		ff::demuxer dem1(test1_path);
 
 		// Create the decoder from ID.
 		ff::stream vs = dem1.get_stream(0);
@@ -289,7 +340,7 @@ int main()
 		std::string test1_path_str(test1_path.generic_string());
 		create_test_audio(test1_path_str, "aac", 3, 48000, 96000);
 
-		ff::demuxer dem1(test1_path_str.c_str());
+		ff::demuxer dem1(test1_path);
 
 		auto as = dem1.get_stream(0);
 		TEST_ASSERT_TRUE(as.is_audio(), "Should be an audio stream.");
@@ -416,7 +467,7 @@ int main()
 		std::string test1_path_str(test1_path.generic_string());
 		// Already created.
 		//create_test_video(test1_path_str, "libx265", "green", 800, 600, 24, 5);
-		ff::demuxer dem1(test1_path_str.c_str());
+		ff::demuxer dem1(test1_path);
 
 		// Create the decoder from ID.
 		ff::stream vs = dem1.get_stream(0);
@@ -579,7 +630,7 @@ int main()
 		std::string test1_path_str(test1_path.generic_string());
 		// Already created.
 		//create_test_video(test1_path_str, "libx265", "green", 800, 600, 24, 5);
-		ff::demuxer dem1(test1_path_str.c_str());
+		ff::demuxer dem1(test1_path);
 
 		// Create the decoder from ID.
 		ff::stream vs = dem1.get_stream(0);
@@ -645,7 +696,7 @@ int main()
 		std::string test1_path_str(test1_path.generic_string());
 		// Already created.
 		//create_test_video(test1_path_str, "libx265", "green", 800, 600, 24, 5);
-		ff::demuxer dem1(test1_path_str.c_str());
+		ff::demuxer dem1(test1_path);
 
 		// Create the decoder from ID.
 		ff::stream vs = dem1.get_stream(0);

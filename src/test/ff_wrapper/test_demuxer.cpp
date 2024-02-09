@@ -131,23 +131,6 @@ int main()
 		);
 	}
 
-	// Testing demuxers not created yet
-	{
-		ff::demuxer unusable1;
-
-		TEST_ASSERT_EQUALS(nullptr, unusable1.av_fmt_ctx(), "Should have nullptr ptrs");
-		TEST_ASSERT_EQUALS(nullptr, unusable1.av_input_fmt(), "Should have nullptr ptrs");
-
-		// These methods should not be ready.
-
-		TEST_ASSERT_THROWS(unusable1.description(), std::logic_error);
-		TEST_ASSERT_THROWS(unusable1.short_names(), std::logic_error);
-		TEST_ASSERT_THROWS(unusable1.extensions(), std::logic_error);
-
-		TEST_ASSERT_THROWS(unusable1.demux_next_packet(), std::logic_error);
-		TEST_ASSERT_THROWS(unusable1.seek(0, 0), std::logic_error);
-	}
-
 	// The demuxer requires the absolute path to files,
 	// hence obtain this.
 	fs::path working_dir(fs::current_path());
@@ -157,7 +140,7 @@ int main()
 		fs::path test1_path(working_dir / "test1.mp4");
 		std::string test1_path_str(test1_path.generic_string());
 		create_test_video(test1_path_str, 1280, 720, 24, 5);
-		ff::demuxer d1(test1_path_str.c_str());
+		ff::demuxer d1(test1_path);
 
 		// stream information
 		TEST_ASSERT_EQUALS(1, d1.num_streams(), "should get num streams right");
@@ -209,7 +192,7 @@ int main()
 		fs::path test_path(working_dir / "test2.wmv");
 		std::string test_path_str(test_path.generic_string());
 		create_test_av(test_path_str, 4, 800, 600, 24, 1000, 44000);
-		ff::demuxer d1(test_path_str.c_str());
+		ff::demuxer d1(test_path);
 
 		// stream information
 		TEST_ASSERT_EQUALS(2, d1.num_streams(), "should get num streams right");
