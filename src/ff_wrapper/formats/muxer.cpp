@@ -10,7 +10,11 @@ extern "C"
 
 #include <filesystem>
 
-ff::muxer::muxer(const std::filesystem::path& file_path, const char* fmt_name, const char* fmt_mime_type)
+ff::muxer::muxer
+(
+	const std::filesystem::path& file_path, 
+	const std::string& fmt_name, const std::string& fmt_mime_type
+)
 	: media_base()
 {
 	const std::string path_str(file_path.generic_string());
@@ -20,7 +24,12 @@ ff::muxer::muxer(const std::filesystem::path& file_path, const char* fmt_name, c
 		throw std::invalid_argument("The file path cannot be empty.");
 	}
 
-	p_muxer_desc = av_guess_format(fmt_name, path_str.c_str(), fmt_mime_type);
+	p_muxer_desc = av_guess_format
+	(
+		fmt_name.empty() ? nullptr : fmt_name.c_str(), 
+		path_str.c_str(),
+		fmt_mime_type.empty() ? nullptr : fmt_mime_type.c_str()
+	);
 	if (nullptr == p_muxer_desc)
 	{
 		throw std::invalid_argument("The names you gave could not identify a muxer.");
@@ -59,6 +68,17 @@ std::vector<std::string> ff::muxer::extensions() const
 	return media_base::string_to_list(std::string(p_muxer_desc->extensions));
 }
 
+AVCodecID ff::muxer::desired_encoder_id(AVMediaType type) const
+{
+	auto ret = av_guess_codec(p_muxer_desc, nullptr, p_fmt_ctx->url, nullptr, type);
+	if (AVCodecID::AV_CODEC_ID_NONE == ret)
+	{
+		throw std::domain_error("Could not obtain the ID for the desired encoder.");
+	}
+
+	return ret;
+}
+
 void ff::muxer::internal_create_muxer(const std::string& path)
 {
 	p_fmt_ctx = avformat_alloc_context();
@@ -90,7 +110,7 @@ void ff::muxer::internal_create_muxer(const std::string& path)
 
 	// Make a copy of the file path and sets p_fmt_ctx->url to it.
 	// The documentation requires that p_fmt_ctx->url is freeable by av_free(). Hence the copy.
-	auto path_len = path.size();
+	auto path_len = path.size() + 1; // +1 for the /0.
 	p_fmt_ctx->url = reinterpret_cast<char*>(av_malloc(path_len));
 	if (nullptr == p_fmt_ctx->url) // Allocation failed.
 	{
@@ -115,12 +135,11 @@ ff::stream ff::muxer::add_stream(const encoder& enc)
 
 	if (ready)
 	{
-		throw std::runtime_error("You already prepared the muxer.");
+		throw std::logic_error("You already prepared the muxer.");
 	}
 
-	auto ret = internal_create_stream();
 	// Copy enc's properties to the new stream.
-	ret.set_properties(enc.get_codec_properties());
+	auto ret = internal_create_stream(enc.get_codec_properties());
 
 	return ret;
 }
@@ -131,15 +150,14 @@ ff::stream ff::muxer::add_stream(const stream& dem_s)
 
 	if (ready)
 	{
-		throw std::runtime_error("You already prepared the muxer.");
+		throw std::logic_error("You already prepared the muxer.");
 	}
 
-	auto ret = internal_create_stream();
 	// Copy enc's ESSENTIAL properties to the new stream.
 	// FFmpeg doc: It is advised to manually initialize only the relevant fields in AVCodecParameters, 
 	// rather than using avcodec_parameters_copy() during remuxing: 
 	// there is no guarantee that the codec context values remain valid for both input and output format contexts.
-	ret.set_properties(dem_s.properties().essential_properties());
+	auto ret = internal_create_stream(dem_s.properties().essential_properties());
 
 	return ret;
 }
@@ -185,7 +203,7 @@ void ff::muxer::mux_packet(packet& pkt)
 {
 	if (!ready)
 	{
-		throw std::runtime_error("You must prepare the muxer first.");
+		throw std::logic_error("You must prepare the muxer first.");
 	}
 
 	int ret = av_write_frame(p_fmt_ctx, pkt.av_packet());
@@ -216,7 +234,7 @@ void ff::muxer::flush_demuxer()
 {
 	if (!ready)
 	{
-		throw std::runtime_error("You must prepare the muxer first.");
+		throw std::logic_error("You must prepare the muxer first.");
 	}
 
 	// Pass nullptr to flush the muxer.
@@ -245,7 +263,7 @@ void ff::muxer::finalize()
 {
 	if (!ready)
 	{
-		throw std::runtime_error("You must prepare the muxer first.");
+		throw std::logic_error("You must prepare the muxer first.");
 	}
 
 	int ret = av_write_trailer(p_fmt_ctx);
@@ -271,6 +289,11 @@ void ff::muxer::finalize()
 
 void ff::muxer::internal_prepare_muxer(::AVDictionary** ppavd)
 {
+	if (0 == num_streams())
+	{
+		throw std::logic_error("You have not added any streams.");
+	}
+
 	int ret = avformat_write_header(p_fmt_ctx, ppavd);
 	if (ret < 0) // Failure
 	{
@@ -295,7 +318,7 @@ void ff::muxer::internal_prepare_muxer(::AVDictionary** ppavd)
 	ready = true;
 }
 
-ff::stream ff::muxer::internal_create_stream()
+ff::stream ff::muxer::internal_create_stream(const ff::codec_properties& properties)
 {
 	auto* ps = avformat_new_stream(p_fmt_ctx, nullptr);
 	if (nullptr == ps)
@@ -304,10 +327,13 @@ ff::stream ff::muxer::internal_create_stream()
 	}
 
 	stream ret(ps);
+
+	ret.set_properties(properties);
 	
 	// Add the stream/index to the vectors for convenient access
 	FF_ASSERT(streams.size() == ret->index, "Should store the streams in order.");
 	streams.push_back(ret);
+
 	switch (ret.type())
 	{
 	case AVMEDIA_TYPE_VIDEO:

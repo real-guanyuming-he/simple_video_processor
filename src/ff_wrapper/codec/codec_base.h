@@ -261,7 +261,9 @@ namespace ff
 
 		/*
 		* @returns the properties of the codec, which describes how decoding/encoding is done.
-		* @throws std::logic_error if the codec is not ready.
+		* @throws std::logic_error if the codec is destroyed.
+		* Note: if you get it when the codec is not ready, more properties may be set after 
+		* this. Call it when the codec is ready to get all the properties.
 		*/
 		codec_properties get_codec_properties() const;
 

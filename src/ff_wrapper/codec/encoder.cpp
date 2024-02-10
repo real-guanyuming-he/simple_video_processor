@@ -18,10 +18,17 @@
 #include "../data/frame.h"
 #include "../util/ff_helpers.h"
 #include "decoder.h"
+#include "../formats/muxer.h"
 
 extern "C"
 {
 #include <libavcodec/avcodec.h>
+}
+
+ff::encoder::encoder(const muxer& muxer, AVMediaType type)
+	: codec_base(muxer.desired_encoder_id(type))
+{
+	allocate_object_memory();
 }
 
 bool ff::encoder::feed_frame(const ff::frame& frame)

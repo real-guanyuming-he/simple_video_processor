@@ -181,8 +181,6 @@ int main()
 		//ff::encoder e2("mp3");
 		//ff::encoder e2("mp3lame");
 		ff::encoder e2("libmp3lame");
-		// Can only get properties when ready()
-		TEST_ASSERT_THROWS(e2.get_codec_properties(), std::logic_error);
 
 		// Most encoders require that the properties be set properly for the ctx to be created.
 		ff::codec_properties cp2;

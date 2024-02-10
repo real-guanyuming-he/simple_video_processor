@@ -218,6 +218,10 @@ add_executable(test_decoder
 # Test encoder
 add_executable(test_encoder
     "${TestSrcFFWrapperPath}/test_encoder.cpp")
+# Test muxer
+add_executable(test_muxer
+    "${TestSrcFFWrapperPath}/test_muxer.cpp")
+
 
 set(ListTestTargets
     "test_ff_object"
@@ -228,7 +232,8 @@ set(ListTestTargets
     "test_frame"
     "test_packet"
     "test_decoder"
-    "test_encoder")
+    "test_encoder"
+    "test_muxer")
 
 ################################# Common Test Settings #################################
 
@@ -277,6 +282,8 @@ target_compile_definitions("test_demuxer"
 target_compile_definitions("test_decoder"
     PRIVATE "FFMPEG_EXECUTABLE_PATH=${MyFFmpegExecutablePath}")
 target_compile_definitions("test_encoder"
+    PRIVATE "FFMPEG_EXECUTABLE_PATH=${MyFFmpegExecutablePath}")
+target_compile_definitions("test_muxer"
     PRIVATE "FFMPEG_EXECUTABLE_PATH=${MyFFmpegExecutablePath}")
 
 # Needs to use some FFmpeg APIs in these tests

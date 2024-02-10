@@ -167,8 +167,6 @@ int main()
 		TEST_ASSERT_TRUE(p1.is_video(), "Should be created with correct properties.");
 
 		ff::decoder d2("aac");
-		// Can only get properties when ready()
-		TEST_ASSERT_THROWS(d2.get_codec_properties(), std::logic_error);
 		d2.create_codec_context();
 
 		TEST_ASSERT_TRUE(d2.ready(), "Should be ready.");

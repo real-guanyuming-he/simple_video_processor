@@ -22,6 +22,7 @@ namespace ff
 {
 	class frame;
 	class decoder;
+	class muxer;
 
 	/*
 	* Represents an encoder, which is just an implementation of codec_base,
@@ -39,17 +40,38 @@ namespace ff
 		// Identification info must be provided.
 		encoder() = delete;
 
+		/*
+		* When you know a name to identify the encoder.
+		* 
+		* @throws std::invalid_argument if no encoder matches the name.
+		*/
 		explicit inline encoder(const char* name)
 			: codec_base(name) 
 		{
 			allocate_object_memory();
 		}
 
+		/*
+		* When you know the ID to identify the encoder.
+		* 
+		* @throws std::invalid_argument if no encoder matches the ID.
+		*/
 		explicit inline encoder(AVCodecID ID)
 			: codec_base(ID)
 		{
 			allocate_object_memory();
 		}
+
+		/*
+		* When you have an output file and its muxer
+		* and you want to know which encoder the muxer wants you to use
+		* for a specific type of stream.
+		* 
+		* @param muxer the muxer
+		* @param type the type of the stream.
+		* @throws std::domain_error if the encoder for the type could not be found.
+		*/
+		encoder(const muxer& muxer, AVMediaType type);
 		
 		// not possible to copy the internal states of an encoder.
 		encoder(const encoder&) = delete;

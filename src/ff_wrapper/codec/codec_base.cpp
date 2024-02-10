@@ -53,9 +53,9 @@ ff::codec_base& ff::codec_base::operator=(codec_base&& right) noexcept
 
 ff::codec_properties ff::codec_base::get_codec_properties() const
 {
-	if (!ready())
+	if (destroyed())
 	{
-		throw std::logic_error("Properties can only be obtained when the decoder is ready.");
+		throw std::logic_error("Properties can not be obtained when the codec is destroyed.");
 	}
 
 	return codec_properties(p_codec_ctx);

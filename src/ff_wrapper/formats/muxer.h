@@ -69,8 +69,8 @@ namespace ff
 		explicit muxer
 		(
 			const std::filesystem::path& file_path, 
-			const char* fmt_name = nullptr, 
-			const char* fmt_mime_type = nullptr
+			const std::string& fmt_name = "",
+			const std::string& fmt_mime_type = ""
 		);
 
 		/*
@@ -78,26 +78,13 @@ namespace ff
 		*/
 		~muxer() { destroy(); }
 
-	public:
 ////////////////////////// Inherited via media_base //////////////////////////
-
+	public:
 		std::string description() const override;
 		std::vector<std::string> short_names() const override;
 		std::vector<std::string> extensions() const override;
 
-	private:
-		/*
-		* Creates the muxer and its context. Set up a few things in the context.
-		* After a call to this, you should fill additional info before you call
-		* prepare_muxer().
-		*/
-		void internal_create_muxer(const std::string& path);
-
-		/*
-		* Closes the output file, and completely destroys the muxer and any resource it holds.
-		*/
-		void destroy();
-
+////////////////////////// Muxing related //////////////////////////
 	public:
 		/*
 		* After construction, call this to add stream info to the muxer
@@ -138,6 +125,7 @@ namespace ff
 		* The ready state can only be entered from here.
 		* 
 		* @param options The options to give the muxer. May be empty.
+		* @throws std::logic_error if you have not added any stream.
 		* @throws std::logic_error if you have already called it.
 		* @throws std::filesystem::filesystem_error on I/O error.
 		*/
@@ -154,6 +142,7 @@ namespace ff
 		* @param options The options to give the muxer. Cannot be empty.
 		* On success the argument will be replaced with a dict of options that were unused.
 		* @throws std::invalid_argument if options is empty
+		* @throws std::logic_error if you have not added any stream.
 		* @throws std::logic_error if you have already called it.
 		* @throws std::filesystem::filesystem_error on I/O error.
 		*/
@@ -189,6 +178,7 @@ namespace ff
 		*/
 		void finalize();
 
+////////////////////////// Stream related //////////////////////////
 	public:
 		/*
 		* @returns the number of streams you have created.
@@ -277,6 +267,16 @@ namespace ff
 			return streams[get_subtitle_ind(i)];
 		}
 
+////////////////////////// Other methods //////////////////////////
+	public:
+		/*
+		* @param type of the stream.
+		* @returns the ID of its desired encoder for the specific type of stream.
+		* @throws std::domain_error if the ID could not be obtained.
+		*/
+		AVCodecID desired_encoder_id(AVMediaType type) const;
+
+////////////////////////// Fields //////////////////////////
 	private:
 		/*
 		* Streams of the file, in the order they are created and stored in the fmt ctx.
@@ -291,7 +291,19 @@ namespace ff
 		const AVOutputFormat* p_muxer_desc = nullptr;
 		bool ready = false;
 
+////////////////////////// Internal helper methods //////////////////////////
 	private:
+		/*
+		* Creates the muxer and its context. Set up a few things in the context.
+		* After a call to this, you should fill additional info before you call
+		* prepare_muxer().
+		*/
+		void internal_create_muxer(const std::string& path);
+
+		/*
+		* Closes the output file, and completely destroys the muxer and any resource it holds.
+		*/
+		void destroy();
 		/*
 		* Common piece of code for the two public methods with different dict parameters.
 		* @param ppavd can be nullptr.
@@ -300,7 +312,8 @@ namespace ff
 
 		/*
 		* Common piece of code for the two add_stream methods.
+		* @param properties to set to the new stream.
 		*/
-		stream internal_create_stream();
+		stream internal_create_stream(const ff::codec_properties& properties);
 	};
 }
