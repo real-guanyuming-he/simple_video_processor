@@ -19,6 +19,7 @@
 * Contains the definition of class frame_transformer
 */
 
+#include "../util/util.h"
 #include "../data/frame.h"
 
 struct SwsContext;
@@ -38,7 +39,7 @@ namespace ff
 		2. src_w, src_h, dst_w, dst_h > 0,
 		3. src_fmt and dst_fmt are supported.
 	*/
-	class frame_transformer final
+	class FF_WRAPPER_API frame_transformer final
 	{
 	public:
 		enum algorithms : int

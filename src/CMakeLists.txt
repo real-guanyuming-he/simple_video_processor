@@ -227,7 +227,9 @@ add_executable(test_encoder
 # Test muxer
 add_executable(test_muxer
     "${TestSrcFFWrapperPath}/test_muxer.cpp")
-
+# Test frame_transformer
+add_executable(test_frame_transformer
+    "${TestSrcFFWrapperPath}/test_frame_transformer.cpp")
 
 set(ListTestTargets
     "test_ff_object"
@@ -239,7 +241,8 @@ set(ListTestTargets
     "test_packet"
     "test_decoder"
     "test_encoder"
-    "test_muxer")
+    "test_muxer"
+    "test_frame_transformer")
 
 ################################# Common Test Settings #################################
 
