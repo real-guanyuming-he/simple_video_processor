@@ -68,10 +68,22 @@ namespace ff
 
 			/*
 			* Set up properties for audio sample data.
+			* This copies ch_layout, as its life time is usually uncertain.
+			* If you want to set a weak ref, call the one that takes a const AVChannelLayout&.
 			*/
 			inline data_properties(int f, int num, const channel_layout& ch_layout, int align = 0) noexcept
 				: v_or_a(false), fmt(f), align(align),
-				num_samples(num), ch_layout(ch_layout) {}
+				num_samples(num), ch_layout(ch_layout, false) {}
+
+			/*
+			* Set up properties for audio sample data.
+			* This sets up ch_layout as a weak ref, because a raw AVChannelLayout is usually 
+			* managed by FFmpeg.
+			* If you want to copy it, call the one that takes a const channel_layout&.
+			*/
+			inline data_properties(int f, int num, const AVChannelLayout& ch_layout, int align = 0) noexcept
+				: v_or_a(false), fmt(f), align(align),
+				num_samples(num), ch_layout(ch_layout, true) {}
 
 			// Pixel format or audio sample format, depending on v_or_a.
 			int fmt;

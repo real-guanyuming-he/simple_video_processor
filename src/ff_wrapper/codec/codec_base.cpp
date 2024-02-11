@@ -417,6 +417,111 @@ std::vector<const AVChannelLayout*> ff::codec_base::supported_a_channel_layouts(
 	}
 }
 
+AVPixelFormat ff::codec_base::first_supported_v_pixel_format() const
+{
+	if (destroyed())
+	{
+		throw std::logic_error("The codec is destroyed.");
+	}
+	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_VIDEO)
+	{
+		throw std::logic_error("The codec is not for videos.");
+	}
+
+	if (!p_codec_desc->pix_fmts) // unknown
+	{
+		throw std::domain_error("Don't know which pix fmts are supported.");
+	}
+	else
+	{
+		return *p_codec_desc->pix_fmts;
+	}
+}
+
+ff::rational ff::codec_base::first_supported_v_frame_rate() const
+{
+	if (destroyed())
+	{
+		throw std::logic_error("The codec is destroyed.");
+	}
+	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_VIDEO)
+	{
+		throw std::logic_error("The codec is not for videos.");
+	}
+
+	if (!p_codec_desc->supported_framerates) // unknown
+	{
+		throw std::domain_error("Don't know which frame_rates are supported.");
+	}
+	else
+	{
+		return *p_codec_desc->supported_framerates;
+	}
+}
+
+AVSampleFormat ff::codec_base::first_supported_a_sample_format() const
+{
+	if (destroyed())
+	{
+		throw std::logic_error("The codec is destroyed.");
+	}
+	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_AUDIO)
+	{
+		throw std::logic_error("The codec is not for audios.");
+	}
+
+	if (!p_codec_desc->sample_fmts) // unknown
+	{
+		throw std::domain_error("Don't know which sample fmts are supported.");
+	}
+	else
+	{
+		return *p_codec_desc->sample_fmts;
+	}
+}
+
+int ff::codec_base::first_supported_a_sample_rate() const
+{
+	if (destroyed())
+	{
+		throw std::logic_error("The codec is destroyed.");
+	}
+	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_AUDIO)
+	{
+		throw std::logic_error("The codec is not for audios.");
+	}
+
+	if (!p_codec_desc->supported_samplerates) // unknown
+	{
+		throw std::domain_error("Don't know which sample rates are supported.");
+	}
+	else
+	{
+		return *p_codec_desc->supported_samplerates;
+	}
+}
+
+const AVChannelLayout& ff::codec_base::first_supported_a_channel_layout() const
+{
+	if (destroyed())
+	{
+		throw std::logic_error("The codec is destroyed.");
+	}
+	if (p_codec_desc->type != AVMediaType::AVMEDIA_TYPE_AUDIO)
+	{
+		throw std::logic_error("The codec is not for audios.");
+	}
+
+	if (!p_codec_desc->ch_layouts)
+	{
+		throw std::domain_error("Don't know which channel layouts are supported.");
+	}
+	else
+	{
+		return *p_codec_desc->ch_layouts;
+	}
+}
+
 void ff::codec_base::signal_no_more_food()
 {
 	if (!ready())

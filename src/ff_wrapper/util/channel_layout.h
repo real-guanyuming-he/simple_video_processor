@@ -24,22 +24,53 @@ extern "C"
 
 namespace ff
 {
+	// Copy and paste the macro definitions from <libavutil/channel_layout.h>
+	// search against this regex: #define ([\w]+)[\s]+[\w \(\),]+
+	// and replace with: constexpr AVChannelLayout ff_$1 $1;
+
+	// These are constexpr variables for the FFmpeg AV_CHANNEL_LAYOUT_... macros
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_MONO AV_CHANNEL_LAYOUT_MONO;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_STEREO AV_CHANNEL_LAYOUT_STEREO;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_2POINT1 AV_CHANNEL_LAYOUT_2POINT1;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_2_1 AV_CHANNEL_LAYOUT_2_1;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_SURROUND AV_CHANNEL_LAYOUT_SURROUND;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_3POINT1 AV_CHANNEL_LAYOUT_3POINT1;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_4POINT0 AV_CHANNEL_LAYOUT_4POINT0;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_4POINT1 AV_CHANNEL_LAYOUT_4POINT1;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_2_2 AV_CHANNEL_LAYOUT_2_2;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_QUAD AV_CHANNEL_LAYOUT_QUAD;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_5POINT0 AV_CHANNEL_LAYOUT_5POINT0;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_5POINT1 AV_CHANNEL_LAYOUT_5POINT1;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_5POINT0_BACK AV_CHANNEL_LAYOUT_5POINT0_BACK;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_5POINT1_BACK AV_CHANNEL_LAYOUT_5POINT1_BACK;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_6POINT0 AV_CHANNEL_LAYOUT_6POINT0;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_6POINT0_FRONT AV_CHANNEL_LAYOUT_6POINT0_FRONT;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_3POINT1POINT2 AV_CHANNEL_LAYOUT_3POINT1POINT2;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_HEXAGONAL AV_CHANNEL_LAYOUT_HEXAGONAL;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_6POINT1 AV_CHANNEL_LAYOUT_6POINT1;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_6POINT1_BACK AV_CHANNEL_LAYOUT_6POINT1_BACK;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_6POINT1_FRONT AV_CHANNEL_LAYOUT_6POINT1_FRONT;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_7POINT0 AV_CHANNEL_LAYOUT_7POINT0;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_7POINT0_FRONT AV_CHANNEL_LAYOUT_7POINT0_FRONT;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_7POINT1 AV_CHANNEL_LAYOUT_7POINT1;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_7POINT1_WIDE AV_CHANNEL_LAYOUT_7POINT1_WIDE;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_7POINT1_WIDE_BACK AV_CHANNEL_LAYOUT_7POINT1_WIDE_BACK;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_5POINT1POINT2_BACK AV_CHANNEL_LAYOUT_5POINT1POINT2_BACK;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_OCTAGONAL AV_CHANNEL_LAYOUT_OCTAGONAL;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_CUBE AV_CHANNEL_LAYOUT_CUBE;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_5POINT1POINT4_BACK AV_CHANNEL_LAYOUT_5POINT1POINT4_BACK;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_7POINT1POINT2 AV_CHANNEL_LAYOUT_7POINT1POINT2;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_7POINT1POINT4_BACK AV_CHANNEL_LAYOUT_7POINT1POINT4_BACK;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_HEXADECAGONAL AV_CHANNEL_LAYOUT_HEXADECAGONAL;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_STEREO_DOWNMIX AV_CHANNEL_LAYOUT_STEREO_DOWNMIX;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_22POINT2 AV_CHANNEL_LAYOUT_22POINT2;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_7POINT1_TOP_BACK AV_CHANNEL_LAYOUT_7POINT1_TOP_BACK;
+	constexpr AVChannelLayout ff_AV_CHANNEL_LAYOUT_AMBISONIC_FIRST_ORDER AV_CHANNEL_LAYOUT_AMBISONIC_FIRST_ORDER;
+
 	/*
 	* 
-	* IT CAN BE RATHER INCONVENIENT TO USE SOMETIMES.
-	* CHOOSE TO USE IT OR NOT YOURSELF DEPENDING ON THE SITUATION.
-	* To give an example of the inconvenience,
-	* FFmpeg internal structs like AVCodecParameters store an object of AVChannelLayout directly inside.
-	* To make an object of my wrapper out of one these AVChannelLayout objects,
-	* I must make a copy, because I cannot directly reinterpret_cast a ptr/ref to the object.
-	* Accessing such a ptr/ref would be an undefined behaviour, 
-	as this wrapper is not similar to AVChannelLayout and the access is not one of 
-	* [basic.lval/11] in ISO/IEC 14882:2020.
-	* DON'T USE IT WHEN UNNECESSARY. E.g. I provide a_channel_layout_ref in codec_properties
-	* that returns a ref to AVChannelLayout directly.
-	* 
 	* Represents an audio channel layout.
-	* Encapsulates AVChannelLayout.
+	* Encapsulates a const AVChannelLayout.
 	* 
 	* FFmpeg documentation restricts the ways in which one can
 	*	1. create an AVChannelLayout
@@ -48,7 +79,10 @@ namespace ff
 	*	4. destroy an AVChannelLayout
 	* Hence this encapsulation.
 	* 
-	* Invariants: It is a valid AVChannelLayout
+	* Invariants: 
+	*	1. p_cl != nullptr and 
+	*	2. *p_cl is a valid AVChannelLayout.
+	*	3. if !is_weak_ref, then p_cl is created by the new operator.
 	*/
 	class FF_WRAPPER_API channel_layout final
 	{
@@ -124,6 +158,9 @@ namespace ff
 			FF_AV_CHANNEL_LAYOUT_7POINT1_TOP_BACK,
 			FF_AV_CHANNEL_LAYOUT_AMBISONIC_FIRST_ORDER,
 		};
+		/*
+		* Legitimate way NO.2 to create one:
+		*/
 		explicit channel_layout(default_layouts l);
 
 		/*
@@ -133,34 +170,46 @@ namespace ff
 		* Creates a default channel layout with 1 channel.
 		*/
 		inline channel_layout()
+			: p_cl(nullptr), // A temp placeholder first.
+			is_weak_ref(false)
 		{
-			av_channel_layout_default(&cl, 1);
+			auto* temp = new AVChannelLayout();
+			av_channel_layout_default(temp, 1);
+			p_cl = temp;
 		}
 
 		/*
-		* Copies src.
+		* Depending on weak_ref, either refers to src weakly or copies src.
+		* 
+		* @param src the source
+		* @param weak_ref whether the object is created as a weak ref to src
+		* @throws std::invalid_argument if src is invalid.
 		*/
-		explicit channel_layout(const AVChannelLayout& src);
+		explicit channel_layout(const AVChannelLayout& src, bool weak_ref = true);
 
 		/*
-		* Copying an AVChannelLayout via assigning is forbidden, 
-		av_channel_layout_copy() must be used instead (and its return value should be checked)
+		* Depending on weak_ref, either refers to src weakly or copies src.
+		*
+		* @param src the source
+		* @param weak_ref whether the object is created as a weak ref to src
 		*/
-		channel_layout(const channel_layout& other);
+		channel_layout(const channel_layout& other, bool weak_ref = true);
+
 		/*
-		* Copying an AVChannelLayout via assigning is forbidden,
-		av_channel_layout_copy() must be used instead (and its return value should be checked)
+		* Copying an AVChannelLayout via assigning is forbidden.
+		* av_channel_layout_copy() must be used instead (and its return value should be checked).
+		* NOTE: This assignment operator results in a copy of right, not a weak ref!
 		*/
 		channel_layout& operator=(const channel_layout& right);
 
 		/*
-		* Takes over other, and set other's order to native,
-		* so that other won't be uninited by av_channel_layout_uninit(&cl).
+		* Takes over other, and set other's is_weak_ref to true,
+		* so that other won't be uninited by the destructor.
 		*/
 		inline channel_layout(channel_layout&& other) noexcept
-			: cl(other.cl)
+			: p_cl(other.p_cl), is_weak_ref(other.is_weak_ref)
 		{
-			other.cl.order = AV_CHANNEL_ORDER_NATIVE;
+			other.is_weak_ref = true;
 		}
 
 		/*
@@ -168,20 +217,11 @@ namespace ff
 		* takes over right, and set right's order to native,
 		* so that right won't be uninited by av_channel_layout_uninit(&cl).
 		*/
-		inline channel_layout& operator=(channel_layout&& right) noexcept
-		{
-			av_channel_layout_uninit(&cl);
-			cl = right.cl;
-			right.cl.order = AV_CHANNEL_ORDER_NATIVE;
-			return *this;
-		}
+		channel_layout& operator=(channel_layout&& right) noexcept;
 
-		/*
-		* The channel layout must be unitialized with av_channel_layout_uninit()
-		*/
 		inline ~channel_layout() noexcept
 		{
-			av_channel_layout_uninit(&cl);
+			destroy();
 		}
 
 	public:
@@ -190,8 +230,8 @@ namespace ff
 		// @returns if the two channel layouts are equal
 		bool operator==(const AVChannelLayout& right) const noexcept;
 
-		AVChannelLayout& av_ch_layout() { return cl; }
-		const AVChannelLayout& av_ch_layout() const { return cl; }
+		const AVChannelLayout& av_ch_layout() { return *p_cl; }
+		const AVChannelLayout& av_ch_layout() const { return *p_cl; }
 
 	public:
 		/*
@@ -208,7 +248,26 @@ namespace ff
 		static void av_channel_layout_copy(AVChannelLayout& dst, const AVChannelLayout& src);
 
 	private:
-		AVChannelLayout cl;
+		const AVChannelLayout* p_cl;
+		// Whether the object weakly refs a channel layout created by the FFmpeg libraries 
+		// or owns the channel layout.
+		// 
+		bool is_weak_ref;
+
+	private:
+		/*
+		* Should only be called in the destructor and assignment operators.
+		* If it's not a weak ref, then completely destroys it.
+		*/
+		inline void destroy() noexcept
+		{
+			if (!is_weak_ref)
+			{
+				// The channel layout must be unitialized with av_channel_layout_uninit()
+				av_channel_layout_uninit(const_cast<AVChannelLayout*>(p_cl));
+				delete p_cl;
+			}
+		}
 	};
 }
 

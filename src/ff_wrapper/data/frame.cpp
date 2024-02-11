@@ -44,7 +44,7 @@ ff::frame::data_properties ff::frame::get_data_properties() const
 		return data_properties
 		(
 			p_frame->format,
-			p_frame->nb_samples, ff::channel_layout(p_frame->ch_layout)
+			p_frame->nb_samples, p_frame->ch_layout
 		);
 	}
 }

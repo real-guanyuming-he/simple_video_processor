@@ -122,38 +122,52 @@ int main()
 		}
 	}
 
-	// Now mux some packets from artificial frames.
+	// Now mux some packets from "artificial" frames.
 	{
-		//fs::path test_path_3(working_dir / "muxer_test3.mkv");
-		//ff::muxer m3(test_path_3);
+		fs::path test_path_3(working_dir / "muxer_test3.mkv");
+		ff::muxer m3(test_path_3);
 
-		//// mkv should be able to contain streams of any codec.
-		//ff::encoder venc3(AVCodecID::AV_CODEC_ID_AV1);
-		//ff::encoder aenc3(AVCodecID::AV_CODEC_ID_OPUS);
+		// mkv should be able to contain streams of any codec.
+		ff::encoder venc3(AVCodecID::AV_CODEC_ID_AV1);
+		ff::encoder aenc3(AVCodecID::AV_CODEC_ID_OPUS);
 
-		//// Set the properties of the encoders
-		//ff::codec_properties vp3;
-		//vp3.set_type_video();
-		//vp3.set_v_width(800); vp3.set_v_height(600);
-		//vp3.set_v_pixel_format(venc3.supported_v_pixel_formats()[0]);
-		//vp3.set_time_base(ff::common_video_time_base_600);
-		//ff::codec_properties ap3;
-		//ap3.set_type_audio();
-		//ap3.set_a_sample_rate(32000);
-		//ap3.set_a_sample_format(aenc3.supported_a_sample_formats()[0]);
-		//ap3.set_a_channel_layout(*aenc3.supported_a_channel_layouts()[0]);
-		//ap3.set_time_base(ff::common_audio_time_base_64000);
-		//venc3.set_codec_properties(vp3);
-		//aenc3.set_codec_properties(ap3);
+		// Set the properties of the encoders
+		ff::codec_properties vp3;
+		vp3.set_type_video();
+		vp3.set_v_width(800); vp3.set_v_height(600);
+		vp3.set_v_pixel_format(venc3.first_supported_v_pixel_format());
+		vp3.set_time_base(ff::common_video_time_base_600);
+		ff::codec_properties ap3;
+		ap3.set_type_audio();
+		// Should be 48000
+		ap3.set_a_sample_rate(aenc3.first_supported_a_sample_rate());
+		ap3.set_a_sample_format(aenc3.first_supported_a_sample_format());
+		ap3.set_a_channel_layout(AVChannelLayout AV_CHANNEL_LAYOUT_STEREO);
+		// Hence 96000
+		ap3.set_time_base(ff::common_audio_time_base_96000);
+		venc3.set_codec_properties(vp3);
+		aenc3.set_codec_properties(ap3);
 
-		//// Add streams to the muxer.
-		//m3.add_stream(venc3);
-		//m3.add_stream(aenc3);
+		// Create the encoder contexts
+		venc3.create_codec_context();
+		aenc3.create_codec_context();
 
-		//// Prepare the muxer
-		//m3.prepare_muxer();
+		// Add streams to the muxer.
+		m3.add_stream(venc3);
+		m3.add_stream(aenc3);
 
-		// TBD: Not completed.
+		// Prepare the muxer
+		m3.prepare_muxer();
+
+		// Now produce the "artificial" frames
+		ff::frame vf(true);
+		ff::frame af(true);
+		// Set the data properties
+		ff::frame::data_properties vfd(vp3.v_pixel_format(), vp3.v_height(), vp3.v_width());
+		constexpr int a_frame_rate = 100;
+		const int a_num_samples_per_frame = ap3.a_sample_rate() / a_frame_rate;
+		ff::frame::data_properties afd(ap3.a_sample_format(), a_num_samples_per_frame, ap3.a_channel_layout_ref());
+		
 	}
 
 	return 0;

@@ -260,6 +260,42 @@ namespace ff
 		std::vector<const AVChannelLayout*> supported_a_channel_layouts() const;
 
 		/*
+		* @returns the first supported pixel format (usually the best).
+		* @throws std::logic_error if destroyed().
+		* @throws std::logic_error if the codec is not for videos.
+		* @throws std::domain_error if the codec does not know the supported values.
+		*/
+		AVPixelFormat first_supported_v_pixel_format() const;
+		/*
+		* @returns the first supported video frame rate (usually the best).
+		* @throws std::logic_error if destroyed().
+		* @throws std::logic_error if the codec is not for videos.
+		* @throws std::domain_error if the codec does not know the supported values.
+		*/
+		ff::rational first_supported_v_frame_rate() const;
+		/*
+		* @returns the first supported audio sample format (usually the best). 
+		* @throws std::logic_error if destroyed().
+		* @throws std::logic_error if the codec is not for audios.
+		* @throws std::domain_error if the codec does not know the supported values.
+		*/
+		AVSampleFormat first_supported_a_sample_format() const;
+		/*
+		* @returns the first supported audio sample rate (usually the best).
+		* @throws std::logic_error if destroyed().
+		* @throws std::logic_error if the codec is not for audios.
+		* @throws std::domain_error if the codec does not know the supported values.
+		*/
+		int first_supported_a_sample_rate() const;
+		/*
+		* @returns (a const reference to) the first supported audio channel layout (usually the best).
+		* @throws std::logic_error if destroyed().
+		* @throws std::logic_error if the codec is not for audios.
+		* @throws std::domain_error if the codec does not know the supported values.
+		*/
+		const AVChannelLayout& first_supported_a_channel_layout() const;
+
+		/*
 		* @returns the properties of the codec, which describes how decoding/encoding is done.
 		* @throws std::logic_error if the codec is destroyed.
 		* Note: if you get it when the codec is not ready, more properties may be set after 

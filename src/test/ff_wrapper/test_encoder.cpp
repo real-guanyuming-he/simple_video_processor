@@ -188,7 +188,7 @@ int main()
 		cp2.set_time_base(ff::common_audio_time_base_64000);
 		cp2.set_a_sample_format(AVSampleFormat::AV_SAMPLE_FMT_S32P);
 		cp2.set_a_sample_rate(32000);
-		cp2.set_a_channel_layout(ff::channel_layout(ff::channel_layout::FF_AV_CHANNEL_LAYOUT_STEREO));
+		cp2.set_a_channel_layout(ff::ff_AV_CHANNEL_LAYOUT_STEREO);
 		e2.set_codec_properties(cp2);
 
 		e2.create_codec_context();

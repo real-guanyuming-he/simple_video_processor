@@ -174,7 +174,7 @@ int main()
 		ff::frame::data_properties dp2
 		(
 			AVSampleFormat::AV_SAMPLE_FMT_S16, 144,
-			ff::channel_layout(AV_CHANNEL_LAYOUT_STEREO)
+			ff::ff_AV_CHANNEL_LAYOUT_STEREO
 		);
 		ff::frame f2(true);
 
@@ -252,7 +252,7 @@ int main()
 		ff::frame::data_properties dp1
 		(
 			AVSampleFormat::AV_SAMPLE_FMT_DBL, 1200,
-			ff::channel_layout(AV_CHANNEL_LAYOUT_SURROUND)
+			ff::ff_AV_CHANNEL_LAYOUT_SURROUND
 		);
 		f1.allocate_data(dp1);
 		f1.clear_data();

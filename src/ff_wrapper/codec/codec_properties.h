@@ -97,6 +97,7 @@ namespace ff
 		inline bool			is_audio()			const noexcept { return AVMEDIA_TYPE_AUDIO == p_params->codec_type; }
 		inline bool			is_subtitle()		const noexcept { return AVMEDIA_TYPE_SUBTITLE == p_params->codec_type; }
 		inline ff::rational time_base()			const noexcept { return tb; }
+		inline int			bit_rate()			const noexcept { return p_params->bit_rate; }
 
 		// Get video related fields
 
@@ -115,7 +116,7 @@ namespace ff
 		inline AVSampleFormat			a_sample_format()	const noexcept { return (AVSampleFormat)p_params->format; }
 		inline int						a_sample_rate()		const noexcept { return p_params->sample_rate; }
 		inline const AVChannelLayout&	a_channel_layout_ref()	const noexcept { return p_params->ch_layout; }
-		inline channel_layout			a_channel_layout()		const noexcept { return ff::channel_layout(p_params->ch_layout); }
+		inline channel_layout			a_channel_layout()		const noexcept { return ff::channel_layout(p_params->ch_layout, true); }
 
 		/*
 		* @returns The sample aspect ratio (w/h). Or 0/1 if unknown.
@@ -138,6 +139,7 @@ namespace ff
 		inline void	set_type_audio()				noexcept { p_params->codec_type = AVMEDIA_TYPE_AUDIO; }
 		inline void	set_type_subtitle()				noexcept { p_params->codec_type = AVMEDIA_TYPE_SUBTITLE; }
 		inline void set_time_base(ff::rational b)	noexcept { tb = b; }
+		inline void set_bit_rate(int br)			noexcept { p_params->bit_rate = br; }
 
 		// Set video related fields
 
