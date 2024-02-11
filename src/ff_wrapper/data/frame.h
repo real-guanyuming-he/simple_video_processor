@@ -85,6 +85,54 @@ namespace ff
 				: v_or_a(false), fmt(f), align(align),
 				num_samples(num), ch_layout(ch_layout, true) {}
 
+			/*
+			* Doesn't care about align.
+			*/
+			inline bool operator==(const data_properties& right) const noexcept
+			{
+				if (v_or_a != right.v_or_a)
+				{
+					return false;
+				}
+				if (fmt != right.fmt)
+				{
+					return false;
+				}
+
+				if (v_or_a) // Video
+				{
+					return width == right.width && height == right.height;
+				}
+				else // Audio
+				{
+					return ch_layout == right.ch_layout && num_samples == right.num_samples;
+				}
+			}
+
+			/*
+			* Doesn't care about align.
+			*/
+			inline bool operator!=(const data_properties& right) const noexcept
+			{
+				if (v_or_a != right.v_or_a)
+				{
+					return true;
+				}
+				if (fmt != right.fmt)
+				{
+					return true;
+				}
+
+				if (v_or_a) // Video
+				{
+					return width != right.width || height != right.height;
+				}
+				else // Audio
+				{
+					return ch_layout != right.ch_layout || num_samples != right.num_samples;
+				}
+			}
+
 			// Pixel format or audio sample format, depending on v_or_a.
 			int fmt;
 			// Alignment of the buffer. Set to 0 to automatically choose one for the current CPU. 
@@ -96,6 +144,7 @@ namespace ff
 			// Audio only
 			channel_layout ch_layout; int num_samples = 0;
 
+			// true for video; false for audio.
 			bool v_or_a;
 		};
 

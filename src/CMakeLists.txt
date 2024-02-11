@@ -29,6 +29,9 @@ cmake_path(APPEND
 cmake_path(APPEND 
     SrcFFWrapperRootPath "codec"
     OUTPUT_VARIABLE SrcFFWrapperCodecPath)
+cmake_path(APPEND 
+    SrcFFWrapperRootPath "sws"
+    OUTPUT_VARIABLE SrcFFWrapperSwsPath)
 
 # The FFmpeg wrapper library
 set(FFWrapperSourceFiles
@@ -68,7 +71,10 @@ set(FFWrapperSourceFiles
     "${SrcFFWrapperCodecPath}/encoder.h"
     "${SrcFFWrapperCodecPath}/encoder.cpp"
     "${SrcFFWrapperCodecPath}/codec_properties.h"
-    "${SrcFFWrapperCodecPath}/codec_properties.cpp")
+    "${SrcFFWrapperCodecPath}/codec_properties.cpp"
+# SwScale
+    "${SrcFFWrapperSwsPath}/frame_transformer.h"
+    "${SrcFFWrapperSwsPath}/frame_transformer.cpp")
     
 add_library(${FFWrapperName} SHARED
     ${FFWrapperSourceFiles})
