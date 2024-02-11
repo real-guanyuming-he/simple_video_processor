@@ -19,6 +19,7 @@
 #include "../../ff_wrapper/data/frame.h"
 #include "../../ff_wrapper/codec/encoder.h"
 
+#include <iostream>
 #include <cstdlib> // For std::system().
 #include <filesystem> // For path handling as a demuxer requires an absolute path.
 #include <format> // For std::format().
@@ -28,6 +29,8 @@ namespace fs = std::filesystem;
 
 int main()
 {
+	FF_TEST_START
+
 	fs::path working_dir(fs::current_path());
 
 	// Test creation
@@ -132,17 +135,20 @@ int main()
 		ff::encoder aenc3(AVCodecID::AV_CODEC_ID_OPUS);
 
 		// Set the properties of the encoders
+		constexpr int v_frame_rate = 24;
 		ff::codec_properties vp3;
 		vp3.set_type_video();
 		vp3.set_v_width(800); vp3.set_v_height(600);
+		// YUV420
 		vp3.set_v_pixel_format(venc3.first_supported_v_pixel_format());
+		vp3.set_v_frame_rate(ff::rational(v_frame_rate, 1));
 		vp3.set_time_base(ff::common_video_time_base_600);
 		ff::codec_properties ap3;
 		ap3.set_type_audio();
 		// Should be 48000
 		ap3.set_a_sample_rate(aenc3.first_supported_a_sample_rate());
 		ap3.set_a_sample_format(aenc3.first_supported_a_sample_format());
-		ap3.set_a_channel_layout(AVChannelLayout AV_CHANNEL_LAYOUT_STEREO);
+		ap3.set_a_channel_layout(ff::ff_AV_CHANNEL_LAYOUT_STEREO);
 		// Hence 96000
 		ap3.set_time_base(ff::common_audio_time_base_96000);
 		venc3.set_codec_properties(vp3);
@@ -152,9 +158,14 @@ int main()
 		venc3.create_codec_context();
 		aenc3.create_codec_context();
 
+		// Creating the context may change some properties.
+		// Use these to create the frames.
+		const auto cvp3 = venc3.get_codec_properties();
+		const auto cap3 = aenc3.get_codec_properties();
+
 		// Add streams to the muxer.
-		m3.add_stream(venc3);
-		m3.add_stream(aenc3);
+		auto vs = m3.add_stream(venc3);
+		auto as = m3.add_stream(aenc3);
 
 		// Prepare the muxer
 		m3.prepare_muxer();
@@ -163,12 +174,133 @@ int main()
 		ff::frame vf(true);
 		ff::frame af(true);
 		// Set the data properties
-		ff::frame::data_properties vfd(vp3.v_pixel_format(), vp3.v_height(), vp3.v_width());
-		constexpr int a_frame_rate = 100;
-		const int a_num_samples_per_frame = ap3.a_sample_rate() / a_frame_rate;
-		ff::frame::data_properties afd(ap3.a_sample_format(), a_num_samples_per_frame, ap3.a_channel_layout_ref());
-		
+		ff::frame::data_properties vfd(cvp3.v_pixel_format(), cvp3.v_height(), cvp3.v_width());
+		ff::frame::data_properties afd(cap3.a_sample_format(), cap3.a_frame_num_samples(), cap3.a_channel_layout_ref());
+		const int a_frame_rate =
+			cap3.a_sample_rate() /
+			(cap3.a_frame_num_samples() * cap3.a_channel_layout_ref().nb_channels);
+		const auto v_tb = cvp3.time_base();
+		const auto a_tb = cap3.time_base();
+		const int v_pts_delta = v_tb.get_den() / v_frame_rate;
+		const int a_pts_delta = a_tb.get_den() / a_frame_rate;
+
+		// Encode them and send them to the muxer
+		// for this long
+		constexpr int file_duration_secs = 2;
+		constexpr int v_num_frames = v_frame_rate * file_duration_secs;
+		const int a_num_frames = a_frame_rate * file_duration_secs;
+		// a_frame_rate = v_frame_rate
+		for (int i = 0; i < v_num_frames; ++i)
+		{
+			// Don't care what's inside the data.
+			// Just allocate them.
+			vf.allocate_data(vfd);
+
+			// Don't forget to set the time
+			int64_t pts = (int64_t)i * (int64_t)v_pts_delta;
+			int64_t duration = v_pts_delta;
+			vf.reset_time(pts, duration, v_tb);
+
+			venc3.feed_frame(vf);
+			while (!venc3.hungry())
+			{
+				ff::packet vpkt = venc3.encode_packet();
+				if (!vpkt.destroyed())
+				{
+					// prepare the packet
+					// dts and pts should be set by the encoder
+					vpkt->time_base = vf->time_base;
+					vpkt.prepare_for_muxing(vs);
+
+					// feed it to the muxer
+					m3.mux_packet(vpkt);
+				}
+			}
+
+			// Don't forget to do this.
+			vf.release_resources_memory();
+		}
+
+		for (int i = 0; i < a_num_frames; ++i)
+		{
+			// Don't care what's inside the data.
+			// Just allocate them.
+			af.allocate_data(afd);
+
+			// Don't forget to set the time
+			int64_t pts = (int64_t)i * (int64_t)a_pts_delta;
+			int64_t duration = a_pts_delta;
+			af.reset_time(pts, duration, a_tb);
+
+			aenc3.feed_frame(af);
+			while (!aenc3.hungry())
+			{
+				ff::packet apkt = aenc3.encode_packet();
+				if (!apkt.destroyed())
+				{
+					// prepare the packet
+					// dts and pts should be set by the encoder
+					apkt->time_base = af->time_base;
+					apkt.prepare_for_muxing(as);
+
+					// feed it to the muxer
+					m3.mux_packet(apkt);
+				}
+			}
+
+			// Don't forget to do this.
+			af.release_resources_memory();
+		}
+
+		// Now drain the encoders
+		venc3.signal_no_more_food();
+		aenc3.signal_no_more_food();
+
+		ff::packet vpkt(false);
+		ff::packet apkt(false);
+
+		auto vi = v_num_frames;
+		auto ai = a_num_frames;
+		do
+		{
+			vpkt = venc3.encode_packet();
+			if (!vpkt.destroyed())
+			{
+				// prepare the packet
+				// dts and pts should be set by the encoder
+				vpkt->time_base = vf->time_base;
+				vpkt.prepare_for_muxing(vs);
+
+				// feed it to the muxer
+				m3.mux_packet(vpkt);
+			}
+
+			++vi;
+		} while (!vpkt.destroyed());
+
+		do
+		{
+			apkt = aenc3.encode_packet();
+			if (!apkt.destroyed())
+			{
+				// prepare the packet
+				// dts and pts should be set by the encoder
+				apkt->time_base = af->time_base;
+				apkt.prepare_for_muxing(as);
+
+				// feed it to the muxer
+				m3.mux_packet(apkt);
+			}
+
+			++ai;
+		} while (!apkt.destroyed());
+
+		// Finalize the muxing
+		m3.finalize();	
 	}
 
+	FF_TEST_END
+
 	return 0;
+
 }

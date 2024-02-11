@@ -188,6 +188,18 @@ namespace ff
 		*/
 		void change_time_base(ff::rational new_tb);
 
+		/*
+		* Resets the time fields to the given arguments.
+		* 
+		* @param dts new dts
+		* @param pts new pts
+		* @param duration new duration
+		* @param time_base new time base
+		* @throws std::invalid_argument if dts > pts (but you should keep dts < pts for better compatibility).
+		* @throws std::invalid_argument if time_base <= 0
+		*/
+		void reset_time(int64_t dts, int64_t pts, int64_t duration, ff::rational time_base);
+
 	public:
 //////////////////////////////////////// Exposers ////////////////////////////////////////
 		const ::AVPacket* av_packet() const noexcept { return p_packet; }

@@ -60,4 +60,16 @@ TEST_ASSERT_TRUE(actual == expected, msg)
 	}\
 }
 
+// Enclose the tests in a try catch block to see which exceptions are thrown
+#define FF_TEST_START try {
+
+#define FF_TEST_END } catch(const std::exception& e) \
+{\
+	std::cerr << "Unexpected exception thrown during executing tests" <<\
+		" in file " << __FILE__ << " with message:\n" <<\
+		e.what();\
+	FF_DEBUG_BREAK\
+	return -1;\
+}
+
 #include <iostream>

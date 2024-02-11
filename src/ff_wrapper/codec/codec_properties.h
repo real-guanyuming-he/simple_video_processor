@@ -113,10 +113,15 @@ namespace ff
 
 		// Get audio related fields
 
-		inline AVSampleFormat			a_sample_format()	const noexcept { return (AVSampleFormat)p_params->format; }
-		inline int						a_sample_rate()		const noexcept { return p_params->sample_rate; }
+		inline AVSampleFormat			a_sample_format()		const noexcept { return (AVSampleFormat)p_params->format; }
+		inline int						a_sample_rate()			const noexcept { return p_params->sample_rate; }
 		inline const AVChannelLayout&	a_channel_layout_ref()	const noexcept { return p_params->ch_layout; }
 		inline channel_layout			a_channel_layout()		const noexcept { return ff::channel_layout(p_params->ch_layout, true); }
+		/*
+		* Encoding only.
+		* @returns the number of samples (per channel) required for each (except the last) audio frame for the encoder.
+		*/
+		inline int						a_frame_num_samples()	const noexcept { return p_params->frame_size; }
 
 		/*
 		* @returns The sample aspect ratio (w/h). Or 0/1 if unknown.
