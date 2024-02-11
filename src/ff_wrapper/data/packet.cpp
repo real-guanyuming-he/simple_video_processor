@@ -277,11 +277,29 @@ void ff::packet::change_time_base(ff::rational new_tb)
 	}
 }
 
+void ff::packet::reset_time(int64_t dts, int64_t pts, int64_t duration, ff::rational time_base)
+{
+	if (dts > pts)
+	{
+		throw std::invalid_argument("dts must be <= pts.");
+	}
+	if (time_base <= 0)
+	{
+		throw std::invalid_argument("Time base must be > 0.");
+	}
+
+	p_packet->dts = dts;
+	p_packet->pts = pts;
+	p_packet->duration = duration;
+	p_packet->time_base = time_base.av_rational();
+}
+
 void ff::packet::prepare_for_muxing(const stream& muxer_stream)
 {
 	// Some formats don't need a fixed time base.
-	// Only changes the time fields if the stream's time base is valid.
-	if (muxer_stream.time_base() > 0)
+	// Only changes the time fields if the stream's time base is valid
+	// and is different from this's tb.
+	if (muxer_stream.time_base() > 0 && muxer_stream.time_base() != p_packet->time_base)
 	{
 		change_time_base(muxer_stream.time_base());
 	}

@@ -65,6 +65,18 @@ ff::frame ff::frame::shared_ref() const
 	return ff::frame(shared, video_or_audio);
 }
 
+void ff::frame::reset_time(int64_t pts, int64_t duration, ff::rational time_base)
+{
+	if (time_base <= 0)
+	{
+		throw std::invalid_argument("Time base must be > 0.");
+	}
+
+	p_frame->pts = pts;
+	p_frame->duration = duration;
+	p_frame->time_base = time_base.av_rational();
+}
+
 void ff::frame::internal_allocate_object_memory()
 {
 	p_frame = av_frame_alloc();

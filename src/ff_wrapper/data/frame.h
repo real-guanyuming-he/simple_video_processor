@@ -16,6 +16,7 @@
 */
 
 #include "../util/util.h"
+#include "../util/ff_math.h"
 #include "../util/ff_object.h"
 #include "../util/channel_layout.h"
 
@@ -199,6 +200,16 @@ namespace ff
 		* @throws std::logic_error if this isn't ready.
 		*/
 		frame shared_ref() const;
+
+		/*
+		* Resets the time fields to the given arguments.
+		*
+		* @param pts new pts
+		* @param duration new duration
+		* @param time_base new time base
+		* @throws std::invalid_argument if time_base <= 0
+		*/
+		void reset_time(int64_t pts, int64_t duration, ff::rational time_base);
 
 	public:
 		/*
