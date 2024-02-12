@@ -68,6 +68,21 @@ std::vector<std::string> ff::muxer::extensions() const
 	return media_base::string_to_list(std::string(p_muxer_desc->extensions));
 }
 
+bool ff::muxer::supports_video() const noexcept
+{
+	return p_muxer_desc->video_codec != AVCodecID::AV_CODEC_ID_NONE;
+}
+
+bool ff::muxer::supports_audio() const noexcept
+{
+	return p_muxer_desc->audio_codec != AVCodecID::AV_CODEC_ID_NONE;
+}
+
+bool ff::muxer::supports_subtitle() const noexcept
+{
+	return p_muxer_desc->subtitle_codec != AVCodecID::AV_CODEC_ID_NONE;
+}
+
 AVCodecID ff::muxer::desired_encoder_id(AVMediaType type) const
 {
 	auto ret = av_guess_codec(p_muxer_desc, nullptr, p_fmt_ctx->url, nullptr, type);
@@ -199,12 +214,57 @@ void ff::muxer::prepare_muxer(dict& options)
 	options = pavd;
 }
 
-void ff::muxer::mux_packet(packet& pkt)
+void ff::muxer::mux_packet_auto(packet& pkt)
 {
 	if (!ready)
 	{
 		throw std::logic_error("You must prepare the muxer first.");
 	}
+
+	if (manual_muxing_called)
+	{
+		throw std::logic_error("Do not call both mux_packet_auto() and mux_packet_manual()!");
+	}
+
+	auto_muxing_called = true;
+
+	int ret = av_interleaved_write_frame(p_fmt_ctx, pkt.av_packet());
+	if (ret < 0)
+	{
+		switch (ret)
+		{
+		case AVERROR(ENOMEM):
+			throw std::bad_alloc();
+			break;
+		case AVERROR(EINVAL):
+			throw std::invalid_argument("The packet you gave is invalid.");
+			break;
+		case AVERROR(EIO):
+			throw std::filesystem::filesystem_error
+			(
+				"Unexpected I/O error happened when muxing a packet", p_fmt_ctx->url,
+				std::make_error_code(std::errc::io_error)
+			);
+			break;
+		default:
+			ON_FF_ERROR_WITH_CODE("Unexpected error happened when muxing a packet", ret);
+		}
+	}
+}
+
+void ff::muxer::mux_packet_manual(packet& pkt)
+{
+	if (!ready)
+	{
+		throw std::logic_error("You must prepare the muxer first.");
+	}
+
+	if (auto_muxing_called)
+	{
+		throw std::logic_error("Do not call both mux_packet_auto() and mux_packet_manual()!");
+	}
+
+	manual_muxing_called = true;
 
 	int ret = av_write_frame(p_fmt_ctx, pkt.av_packet());
 	if (ret < 0)

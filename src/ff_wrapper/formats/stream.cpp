@@ -76,6 +76,18 @@ void ff::stream::set_properties(const ff::codec_properties& cp)
     }
 
     avcodec_parameters_copy(p_stream->codecpar, cp.av_codec_parameters());
+
+    // Don't know why the stream contains redundant fields 
+    // that are also present in its codecpar.
+    // Nevertheless, set them.
+    if (cp.v_frame_rate() > 0)
+    {
+        p_stream->r_frame_rate = cp.v_frame_rate().av_rational();
+    }
+    if (cp.v_sar() != 0)
+    {
+        p_stream->sample_aspect_ratio = cp.v_sar().av_rational();
+    }
 }
 
 const AVCodecID ff::stream::codec_id() const noexcept

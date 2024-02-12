@@ -150,6 +150,8 @@ namespace ff
 
 		/*
 		* Mux a packet into the file.
+		* The interleaving of packets will automatically be managed by the muxer.
+		* Do not call both mux_packet_auto() and mux_packet_manual()!
 		* 
 		* @param pkt the packet to be fed into the muxer. It must be properly set up.
 		* You can call packet::prepare_for_muxing() and pass the corresponding stream to set it up,
@@ -157,10 +159,28 @@ namespace ff
 		* except in rare situations the dts can be non-decreasing. This parameter is nonconst because 
 		* the underlying FFmpeg function takes a nonconst pointer.
 		* @throws std::invalid_argument if the packet is invalid.
+		* @throws std::logic_error if you have already called mux_packet_manual().
 		* @throws std::logic_error if you have not prepared the demuxer yet.
 		* @throws std::filesystem::filesystem_error on I/O error.
 		*/
-		void mux_packet(packet& pkt);
+		void mux_packet_auto(packet& pkt);
+
+		/*
+		* Mux a packet into the file.
+		* The interleaving of packets must have already been managed by you.
+		* Do not call both mux_packet_auto() and mux_packet_manual()!
+		*
+		* @param pkt the packet to be fed into the muxer. It must be properly set up.
+		* You can call packet::prepare_for_muxing() and pass the corresponding stream to set it up,
+		* or do what the comment for that method says. The packets must also be coming with increasing dts,
+		* except in rare situations the dts can be non-decreasing. This parameter is nonconst because
+		* the underlying FFmpeg function takes a nonconst pointer.
+		* @throws std::invalid_argument if the packet is invalid.
+		* @throws std::logic_error if you have already called mux_packet_auto().
+		* @throws std::logic_error if you have not prepared the demuxer yet.
+		* @throws std::filesystem::filesystem_error on I/O error.
+		*/
+		void mux_packet_manual(packet& pkt);
 
 		/*
 		* Flush any data buffered immediately to the output file.
@@ -270,6 +290,21 @@ namespace ff
 ////////////////////////// Other methods //////////////////////////
 	public:
 		/*
+		* @returns true iff the output format supports video streams
+		*/
+		bool supports_video() const noexcept;
+
+		/*
+		* @returns true iff the output format supports audio streams
+		*/
+		bool supports_audio() const noexcept;
+
+		/*
+		* @returns true iff the output format supports subtitle streams
+		*/
+		bool supports_subtitle() const noexcept;
+
+		/*
 		* @param type of the stream.
 		* @returns the ID of its desired encoder for the specific type of stream.
 		* @throws std::domain_error if the ID could not be obtained.
@@ -290,6 +325,11 @@ namespace ff
 
 		const AVOutputFormat* p_muxer_desc = nullptr;
 		bool ready = false;
+
+		// if mux_packet_auto() has been called.
+		bool auto_muxing_called = false;
+		// if mux_packet_manual() has been called.
+		bool manual_muxing_called = false;
 
 ////////////////////////// Internal helper methods //////////////////////////
 	private:

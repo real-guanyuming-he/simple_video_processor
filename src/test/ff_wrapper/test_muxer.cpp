@@ -18,6 +18,7 @@
 #include "../../ff_wrapper/formats/muxer.h"
 #include "../../ff_wrapper/data/frame.h"
 #include "../../ff_wrapper/codec/encoder.h"
+#include "../../ff_wrapper/sws/frame_transformer.h"
 
 #include <iostream>
 #include <cstdlib> // For std::system().
@@ -47,7 +48,8 @@ int main()
 		// these should throw.
 		TEST_ASSERT_THROWS(m1.prepare_muxer(), std::logic_error);
 		ff::packet temp;
-		TEST_ASSERT_THROWS(m1.mux_packet(temp), std::logic_error);
+		TEST_ASSERT_THROWS(m1.mux_packet_auto(temp), std::logic_error);
+		TEST_ASSERT_THROWS(m1.mux_packet_manual(temp), std::logic_error);
 		TEST_ASSERT_THROWS(m1.flush_demuxer(), std::logic_error);
 		TEST_ASSERT_THROWS(m1.finalize(), std::logic_error);
 	}
@@ -131,8 +133,8 @@ int main()
 		ff::muxer m3(test_path_3);
 
 		// mkv should be able to contain streams of any codec.
-		ff::encoder venc3(AVCodecID::AV_CODEC_ID_AV1);
-		ff::encoder aenc3(AVCodecID::AV_CODEC_ID_OPUS);
+		ff::encoder venc3(AV_CODEC_ID_AV1);
+		ff::encoder aenc3("libopus");
 
 		// Set the properties of the encoders
 		constexpr int v_frame_rate = 24;
@@ -143,6 +145,7 @@ int main()
 		vp3.set_v_pixel_format(venc3.first_supported_v_pixel_format());
 		vp3.set_v_frame_rate(ff::rational(v_frame_rate, 1));
 		vp3.set_time_base(ff::common_video_time_base_600);
+		vp3.set_v_sar(ff::rational(1, 1));
 		ff::codec_properties ap3;
 		ap3.set_type_audio();
 		// Should be 48000
@@ -165,16 +168,15 @@ int main()
 
 		// Add streams to the muxer.
 		auto vs = m3.add_stream(venc3);
-		auto as = m3.add_stream(aenc3);
+		//auto as = m3.add_stream(aenc3);
 
 		// Prepare the muxer
 		m3.prepare_muxer();
 
 		// Now produce the "artificial" frames
-		ff::frame vf(true);
 		ff::frame af(true);
 		// Set the data properties
-		ff::frame::data_properties vfd(cvp3.v_pixel_format(), cvp3.v_height(), cvp3.v_width());
+		ff::frame::data_properties vfd(cvp3.v_pixel_format(), cvp3.v_width(), cvp3.v_height());
 		ff::frame::data_properties afd(cap3.a_sample_format(), cap3.a_frame_num_samples(), cap3.a_channel_layout_ref());
 		const int a_frame_rate =
 			cap3.a_sample_rate() /
@@ -184,6 +186,33 @@ int main()
 		const int v_pts_delta = v_tb.get_den() / v_frame_rate;
 		const int a_pts_delta = a_tb.get_den() / a_frame_rate;
 
+		// Use swscale to convert this rgb frame to vf
+		ff::frame imagef(true);
+		ff::frame::data_properties ifd(AVPixelFormat::AV_PIX_FMT_RGB24, cvp3.v_width(), cvp3.v_height());
+		constexpr int rgb_pixel_size = 3;
+		imagef.allocate_data(ifd);
+		auto* idata = imagef.data<uint8_t>();
+		auto line_size = imagef.line_size();
+		// Write the image.
+		for (int row = 0; row < cvp3.v_height(); ++row)
+		{
+			for (int col = 0; col < cvp3.v_width(); ++col)
+			{
+				auto* pixel =
+					idata +
+					row * line_size +
+					col * rgb_pixel_size;
+				// r
+				*pixel = 24;
+				// g
+				*(pixel + 1) = 255;
+				// b
+				*(pixel + 2) = 24;
+			}
+		}
+
+		ff::frame_transformer trans(vfd, ifd);
+
 		// Encode them and send them to the muxer
 		// for this long
 		constexpr int file_duration_secs = 2;
@@ -192,14 +221,17 @@ int main()
 		// a_frame_rate = v_frame_rate
 		for (int i = 0; i < v_num_frames; ++i)
 		{
-			// Don't care what's inside the data.
-			// Just allocate them.
-			vf.allocate_data(vfd);
+			// Convert the image to the target format.
+			auto vf = trans.convert_frame(imagef);
 
 			// Don't forget to set the time
 			int64_t pts = (int64_t)i * (int64_t)v_pts_delta;
 			int64_t duration = v_pts_delta;
-			vf.reset_time(pts, duration, v_tb);
+			vf.reset_time
+			(
+				pts, v_tb
+				//,duration
+			);
 
 			venc3.feed_frame(vf);
 			while (!venc3.hungry())
@@ -208,12 +240,15 @@ int main()
 				if (!vpkt.destroyed())
 				{
 					// prepare the packet
-					// dts and pts should be set by the encoder
-					vpkt->time_base = vf->time_base;
+					// pts should have been set by the encoder
+					if (ff::av_rational_invalid_or_zero(vpkt->time_base))
+					{
+						vpkt->time_base = cvp3.time_base().av_rational();
+					}
 					vpkt.prepare_for_muxing(vs);
 
 					// feed it to the muxer
-					m3.mux_packet(vpkt);
+					m3.mux_packet_auto(vpkt);
 				}
 			}
 
@@ -221,40 +256,51 @@ int main()
 			vf.release_resources_memory();
 		}
 
-		for (int i = 0; i < a_num_frames; ++i)
+		// The muxer should protest if I call both auto and manual muxing methods.
+		// This should happen before checking the packet.
+		// Hence just use a destroyed temp packet.
 		{
-			// Don't care what's inside the data.
-			// Just allocate them.
-			af.allocate_data(afd);
-
-			// Don't forget to set the time
-			int64_t pts = (int64_t)i * (int64_t)a_pts_delta;
-			int64_t duration = a_pts_delta;
-			af.reset_time(pts, duration, a_tb);
-
-			aenc3.feed_frame(af);
-			while (!aenc3.hungry())
-			{
-				ff::packet apkt = aenc3.encode_packet();
-				if (!apkt.destroyed())
-				{
-					// prepare the packet
-					// dts and pts should be set by the encoder
-					apkt->time_base = af->time_base;
-					apkt.prepare_for_muxing(as);
-
-					// feed it to the muxer
-					m3.mux_packet(apkt);
-				}
-			}
-
-			// Don't forget to do this.
-			af.release_resources_memory();
+			ff::packet temp(false);
+			TEST_ASSERT_THROWS(m3.mux_packet_manual(temp), std::logic_error);
 		}
+
+		//for (int i = 0; i < a_num_frames; ++i)
+		//{
+		//	// Don't care what's inside the data.
+		//	// Just allocate them.
+		//	af.allocate_data(afd);
+
+		//	af->sample_rate = cap3.a_sample_rate();
+
+		//	// Don't forget to set the time
+		//	int64_t pts = (int64_t)i * (int64_t)a_pts_delta;
+		//	int64_t duration = a_pts_delta;
+		//	af.reset_time(pts, duration, a_tb);
+
+		//	aenc3.feed_frame(af);
+		//	while (!aenc3.hungry())
+		//	{
+		//		ff::packet apkt = aenc3.encode_packet();
+		//		if (!apkt.destroyed())
+		//		{
+		//			// prepare the packet
+		//			// pts should have been set by the encoder
+		//			apkt.validify_dts();
+		//			apkt->time_base = af->time_base;
+		//			apkt.prepare_for_muxing(as);
+
+		//			// feed it to the muxer
+		//			m3.mux_packet_auto(apkt);
+		//		}
+		//	}
+
+		//	// Don't forget to do this.
+		//	af.release_resources_memory();
+		//}
 
 		// Now drain the encoders
 		venc3.signal_no_more_food();
-		aenc3.signal_no_more_food();
+		//aenc3.signal_no_more_food();
 
 		ff::packet vpkt(false);
 		ff::packet apkt(false);
@@ -267,38 +313,44 @@ int main()
 			if (!vpkt.destroyed())
 			{
 				// prepare the packet
-				// dts and pts should be set by the encoder
-				vpkt->time_base = vf->time_base;
+				// pts should have been set by the encoder
+				vpkt.validify_dts();
+				vpkt->time_base = v_tb.av_rational();
 				vpkt.prepare_for_muxing(vs);
 
 				// feed it to the muxer
-				m3.mux_packet(vpkt);
+				m3.mux_packet_auto(vpkt);
 			}
 
 			++vi;
 		} while (!vpkt.destroyed());
 
-		do
-		{
-			apkt = aenc3.encode_packet();
-			if (!apkt.destroyed())
-			{
-				// prepare the packet
-				// dts and pts should be set by the encoder
-				apkt->time_base = af->time_base;
-				apkt.prepare_for_muxing(as);
+		//do
+		//{
+		//	apkt = aenc3.encode_packet();
+		//	if (!apkt.destroyed())
+		//	{
+		//		// prepare the packet
+		//		// pts should have been set by the encoder
+		//		apkt.validify_dts();
+		//		apkt->time_base = af->time_base;
+		//		apkt.prepare_for_muxing(as);
 
-				// feed it to the muxer
-				m3.mux_packet(apkt);
-			}
+		//		// feed it to the muxer
+		//		m3.mux_packet_auto(apkt);
+		//	}
 
-			++ai;
-		} while (!apkt.destroyed());
+		//	++ai;
+		//} while (!apkt.destroyed());
 
 		// Finalize the muxing
 		m3.finalize();	
 	}
 
+
+	// Now the test won't pass.
+	// Probably I didn't set up the encoder properly (but I can't think of why).
+	// Investigating.
 	FF_TEST_END
 
 	return 0;

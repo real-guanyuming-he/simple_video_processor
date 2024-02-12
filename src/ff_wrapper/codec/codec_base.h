@@ -353,6 +353,10 @@ namespace ff
 		*/
 		void create_codec_context(const ff::dict& options = dict());
 
+	public:
+		AVCodecContext* av_codec_ctx() noexcept { return p_codec_ctx; }
+		const AVCodecContext* av_codec_ctx() const noexcept { return p_codec_ctx; }
+
 	protected:
 		// The identification info about the codec that is given through constructors.
 		AVCodecID codec_id = AVCodecID::AV_CODEC_ID_NONE; const char* codec_name = nullptr;

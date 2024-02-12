@@ -16,7 +16,7 @@
 */
 
 #include "../util/util.h"
-#include "../util/ff_math.h"
+#include "../util/ff_time.h"
 #include "../util/ff_object.h"
 #include "../util/channel_layout.h"
 
@@ -215,13 +215,27 @@ namespace ff
 		* Gets one of the data plane that the frame stores.
 		* For audio, pass 0 to get the entire data.
 		* See the comment for the class for more about how data is stored.
-		* 
+		*
 		* @param ind index of the data plane.
 		* @returns a pointer to the start/end of the data plane.
 		* @throws std::logic_error if the frame is not READY.
 		* @throws std::out_of_range if ind is out of range
 		*/
-		void* data(int ind = 0);
+		template <typename T = void>
+		T* data(int ind = 0)
+		{
+			if (!ready())
+			{
+				throw std::logic_error("The frame is not ready");
+			}
+			if (ind < 0 || ind >= num_planes)
+			{
+				throw std::out_of_range("ind is out of range.");
+			}
+
+			return reinterpret_cast<T*>(p_frame->data[ind]);
+		}
+		
 
 		/*
 		* Gets one of the data plane that the frame stores.
@@ -257,8 +271,9 @@ namespace ff
 		* @param duration new duration
 		* @param time_base new time base
 		* @throws std::invalid_argument if time_base <= 0
+		* @throws std::invalid_argument if pts < 0
 		*/
-		void reset_time(int64_t pts, int64_t duration, ff::rational time_base);
+		void reset_time(int64_t pts, ff::rational time_base, int64_t duration = 0);
 
 	public:
 		/*

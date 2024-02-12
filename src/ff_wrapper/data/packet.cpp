@@ -267,6 +267,10 @@ void ff::packet::change_time_base(ff::rational new_tb)
 	// Update the fields
 	p_packet->pts = pts.timestamp_approximate();
 	p_packet->dts = dts.timestamp_approximate();
+	// approximately, pts some times will be equal to dts here if the difference between them is small
+	// detect and address this.
+	validify_dts();
+
 	p_packet->time_base = new_tb.av_rational();
 
 	// Do it for duration, too, if it's valid.
@@ -287,11 +291,25 @@ void ff::packet::reset_time(int64_t dts, int64_t pts, int64_t duration, ff::rati
 	{
 		throw std::invalid_argument("Time base must be > 0.");
 	}
+	if (pts < 0)
+	{
+		throw std::invalid_argument("Pts must be >= 0.");
+	}
 
 	p_packet->dts = dts;
 	p_packet->pts = pts;
 	p_packet->duration = duration;
 	p_packet->time_base = time_base.av_rational();
+}
+
+void ff::packet::validify_dts() noexcept(FF_ASSERTION_DISABLED)
+{
+	FF_ASSERT(p_packet->dts <= p_packet->pts, "Should always make sure this.");
+
+	if (p_packet->dts == p_packet->pts)
+	{
+		p_packet->dts = p_packet->pts - 1;
+	}
 }
 
 void ff::packet::prepare_for_muxing(const stream& muxer_stream)

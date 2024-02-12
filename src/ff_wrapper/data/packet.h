@@ -195,10 +195,18 @@ namespace ff
 		* @param pts new pts
 		* @param duration new duration
 		* @param time_base new time base
-		* @throws std::invalid_argument if dts > pts (but you should keep dts < pts for better compatibility).
+		* @throws std::invalid_argument if dts > pts
 		* @throws std::invalid_argument if time_base <= 0
+		* @throws std::invalid_argument if pts < 0
 		*/
 		void reset_time(int64_t dts, int64_t pts, int64_t duration, ff::rational time_base);
+
+		/*
+		* If demuxing and decoding is not involved,
+		* encoder might give packets whose dts = pts.
+		* Detect and correct this by setting dts <- pts-1.	
+		*/
+		void validify_dts() noexcept(FF_ASSERTION_DISABLED);
 
 	public:
 //////////////////////////////////////// Exposers ////////////////////////////////////////

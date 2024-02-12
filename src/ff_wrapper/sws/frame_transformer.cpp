@@ -80,10 +80,19 @@ ff::frame ff::frame_transformer::convert_frame(const ff::frame& src)
 		throw std::invalid_argument("Src does not match the properties you gave at first.");
 	}
 
-	ff::frame res(true);
-	res.allocate_data(dst_properties());
+	ff::frame dst(true);
+	dst.allocate_data(dst_properties());
 
-	int ret = sws_scale_frame(sws_ctx, res.av_frame(), src.av_frame());
+	// I don't know what sws_scale_frame does exactly,
+	// so I use this just to be safe.
+	int ret = sws_scale
+	(
+		sws_ctx, 
+		src->data, src->linesize,
+		0, src->height,
+		dst->data, dst->linesize
+	);
+
 	if (ret < 0) // Failure
 	{
 		switch (ret)
@@ -95,7 +104,7 @@ ff::frame ff::frame_transformer::convert_frame(const ff::frame& src)
 			ON_FF_ERROR_WITH_CODE("Unexpected error happened during transforming frames", ret);
 		}
 	}
-	return res;
+	return dst;
 }
 
 void ff::frame_transformer::convert_frame(ff::frame& dst, const ff::frame& src)

@@ -65,11 +65,16 @@ ff::frame ff::frame::shared_ref() const
 	return ff::frame(shared, video_or_audio);
 }
 
-void ff::frame::reset_time(int64_t pts, int64_t duration, ff::rational time_base)
+void ff::frame::reset_time(int64_t pts, ff::rational time_base, int64_t duration)
 {
 	if (time_base <= 0)
 	{
 		throw std::invalid_argument("Time base must be > 0.");
+	}
+
+	if (pts < 0)
+	{
+		throw std::invalid_argument("Pts must be >= 0.");
 	}
 
 	p_frame->pts = pts;
@@ -302,20 +307,6 @@ int ff::frame::line_size(int ind) const
 	}
 
 	return p_frame->linesize[ind];
-}
-
-void* ff::frame::data(int ind)
-{
-	if (!ready())
-	{
-		throw std::logic_error("The frame is not ready");
-	}
-	if (ind < 0 || ind >= num_planes)
-	{
-		throw std::out_of_range("ind is out of range.");
-	}
-
-	return p_frame->data[ind];
 }
 
 const void* ff::frame::data(int ind) const
