@@ -23,6 +23,7 @@ extern "C"
 }
 
 #include <stdexcept>
+#include <string.h>
 
 ff::codec_properties::codec_properties()
 	: p_params(avcodec_parameters_alloc()), tb()
@@ -92,6 +93,36 @@ ff::codec_properties::codec_properties(const codec_properties& other)
 void ff::codec_properties::set_a_channel_layout(const AVChannelLayout& ch)
 {
 	channel_layout::av_channel_layout_copy(p_params->ch_layout, ch);
+}
+
+void ff::codec_properties::alloc_and_zero_extradata(AVCodecParameters& p, size_t size, bool zero_all)
+{
+	// Only do this if p's extradata is not set.
+	if (nullptr == p.extradata)
+	{
+		// Must be allocated with av_malloc() and will be freed by avcodec_parameters_free(). 
+		// The allocated size of extradata must be at least extradata_size + AV_INPUT_BUFFER_PADDING_SIZE, 
+		p.extradata = (uint8_t*)av_malloc(size + AV_INPUT_BUFFER_PADDING_SIZE);
+
+		if (nullptr == p.extradata)
+		{
+			throw std::bad_alloc();
+		}
+
+		p.extradata_size = size;
+
+		// with the padding bytes zeroed.
+		if (zero_all)
+		{
+			// zero all bytes instead
+			memset(p.extradata, 0, size + AV_INPUT_BUFFER_PADDING_SIZE);
+		}
+		else
+		{
+			// zero only the padding bytes
+			memset(p.extradata + size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
+		}
+	}
 }
 
 ff::codec_properties ff::codec_properties::essential_properties() const

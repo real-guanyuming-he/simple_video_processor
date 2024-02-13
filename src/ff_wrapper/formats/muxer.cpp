@@ -156,6 +156,24 @@ ff::stream ff::muxer::add_stream(const encoder& enc)
 	// Copy enc's properties to the new stream.
 	auto ret = internal_create_stream(enc.get_codec_properties());
 
+	// TODO: FFmpeg/fftools/ffmpeg_mux_init.c
+	// has this function of_add_attachments(), which appears to set up the extradata.
+	// Investigate what it does to improve the following code.
+	// Partial Investigation Result:
+	//	1. in ffmpeg_opt.c, opt_attach() seems to be where the attachments are set.
+	// Find out all the places this function is called.
+
+	// This version of add_stream's being called means packets
+	// will come from an encoder.
+	// If so, extradata must be setup for some codecs.
+	switch (enc.get_id())
+	{
+	case AV_CODEC_ID_H264:
+		// Allocate 32 bytes and zero them all.
+		codec_properties::alloc_and_zero_extradata(*ret->codecpar, 32, true);
+		break;
+	}
+
 	return ret;
 }
 

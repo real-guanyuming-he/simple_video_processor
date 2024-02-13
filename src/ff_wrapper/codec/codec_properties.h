@@ -88,9 +88,13 @@ namespace ff
 		inline ::AVCodecParameters* av_codec_parameters() noexcept { return p_params; }
 		inline const ::AVCodecParameters* av_codec_parameters() const noexcept { return p_params; }
 
+		inline ::AVCodecParameters* operator->() noexcept { return p_params; }
+		inline const ::AVCodecParameters* operator->() const noexcept { return p_params; }
+
 	public:
 		// Get common fields
 
+		inline AVCodecID	id()				const noexcept { return p_params->codec_id; }
 		inline AVMediaType	type()				const noexcept { return p_params->codec_type; }
 		inline bool			is_type_valid()		const noexcept { return p_params->codec_type != AVMEDIA_TYPE_UNKNOWN; }
 		inline bool			is_video()			const noexcept { return AVMEDIA_TYPE_VIDEO == p_params->codec_type; }
@@ -139,6 +143,7 @@ namespace ff
 	public:
 		// Set common fields
 
+		inline void set_id(AVCodecID id)			noexcept { p_params->codec_id = id; }
 		inline void set_type(AVMediaType type)		noexcept { p_params->codec_type = type; }
 		inline void set_type_video()				noexcept { p_params->codec_type = AVMEDIA_TYPE_VIDEO; }
 		inline void	set_type_audio()				noexcept { p_params->codec_type = AVMEDIA_TYPE_AUDIO; }
@@ -177,6 +182,25 @@ namespace ff
 		* @param ch the new channel layout.
 		*/
 		void set_a_channel_layout(const AVChannelLayout& ch);
+		
+		/*
+		* Exactly the same as 
+		* alloc_and_zero_extradata(*this->p_params, size, zero_all);
+		*/
+		inline void alloc_and_zero_extradata(size_t size, bool zero_all = false)
+		{
+			alloc_and_zero_extradata(*p_params, size, zero_all);
+		}
+
+		/*
+		* Allocates and zeros the extradata field of p,
+		* if p's extradata is not set.
+		* 
+		* @param p whose extradata will be set up
+		* @param size the number of bytes to allocate for the new extradata
+		* @param zero_all true: zero all bytes; false: zero only the padding bytes.
+		*/
+		static void alloc_and_zero_extradata(AVCodecParameters& p, size_t size, bool zero_all = false);
 
 	public:
 		/*

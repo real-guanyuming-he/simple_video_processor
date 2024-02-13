@@ -26,6 +26,11 @@
 #include <format> // For std::format().
 #include <string>
 
+extern "C"
+{
+#include <libavcodec/avcodec.h>
+}
+
 namespace fs = std::filesystem;
 
 int main()
@@ -132,39 +137,37 @@ int main()
 		fs::path test_path_3(working_dir / "muxer_test3.mkv");
 		ff::muxer m3(test_path_3);
 
-		// mkv should be able to contain streams of any codec.
-		ff::encoder venc3(AV_CODEC_ID_AV1);
-		ff::encoder aenc3("libopus");
+		ff::encoder venc3(m3.desired_encoder_id(AVMEDIA_TYPE_VIDEO));
+		//ff::encoder aenc3("libopus");
 
 		// Set the properties of the encoders
 		constexpr int v_frame_rate = 24;
-		ff::codec_properties vp3;
-		vp3.set_type_video();
+		ff::codec_properties vp3 = venc3.get_codec_properties();
 		vp3.set_v_width(800); vp3.set_v_height(600);
 		// YUV420
 		vp3.set_v_pixel_format(venc3.first_supported_v_pixel_format());
 		vp3.set_v_frame_rate(ff::rational(v_frame_rate, 1));
 		vp3.set_time_base(ff::common_video_time_base_600);
 		vp3.set_v_sar(ff::rational(1, 1));
-		ff::codec_properties ap3;
-		ap3.set_type_audio();
-		// Should be 48000
-		ap3.set_a_sample_rate(aenc3.first_supported_a_sample_rate());
-		ap3.set_a_sample_format(aenc3.first_supported_a_sample_format());
-		ap3.set_a_channel_layout(ff::ff_AV_CHANNEL_LAYOUT_STEREO);
-		// Hence 96000
-		ap3.set_time_base(ff::common_audio_time_base_96000);
-		venc3.set_codec_properties(vp3);
-		aenc3.set_codec_properties(ap3);
+		
+		//ff::codec_properties ap3 = aenc3.get_codec_properties();
+		//// Should be 48000
+		//ap3.set_a_sample_rate(aenc3.first_supported_a_sample_rate());
+		//ap3.set_a_sample_format(aenc3.first_supported_a_sample_format());
+		//ap3.set_a_channel_layout(ff::ff_AV_CHANNEL_LAYOUT_STEREO);
+		//// Hence 96000
+		//ap3.set_time_base(ff::common_audio_time_base_96000);
 
 		// Create the encoder contexts
+		venc3.set_codec_properties(vp3);
+		//aenc3.set_codec_properties(ap3);
 		venc3.create_codec_context();
-		aenc3.create_codec_context();
+		//aenc3.create_codec_context();
 
 		// Creating the context may change some properties.
-		// Use these to create the frames.
+		// Obtain the final properties after the encoders are created.
 		const auto cvp3 = venc3.get_codec_properties();
-		const auto cap3 = aenc3.get_codec_properties();
+		//const auto cap3 = aenc3.get_codec_properties();
 
 		// Add streams to the muxer.
 		auto vs = m3.add_stream(venc3);
@@ -177,14 +180,14 @@ int main()
 		ff::frame af(true);
 		// Set the data properties
 		ff::frame::data_properties vfd(cvp3.v_pixel_format(), cvp3.v_width(), cvp3.v_height());
-		ff::frame::data_properties afd(cap3.a_sample_format(), cap3.a_frame_num_samples(), cap3.a_channel_layout_ref());
-		const int a_frame_rate =
+		//ff::frame::data_properties afd(cap3.a_sample_format(), cap3.a_frame_num_samples(), cap3.a_channel_layout_ref());
+		/*const int a_frame_rate =
 			cap3.a_sample_rate() /
-			(cap3.a_frame_num_samples() * cap3.a_channel_layout_ref().nb_channels);
+			(cap3.a_frame_num_samples() * cap3.a_channel_layout_ref().nb_channels);*/
 		const auto v_tb = cvp3.time_base();
-		const auto a_tb = cap3.time_base();
+		//const auto a_tb = cap3.time_base();
 		const int v_pts_delta = v_tb.get_den() / v_frame_rate;
-		const int a_pts_delta = a_tb.get_den() / a_frame_rate;
+		//const int a_pts_delta = a_tb.get_den() / a_frame_rate;
 
 		// Use swscale to convert this rgb frame to vf
 		ff::frame imagef(true);
@@ -217,7 +220,7 @@ int main()
 		// for this long
 		constexpr int file_duration_secs = 2;
 		constexpr int v_num_frames = v_frame_rate * file_duration_secs;
-		const int a_num_frames = a_frame_rate * file_duration_secs;
+		//const int a_num_frames = a_frame_rate * file_duration_secs;
 		// a_frame_rate = v_frame_rate
 		for (int i = 0; i < v_num_frames; ++i)
 		{
@@ -254,14 +257,6 @@ int main()
 
 			// Don't forget to do this.
 			vf.release_resources_memory();
-		}
-
-		// The muxer should protest if I call both auto and manual muxing methods.
-		// This should happen before checking the packet.
-		// Hence just use a destroyed temp packet.
-		{
-			ff::packet temp(false);
-			TEST_ASSERT_THROWS(m3.mux_packet_manual(temp), std::logic_error);
 		}
 
 		//for (int i = 0; i < a_num_frames; ++i)
@@ -306,7 +301,7 @@ int main()
 		ff::packet apkt(false);
 
 		auto vi = v_num_frames;
-		auto ai = a_num_frames;
+		//auto ai = a_num_frames;
 		do
 		{
 			vpkt = venc3.encode_packet();
@@ -324,6 +319,14 @@ int main()
 
 			++vi;
 		} while (!vpkt.destroyed());
+
+		// The muxer should protest if I call both auto and manual muxing methods.
+		// This should happen before checking the packet.
+		// Hence just use a destroyed temp packet.
+		{
+			ff::packet temp(false);
+			TEST_ASSERT_THROWS(m3.mux_packet_manual(temp), std::logic_error);
+		}
 
 		//do
 		//{

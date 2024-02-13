@@ -73,6 +73,11 @@ void ff::codec_base::set_codec_properties(const codec_properties& p)
 		throw std::invalid_argument("The codec_properties' type must be the same as the codec's.");
 	}
 
+	if (p.id() != p_codec_desc->id)
+	{
+		throw std::invalid_argument("The codec_properties' id must be the same as the codec's.");
+	}
+
 	avcodec_parameters_to_context(p_codec_ctx, p.av_codec_parameters());
 
 	// If the codec's time base is invalid or zero,

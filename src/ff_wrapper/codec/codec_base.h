@@ -307,6 +307,7 @@ namespace ff
 		* Sets the properties that describes how decoding/encoding is done to create the context.
 		* You can only set the properties when the codec is created yet not ready.
 		* That is, before you create the context.
+		* Can be overridden to perform codec-specific actions
 		*
 		* @param p the properties. It is highly recommended to mannually set only
 		the needed fields of codec_properties instead of using one directly obtained from
@@ -314,8 +315,9 @@ namespace ff
 		That's because some options may not be compatible between encoders and decoders or between codecs and de/muxers.
 		* @throws std::logic_error if not created.
 		* @throws std::invalid_argument if p's type is not the same as the codec's
+		* @throws std::invalid_argument if p's id is not the same as the codec's
 		*/
-		void set_codec_properties(const codec_properties& p);
+		virtual void set_codec_properties(const codec_properties& p);
 
 /////////////////////////////// decode/encode methods ///////////////////////////////
 		/*
