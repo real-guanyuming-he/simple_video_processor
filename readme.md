@@ -37,7 +37,7 @@ The wrapper is currently being developed. It now has:
 - demuxer
 - decoder
 - encoder
-- muxer (Not tested yet)
+- muxer (Can work for some codecs. Need more tests for it.)
 - encapsulation of various data structures of `FFmpeg`.
 
 It has the following features:
