@@ -130,6 +130,10 @@ namespace ff
 		*/
 		inline const char* get_name() const noexcept { return codec_name; }
 
+		bool is_video() const noexcept;
+		bool is_audio() const noexcept;
+		bool is_subtitle() const noexcept;
+
 	public:
 		/*
 		* See the comments for this class for what being hungry means.
@@ -358,6 +362,9 @@ namespace ff
 	public:
 		AVCodecContext* av_codec_ctx() noexcept { return p_codec_ctx; }
 		const AVCodecContext* av_codec_ctx() const noexcept { return p_codec_ctx; }
+
+		AVCodecContext* operator->() noexcept { return p_codec_ctx; }
+		const AVCodecContext* operator->() const noexcept { return p_codec_ctx; }
 
 	protected:
 		// The identification info about the codec that is given through constructors.

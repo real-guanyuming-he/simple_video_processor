@@ -294,6 +294,20 @@ namespace ff
 			allocate_resources_memory(0, const_cast<data_properties*>(&dp));
 		}
 		
+	public:
+		/*
+		* My wrapper for ::av_frame_copy_props()
+		* that interprets errors as exceptions.
+		*/
+		static void av_frame_copy_props(AVFrame& dst, const AVFrame& src);
+
+		/*
+		* If !dst.destroyed() && !src.destroyed(),
+		* then av_frame_copy_props(*dst.p_frame, *src.p_frame);
+		*
+		* @throws std::logic_error if either is destroyed.
+		*/
+		static void av_frame_copy_props(frame& dst, const frame& src);
 
 	private: // Inherited through ff_object.
 		void internal_allocate_object_memory() override;

@@ -23,7 +23,7 @@ extern "C"
 }
 
 #include <stdexcept>
-#include <string.h>
+#include <string.h> // for memset(), memcpy_s()
 
 ff::codec_properties::codec_properties()
 	: p_params(avcodec_parameters_alloc()), tb()
@@ -125,6 +125,27 @@ void ff::codec_properties::alloc_and_zero_extradata(AVCodecParameters& p, size_t
 	}
 }
 
+void ff::codec_properties::copy_extradata(codec_properties& dst, const codec_properties& src)
+{
+	// Free dst's extradata.
+	if (dst->extradata)
+	{
+		av_freep(&dst->extradata);
+	}
+
+	// if src->ed_size = 0, then dst's should be 0;
+	// if src->ed_size != 0, then dst's should be src's.
+	dst->extradata_size = src->extradata_size;
+
+	if (nullptr != src->extradata)
+	{
+		// allocate and zero the padding bytes.
+		alloc_and_zero_extradata(*dst.p_params, dst->extradata_size, false);
+		// copy the memory
+		memcpy_s(dst->extradata, dst->extradata_size, src->extradata, src->extradata_size);
+	}
+}
+
 ff::codec_properties ff::codec_properties::essential_properties() const
 {
 	codec_properties ret;
@@ -133,6 +154,7 @@ ff::codec_properties ff::codec_properties::essential_properties() const
 	ret.p_params->codec_type = p_params->codec_type;
 
 	// Copy essential properties of all types.
+	ret.p_params->codec_id = p_params->codec_id;
 	ret.p_params->format = p_params->format;
 	ret.tb = tb;
 	

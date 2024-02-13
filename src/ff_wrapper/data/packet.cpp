@@ -267,9 +267,6 @@ void ff::packet::change_time_base(ff::rational new_tb)
 	// Update the fields
 	p_packet->pts = pts.timestamp_approximate();
 	p_packet->dts = dts.timestamp_approximate();
-	// approximately, pts some times will be equal to dts here if the difference between them is small
-	// detect and address this.
-	validify_dts();
 
 	p_packet->time_base = new_tb.av_rational();
 
@@ -302,16 +299,6 @@ void ff::packet::reset_time(int64_t dts, int64_t pts, int64_t duration, ff::rati
 	p_packet->time_base = time_base.av_rational();
 }
 
-void ff::packet::validify_dts() noexcept(FF_ASSERTION_DISABLED)
-{
-	FF_ASSERT(p_packet->dts <= p_packet->pts, "Should always make sure this.");
-
-	if (p_packet->dts == p_packet->pts)
-	{
-		p_packet->dts = p_packet->pts - 1;
-	}
-}
-
 void ff::packet::prepare_for_muxing(const stream& muxer_stream)
 {
 	// Some formats don't need a fixed time base.
@@ -324,4 +311,34 @@ void ff::packet::prepare_for_muxing(const stream& muxer_stream)
 
 	// Don't forget the set the index, too.
 	p_packet->stream_index = muxer_stream.index();
+}
+
+void ff::packet::av_packet_copy_props(AVPacket& dst, const AVPacket& src)
+{
+	int ret = ::av_packet_copy_props(&dst, &src);
+	if (ret < 0) // Failure
+	{
+		switch (ret)
+		{
+		case AVERROR(ENOMEM):
+			throw std::bad_alloc();
+			break;
+		default:
+			ON_FF_ERROR_WITH_CODE("Unexpected error: could not copy the properties of avpacket", ret);
+		}
+	}
+}
+
+void ff::packet::av_packet_copy_props(packet& dst, const packet& src)
+{
+	if (dst.destroyed())
+	{
+		throw std::logic_error("Cannot copy properties when destroyed.");
+	}
+	if (src.destroyed())
+	{
+		throw std::logic_error("Cannot copy properties when destroyed.");
+	}
+
+	av_packet_copy_props(*dst.p_packet, *src.p_packet);
 }

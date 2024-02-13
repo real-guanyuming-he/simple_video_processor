@@ -324,6 +324,12 @@ namespace ff
 		std::vector<int> v_indices, a_indices, s_indices;
 
 		const AVOutputFormat* p_muxer_desc = nullptr;
+
+		// pts of the last demuxed pkt
+		int64_t last_pts = AV_NOPTS_VALUE;
+		// pts of the last demuxed pkt
+		int64_t last_dts = AV_NOPTS_VALUE;
+
 		bool ready = false;
 
 		// if mux_packet_auto() has been called.
@@ -355,5 +361,11 @@ namespace ff
 		* @param properties to set to the new stream.
 		*/
 		stream internal_create_stream(const ff::codec_properties& properties);
+
+		/*
+		* Check pkt's pts and dts against last_pts and last_dts.
+		* Make dts always monotonically increasing.
+		*/
+		void internal_sync_packet(packet& pkt);
 	};
 }

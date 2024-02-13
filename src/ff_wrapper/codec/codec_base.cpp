@@ -51,6 +51,21 @@ ff::codec_base& ff::codec_base::operator=(codec_base&& right) noexcept
 	return *this;
 }
 
+bool ff::codec_base::is_video() const noexcept
+{
+	return AVMEDIA_TYPE_VIDEO == p_codec_desc->type;
+}
+
+bool ff::codec_base::is_audio() const noexcept
+{
+	return AVMEDIA_TYPE_AUDIO == p_codec_desc->type;
+}
+
+bool ff::codec_base::is_subtitle() const noexcept
+{
+	return AVMEDIA_TYPE_SUBTITLE == p_codec_desc->type;
+}
+
 ff::codec_properties ff::codec_base::get_codec_properties() const
 {
 	if (destroyed())

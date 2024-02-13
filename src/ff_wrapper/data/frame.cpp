@@ -82,6 +82,36 @@ void ff::frame::reset_time(int64_t pts, ff::rational time_base, int64_t duration
 	p_frame->time_base = time_base.av_rational();
 }
 
+void ff::frame::av_frame_copy_props(AVFrame& dst, const AVFrame& src)
+{
+	int ret = ::av_frame_copy_props(&dst, &src);
+	if (ret < 0) // Failure
+	{
+		switch (ret)
+		{
+		case AVERROR(ENOMEM):
+			throw std::bad_alloc();
+			break;
+		default:
+			ON_FF_ERROR_WITH_CODE("Unexpected error: could not copy the properties of avframe", ret);
+		}
+	}
+}
+
+void ff::frame::av_frame_copy_props(frame& dst, const frame& src)
+{
+	if (dst.destroyed())
+	{
+		throw std::logic_error("Cannot copy properties when destroyed.");
+	}
+	if (src.destroyed())
+	{
+		throw std::logic_error("Cannot copy properties when destroyed.");
+	}
+
+	av_frame_copy_props(*dst.p_frame, *src.p_frame);
+}
+
 void ff::frame::internal_allocate_object_memory()
 {
 	p_frame = av_frame_alloc();
@@ -193,8 +223,7 @@ ff::frame::frame(const frame& other)
 
 	internal_allocate_object_memory();
 	// Copy properties that do not affect the data.
-	// Its comment/doc does not specify that this may fail.
-	av_frame_copy_props(p_frame, other.p_frame);
+	av_frame_copy_props(*p_frame, *other.p_frame);
 
 	if (other.created())
 	{
@@ -236,8 +265,7 @@ ff::frame& ff::frame::operator=(const frame& right)
 
 	internal_allocate_object_memory();
 	// Copy properties that do not affect the data.
-	// Its comment/doc does not specify that this may fail.
-	av_frame_copy_props(p_frame, right.p_frame);
+	av_frame_copy_props(*p_frame, *right.p_frame);
 
 	if (right.created())
 	{

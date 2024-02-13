@@ -110,6 +110,8 @@ ff::packet ff::encoder::encode_packet()
 	if (0 == ret) // Success
 	{
 		cancel_full();
+		// Set its time base. Sometimes the time base is not set.
+		pkt->time_base = p_codec_ctx->time_base;
 		return ff::packet(pkt);
 	}
 

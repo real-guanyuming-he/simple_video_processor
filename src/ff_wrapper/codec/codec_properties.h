@@ -202,13 +202,20 @@ namespace ff
 		*/
 		static void alloc_and_zero_extradata(AVCodecParameters& p, size_t size, bool zero_all = false);
 
+		/*
+		* If src has extradata, then 
+		* copies src's to dst's, which will be uninited and allocated.
+		*/
+		static void copy_extradata(codec_properties& dst, const codec_properties& src);
+
 	public:
 		/*
 		* Essential properties are:
-		*	1. First the type will be copied.
-		*	2. Format and time base for all types.
+		*	1. First the type.
+		*	2. Codec ID, format, and time base for all types.
 		*	3. Width, height, frame rate, and sample aspect ratio for video.
 		*	4. Channel layout and sample rate for audio.
+		* 
 		* You must ensure that this's type is set correctly.
 		* 
 		* @returns a codec_properties with the same essential properties as this.

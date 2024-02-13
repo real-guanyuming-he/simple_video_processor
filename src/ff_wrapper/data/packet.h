@@ -201,13 +201,6 @@ namespace ff
 		*/
 		void reset_time(int64_t dts, int64_t pts, int64_t duration, ff::rational time_base);
 
-		/*
-		* If demuxing and decoding is not involved,
-		* encoder might give packets whose dts = pts.
-		* Detect and correct this by setting dts <- pts-1.	
-		*/
-		void validify_dts() noexcept(FF_ASSERTION_DISABLED);
-
 	public:
 //////////////////////////////////////// Exposers ////////////////////////////////////////
 		const ::AVPacket* av_packet() const noexcept { return p_packet; }
@@ -227,6 +220,20 @@ namespace ff
 		* @param muxer_stream the stream that the packet will belong to.
 		*/
 		void prepare_for_muxing(const stream& muxer_stream);
+
+		/*
+		* My wrapper for ::av_packet_copy_props()
+		* that interprets errors as exceptions.
+		*/
+		static void av_packet_copy_props(AVPacket& dst, const AVPacket& src);
+
+		/*
+		* If !dst.destroyed() && !src.destroyed(),
+		* then av_packet_copy_props(*dst.p_packet, *src.p_packet);
+		* 
+		* @throws std::logic_error if either is destroyed.
+		*/
+		static void av_packet_copy_props(packet& dst, const packet& src);
 
 	private:
 		::AVPacket* p_packet;

@@ -162,6 +162,7 @@ ff::stream ff::muxer::add_stream(const encoder& enc)
 	// Partial Investigation Result:
 	//	1. in ffmpeg_opt.c, opt_attach() seems to be where the attachments are set.
 	// Find out all the places this function is called.
+	//	2. Debug FFmpeg in ubuntu and find out what changes the extradata.
 
 	// This version of add_stream's being called means packets
 	// will come from an encoder.
@@ -190,7 +191,13 @@ ff::stream ff::muxer::add_stream(const stream& dem_s)
 	// FFmpeg doc: It is advised to manually initialize only the relevant fields in AVCodecParameters, 
 	// rather than using avcodec_parameters_copy() during remuxing: 
 	// there is no guarantee that the codec context values remain valid for both input and output format contexts.
-	auto ret = internal_create_stream(dem_s.properties().essential_properties());
+	auto src_p = dem_s.properties();
+	auto dst_p = src_p.essential_properties();
+	// In addition, copy the extradata just to be safe.
+	codec_properties::copy_extradata(dst_p, src_p);
+
+	// Create the stream with the properties.
+	auto ret = internal_create_stream(dst_p);
 
 	return ret;
 }
@@ -246,6 +253,8 @@ void ff::muxer::mux_packet_auto(packet& pkt)
 
 	auto_muxing_called = true;
 
+	internal_sync_packet(pkt);
+
 	int ret = av_interleaved_write_frame(p_fmt_ctx, pkt.av_packet());
 	if (ret < 0)
 	{
@@ -283,6 +292,8 @@ void ff::muxer::mux_packet_manual(packet& pkt)
 	}
 
 	manual_muxing_called = true;
+
+	internal_sync_packet(pkt);
 
 	int ret = av_write_frame(p_fmt_ctx, pkt.av_packet());
 	if (ret < 0)
@@ -426,4 +437,24 @@ ff::stream ff::muxer::internal_create_stream(const ff::codec_properties& propert
 	}
 
 	return ps;
+}
+
+void ff::muxer::internal_sync_packet(packet& pkt)
+{
+	if (last_dts != AV_NOPTS_VALUE)
+	{
+		// Keep dts monotonically increasing.
+		if (pkt->dts == last_dts)
+		{
+			++pkt->dts;
+			// Keep pts >= dts
+			if (pkt->pts < pkt->dts)
+			{
+				++pkt->pts;
+			}	
+		}
+	}
+
+	last_dts = pkt->dts;
+	last_pts = pkt->pts;
 }

@@ -26,6 +26,9 @@ struct SwsContext;
 
 namespace ff
 {
+	class decoder;
+	class encoder;
+
 	/*
 	* Transforms a video ff::frame in one or more of the following ways:
 	*	1. Changes the pixel format of the frame.
@@ -85,13 +88,54 @@ namespace ff
 			algorithms algorithm = FF_SWS_BICUBIC 
 		);
 
+		/*
+		* Performs such a transformation that transforms
+		* video frames from decoder to video frames into encoder.
+		*
+		* @throws std::invalid_argument if either decoder or encoder
+		* is not for video.
+		* @throws std::logic_error if either decoder or encoder
+		* is not ready.
+		* @throws std::domain_error if either decoder's pixel format is not supported as input
+		* or encoder's pixel format is not supported as output.
+		* You can query if a pixel format is supported as input/output by calling
+		* query_input/output_pixel_format_support
+		*/
+		frame_transformer
+		(
+			const encoder& enc,
+			const decoder& dec,
+			// bicubic is widely applicable and has good performance.
+			algorithms algorithm = FF_SWS_BICUBIC
+		);
+
+		/*
+		* Performs such a transformation that transforms
+		* video frames of src_w, src_h, src_fmt into frames of dst_w, dst_h, dst_fmt.
+		*
+		* @throws std::invalid_argument if either decoder or encoder
+		* is not for video.
+		* @throws std::domain_error if either decoder's pixel format is not supported as input
+		* or encoder's pixel format is not supported as output.
+		* You can query if a pixel format is supported as input/output by calling
+		* query_input/output_pixel_format_support
+		*/
+		frame_transformer
+		(
+			int dst_w, int dst_h, AVPixelFormat dst_fmt,
+			int src_w, int src_h, AVPixelFormat src_fmt,
+			// bicubic is widely applicable and has good performance.
+			algorithms algorithm = FF_SWS_BICUBIC
+		);
+
 		~frame_transformer();
 
 	public:
 		/*
 		* Converts src.
 		* 
-		* @param src the frame to be converted.
+		* @param src the frame to be converted. src's properties will also be 
+		* copied to it.
 		* @returns the dst frame converted.
 		* @throws std::invalid_argument if src does not match the properties you gave
 		* to a constructor.
@@ -103,7 +147,8 @@ namespace ff
 		*
 		* @param src the frame to be converted.
 		* @param dst the frame where the result will be contained in. If dst is destroyed()
-		* or created(), then it will be made ready with the dst properties.
+		* or created(), then it will be made ready with the dst properties. 
+		* src's properties will also be copied to it.
 		* @throws std::invalid_argument if src/dst does not match the properties you gave
 		* to a constructor.
 		*/
@@ -119,7 +164,6 @@ namespace ff
 			return ff::frame::data_properties(dst_fmt, dst_w, dst_h);
 		}
 		
-
 	public:
 		// @returns true iff fmt is supported as an input pixel format
 		static bool query_input_pixel_format_support(AVPixelFormat fmt);
@@ -135,5 +179,16 @@ namespace ff
 		int src_w, src_h;
 		int dst_w, dst_h;
 		AVPixelFormat src_fmt, dst_fmt;
+
+	private:
+		/*
+		* Common piece of code among constructors.
+		*/
+		void internal_create_sws_context
+		(
+			int dst_w, int dst_h, AVPixelFormat dst_fmt,
+			int src_w, int src_h, AVPixelFormat src_fmt,
+			algorithms algorithm
+		);
 	};
 }
