@@ -350,6 +350,7 @@ int main()
 		auto ap = as.properties();
 		TEST_ASSERT_EQUALS(96000, ap.a_sample_rate(), "Should be equal");
 		ff::codec_properties temp;
+		temp.set_id(ap.id());
 		temp.set_type(ap.type());
 		temp.set_a_sample_rate(ap.a_sample_rate());
 		temp.set_a_sample_format(ap.a_sample_format());

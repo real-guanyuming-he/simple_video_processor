@@ -162,8 +162,7 @@ int main()
 		ff::encoder e1(AVCodecID::AV_CODEC_ID_PNG);
 
 		// Most encoders require that the properties be set properly for the ctx to be created.
-		ff::codec_properties cp1;
-		cp1.set_type_video();
+		ff::codec_properties cp1(e1.get_codec_properties());
 		cp1.set_time_base(ff::common_video_time_base_600);
 		cp1.set_v_pixel_format(AVPixelFormat::AV_PIX_FMT_RGB24);
 		cp1.set_v_width(800);
@@ -183,8 +182,7 @@ int main()
 		ff::encoder e2("libmp3lame");
 
 		// Most encoders require that the properties be set properly for the ctx to be created.
-		ff::codec_properties cp2;
-		cp2.set_type_audio();
+		ff::codec_properties cp2(e2.get_codec_properties());
 		cp2.set_time_base(ff::common_audio_time_base_64000);
 		cp2.set_a_sample_format(AVSampleFormat::AV_SAMPLE_FMT_S32P);
 		cp2.set_a_sample_rate(32000);
@@ -300,8 +298,11 @@ int main()
 		// If type's not set, then it will throw
 		TEST_ASSERT_THROWS(e1.set_codec_properties(ep), std::invalid_argument);
 		ep.set_type_video();
-		e1.set_codec_properties(ep);
+		// If ID's not set, then it will throw
+		TEST_ASSERT_THROWS(e1.set_codec_properties(ep), std::invalid_argument);
+		ep.set_id(e1.get_id());
 
+		e1.set_codec_properties(ep);
 		e1.create_codec_context();
 
 		TEST_ASSERT_TRUE(e1.ready(), "Should be ready.");
@@ -532,8 +533,12 @@ int main()
 		// If type's not set, then it will throw
 		TEST_ASSERT_THROWS(e1.set_codec_properties(ep), std::invalid_argument);
 		ep.set_type_video();
-		e1.set_codec_properties(ep);
 
+		// If ID's not set, then it will throw
+		TEST_ASSERT_THROWS(e1.set_codec_properties(ep), std::invalid_argument);
+		ep.set_id(e1.get_id());
+
+		e1.set_codec_properties(ep);
 		e1.create_codec_context();
 
 		// Let's encode 5 times using e1
@@ -661,8 +666,12 @@ int main()
 		// If type's not set, then it will throw
 		TEST_ASSERT_THROWS(e1.set_codec_properties(ep), std::invalid_argument);
 		ep.set_type_video();
-		e1.set_codec_properties(ep);
 
+		// If ID's not set, then it will throw
+		TEST_ASSERT_THROWS(e1.set_codec_properties(ep), std::invalid_argument);
+		ep.set_id(e1.get_id());
+
+		e1.set_codec_properties(ep);
 		e1.create_codec_context();
 
 		TEST_ASSERT_TRUE(e1.ready(), "Should be ready.");
@@ -708,9 +717,7 @@ int main()
 	// Test feeding invalid frame
 	{
 		ff::encoder e1(AVCodecID::AV_CODEC_ID_AAC);
-		ff::codec_properties ep;
-
-		ep.set_type_audio();
+		ff::codec_properties ep(e1.get_codec_properties());
 		ep.set_a_sample_format(e1.supported_a_sample_formats()[0]);
 		ep.set_a_sample_rate(32000);
 		try
@@ -722,10 +729,9 @@ int main()
 			// Don't know which are supported
 			ep.set_a_channel_layout(AVChannelLayout AV_CHANNEL_LAYOUT_STEREO);
 		}
-
 		ep.set_time_base(ff::common_audio_time_base_64000);
-		e1.set_codec_properties(ep);
 
+		e1.set_codec_properties(ep);
 		e1.create_codec_context();
 		TEST_ASSERT_TRUE(e1.hungry(), "should be hungry initially.");
 		// Now keep trying to encode but it should not change the state at all
