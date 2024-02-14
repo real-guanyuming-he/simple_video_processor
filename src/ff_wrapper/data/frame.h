@@ -52,6 +52,9 @@ namespace ff
 	*/
 	class FF_WRAPPER_API frame : public ff_object
 	{
+		// Decoder needs to set it up during decoding
+		friend class decoder;
+
 	public:
 		/*
 		* This struct independently determines how much space is needed for the data of a frame.
@@ -192,6 +195,11 @@ namespace ff
 		const AVFrame* operator->() const noexcept { return p_frame; }
 
 		bool v_or_a() const noexcept { return video_or_audio; }
+
+		/*
+		* @throws std::logic_error if it's not created.
+		*/
+		void set_v_or_a(bool new_v_or_a);
 
 		/*
 		* @returns number of data planes.

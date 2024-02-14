@@ -95,52 +95,70 @@ ff::packet ff::encoder::encode_packet()
 		throw std::logic_error("The encoder is not ready.");
 	}
 
-	// Hungry can only be set here and cancelled in feed_packet()
+	// Hungry can only be set here and cancelled in feed_frame()
 	if (hungry())
 	{
 		return ff::packet(false);
 	}
 
+	// Using an AVPacket is more convenient here.
 	AVPacket* pkt = av_packet_alloc();
 	if (nullptr == pkt)
 	{
 		throw std::bad_alloc();
 	}
-	int ret = avcodec_receive_packet(p_codec_ctx, pkt);
-	if (0 == ret) // Success
+
+	if (internal_encode_packet(pkt))
 	{
-		cancel_full();
-		// Set its time base. Sometimes the time base is not set.
-		pkt->time_base = p_codec_ctx->time_base;
 		return ff::packet(pkt);
 	}
-
-	// Failure
-	// First free the AVPacket
-	av_packet_free(&pkt);
-	switch (ret)
+	else
 	{
-	case AVERROR(EAGAIN):
-		// Needs more frames.
-		FF_ASSERT(!signaled_no_more_food, "After draining has started, EAGAIN can never be returned.");
+		// Failure
+		// destroy pkt.
+		av_packet_free(&pkt);
+		return packet(false);
+	}
+}
 
-		become_hungry();
-		return ff::packet(false);
-		break;
-	case AVERROR_EOF:
-		// Called during draining.
-		return ff::packet(false);
-		break;
-	case AVERROR(EINVAL):
-		FF_ASSERT(false, "The encoder has not been set up correctly. This should not happen.");
-		break;
-	default:
-		// Other decoding errors.
-		throw std::runtime_error("The encoding failed but the encoder was set up correctly. "
-			"Perhaps the frame you gave was invalid.");
+bool ff::encoder::encode_packet(packet& pkt)
+{
+	if (!ready())
+	{
+		throw std::logic_error("The encoder is not ready.");
 	}
 
-	return ff::packet(false);
+	// Handle pkt so that it's always created before avcodec_receive_packet()
+	switch (pkt.get_object_state())
+	{
+	case ff_object::DESTROYED:
+		pkt.allocate_object_memory();
+		[[fallthrough]];
+	case ff_object::OBJECT_CREATED:
+		// Do nothing.
+		break;
+	case ff_object::READY:
+		// Release its previous data.
+		pkt.release_resources_memory();
+		break;
+	}
+
+	// Hungry can only be set here and cancelled in feed_frame()
+	if (hungry())
+	{
+		return false;
+	}
+
+	bool ret = internal_encode_packet(pkt.av_packet());
+
+	if (ret) // Success
+	{
+		// Don't forget to make pkt ready
+		// and set its internal fields (if needed in the future).
+		pkt.state = ff_object::READY;
+	}
+
+	return ret;
 }
 
 bool ff::encoder::set_properties_from_decoder(const decoder& dec)
@@ -348,4 +366,41 @@ void ff::encoder::start_draining()
 			ON_FF_ERROR_WITH_CODE("Unexpected error happened when I tried to start draining.", ret);
 		}
 	}
+}
+
+bool ff::encoder::internal_encode_packet(AVPacket* pkt)
+{
+	int ret = avcodec_receive_packet(p_codec_ctx, pkt);
+	if (0 == ret) // Success
+	{
+		cancel_full();
+		// Set its time base to the encoder's. Sometimes the time base is not set.
+		pkt->time_base = p_codec_ctx->time_base;
+		return true;
+	}
+
+	// Failure
+	switch (ret)
+	{
+	case AVERROR(EAGAIN):
+		// Needs more frames.
+		FF_ASSERT(!signaled_no_more_food, "After draining has started, EAGAIN can never be returned.");
+
+		become_hungry();
+		return false;
+		break;
+	case AVERROR_EOF:
+		// Called during draining.
+		return false;
+		break;
+	case AVERROR(EINVAL):
+		FF_ASSERT(false, "The encoder has not been set up correctly. This should not happen.");
+		break;
+	default:
+		// Other decoding errors.
+		throw std::runtime_error("The encoding failed but the encoder was set up correctly. "
+			"Perhaps the frame you gave was invalid.");
+	}
+
+	return false;
 }

@@ -40,6 +40,9 @@ namespace ff
 	*/
 	class FF_WRAPPER_API packet final : public ff_object
 	{
+		// Encoder needs to set it up during encoding.
+		friend class encoder;
+
 	public:
 		inline ~packet() { destroy(); }
 

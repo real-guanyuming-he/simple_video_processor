@@ -109,15 +109,43 @@ namespace ff
 		/*
 		* Encodes the next packets from the frames it has been fed.
 		* See the comments for codec_base for when to decode frames.
+		* To reuse a packet, call the version that accepts a packet& parameter.
 		* 
-		* Note: you must manually set the time base, dts, and pts of
+		* Note: you must manually set (at least check) some properties (e.g. time fields) of
 		* the encoded packet if you are going to mux it.
+		* The encoder doesn't promise that all the properties are set up correctly.
+		* I only set its time_base to the encoder's.
 		*
 		* @returns a packet encoded; a DESTROYED packet if the encoder is hungry, or
 		* if the encoder has nothing left in its stomach after you started draining it.
 		* @throws std::logic_error if the encoder is not ready.
 		*/
 		ff::packet encode_packet();
+
+		/*
+		* Encodes the next packets from the frames it has been fed.
+		* See the comments for codec_base for when to decode frames.
+		* This version allows you to reuse a packet allocated only once for
+		* a whole encoding loop.
+		*
+		* Note: you must manually set (at least check) some properties (e.g. time fields) of
+		* the encoded packet if you are going to mux it.
+		* The encoder doesn't promise that all the properties are set up correctly.
+		* This is especially important if you use this version to reuse a packet,
+		* as the encoder doesn't promise that it will reset the properties during each call.
+		* I only set its time_base to the encoder's.
+		*
+		* @param pkt where the encoded data will be stored inside.
+		*	If pkt is destroyed, then pkt will be ready with the encoded data.
+		*	If pkt is created, then pkt will be ready with the encoded data.
+		*	If pkt is ready, then its previous data will be released and
+		* the encoded data will be given to it.
+		*	If the encoding fails (i.e. it returns false), then pkt will be created with no data.
+		* @returns true if a packet has been encoded; false if the encoder is hungry, or
+		* if the encoder has nothing left in its stomach after you started draining it.
+		* @throws std::logic_error if the encoder is not ready.
+		*/
+		bool encode_packet(packet& pkt);
 
 	public:
 ///////////////////////////// Transcoding /////////////////////////////
@@ -146,5 +174,11 @@ namespace ff
 		// Inherited via codec_base
 		void start_draining() override;
 
+		/*
+		* Common piece of code of the encode_packet() methods.
+		*
+		* @returns true iff a packet has been encoded.
+		*/
+		bool internal_encode_packet(AVPacket* pkt);
 	};
 }

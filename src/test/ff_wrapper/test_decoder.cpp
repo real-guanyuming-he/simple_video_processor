@@ -112,6 +112,8 @@ int create_test_av
 
 int main()
 {
+	FF_TEST_START
+
 	/*
 	* No dedicated tests for codec_base, because
 	* that's an abstract class and decoder and encoder are the only possible implementations of it.
@@ -244,9 +246,6 @@ int main()
 		TEST_ASSERT_EQUALS(vs.codec_id(), dec1.get_id(), "Should be equal");
 		TEST_ASSERT_TRUE(dec1.created(), "The decoder should be created now.");
 
-		// Although the recommendation is to only set the needed ones and leave others their default values,
-		// libx265 really needs some extra data that is hard to copy by hand.
-		// So I make a full copy here.
 		auto sp = vs.properties();
 		// Should not stretch samples.
 		TEST_ASSERT_EQUALS(ff::rational(1, 1), sp.v_sar(), "Should be equal");
@@ -472,9 +471,6 @@ int main()
 		ff::stream vs = dem1.get_stream(0);
 		ff::decoder dec1(vs.codec_id());
 
-		// Although the recommendation is to only set the needed ones and leave others their default values,
-		// libx265 really needs some extra data that is hard to copy by hand.
-		// So I make a full copy here.
 		auto sp = vs.properties();
 		dec1.set_codec_properties(sp);
 
@@ -635,11 +631,7 @@ int main()
 		ff::stream vs = dem1.get_stream(0);
 		ff::decoder dec1(vs.codec_id());
 
-		// Although the recommendation is to only set the needed ones and leave others their default values,
-		// libx265 really needs some extra data that is hard to copy by hand.
-		// So I make a full copy here.
-		auto sp = vs.properties();
-		dec1.set_codec_properties(sp);
+		dec1.set_codec_properties(vs.properties());
 
 		// Create the decoder context so it can be ready.
 		dec1.create_codec_context();
@@ -701,9 +693,6 @@ int main()
 		ff::stream vs = dem1.get_stream(0);
 		ff::decoder dec1(vs.codec_id());
 
-		// Although the recommendation is to only set the needed ones and leave others their default values,
-		// libx265 really needs some extra data that is hard to copy by hand.
-		// So I make a full copy here.
 		auto sp = vs.properties();
 		dec1.set_codec_properties(sp);
 
@@ -748,6 +737,103 @@ int main()
 		// Try to feed the invalid pkt to the decoder.
 		TEST_ASSERT_THROWS(dec1.feed_packet(inv_pkt), std::invalid_argument);
 	}
+
+	// Test the two versions of decode_frame()
+	{
+		// Feed the decoder until it's full before 
+		// decoding a frame so that decode_frame will always decode one.
+
+		fs::path test1_path(working_dir / "decoder_test1.mp4");
+		std::string test1_path_str(test1_path.generic_string());
+		// Already created.
+		//create_test_video(test1_path_str, "libx265", "green", 800, 600, 24, 5);
+		ff::demuxer dem1(test1_path);
+
+		// Create the decoder from ID.
+		ff::stream vs = dem1.get_stream(0);
+		ff::decoder dec1(vs.codec_id());
+
+		auto sp = vs.properties();
+		dec1.set_codec_properties(sp);
+
+		// Create the decoder context so it can be ready.
+		dec1.create_codec_context();
+		auto dp = dec1.get_codec_properties();
+
+		/*
+		* Feed the decoder packets until it's full
+		*/
+		auto make_dec_full = [&dem1, &dec1]() -> void
+		{
+			ff::packet pkt;
+			do
+			{
+				pkt = dem1.demux_next_packet();
+
+				// If the demuxer reaches the end, seek to the start to keep feeding.
+				if (dem1.eof())
+				{
+					FF_ASSERT(pkt.destroyed(), "Should return a destroyed pkt when EOF.");
+					dem1.seek(0, 1, false);
+					continue;
+				}
+
+				dec1.feed_packet(pkt);
+
+			} while (!dec1.full());
+		};
+
+		// Test the method that supports reusing frame.
+		ff::frame f(false); 
+		// Now f is destroyed.
+		make_dec_full();
+		TEST_ASSERT_TRUE(dec1.decode_frame(f), "Should succeed");
+		TEST_ASSERT_TRUE(f.ready(), "f should have been made ready.");
+
+		f = ff::frame(true);
+		// Now f is created;
+		make_dec_full();
+		TEST_ASSERT_TRUE(dec1.decode_frame(f), "Should succeed");
+		TEST_ASSERT_TRUE(f.ready(), "f should have been made ready.");
+
+		// Now f is ready.
+		const auto* prev_data = f.data();
+		make_dec_full();
+		TEST_ASSERT_TRUE(dec1.decode_frame(f), "Should succeed");
+		TEST_ASSERT_TRUE(f.ready(), "f should have been made ready.");
+		TEST_ASSERT_TRUE(prev_data != f.data(), "Should have new data.");
+
+		// Now decode until hungry to make the next call to decode_frame() fail
+		while (!dec1.hungry())
+		{
+			dec1.decode_frame();
+		}
+		// Now f is ready.
+		TEST_ASSERT_FALSE(dec1.decode_frame(f), "Should fail");
+		TEST_ASSERT_TRUE(f.created(), "f should have been made created");
+		// Now f is created.
+		TEST_ASSERT_FALSE(dec1.decode_frame(f), "Should fail");
+		TEST_ASSERT_TRUE(f.created(), "f should have been made created");
+		f.release_object_memory();
+		// Now f is destroyed.
+		TEST_ASSERT_FALSE(dec1.decode_frame(f), "Should fail");
+		TEST_ASSERT_TRUE(f.created(), "f should have been made created");
+
+		// Test the method that returns a frame.
+		make_dec_full();
+		f = dec1.decode_frame();
+		TEST_ASSERT_TRUE(f.ready(), "f should have been made ready.");
+
+		// Now decode until hungry to make the next call to decode_frame() fail
+		while (!dec1.hungry())
+		{
+			dec1.decode_frame();
+		}
+		f = dec1.decode_frame();
+		TEST_ASSERT_TRUE(f.destroyed(), "f should have been made destroyed.");
+	}
+
+	FF_TEST_END
 
 	return 0;
 }

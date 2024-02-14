@@ -183,44 +183,68 @@ ff::frame ff::decoder::decode_frame()
 		return ff::frame(false);
 	}
 
+	// Use an AVFrame here is more convenient.
 	AVFrame* pf = av_frame_alloc();
 	if (nullptr == pf)
 	{
 		throw std::bad_alloc();
 	}
-	int ret = avcodec_receive_frame(p_codec_ctx, pf);
-	if (0 == ret) // Success
+
+	if (internal_decode_frame(pf))
 	{
-		cancel_full();
-		return ff::frame(pf, p_codec_desc->type == AVMEDIA_TYPE_VIDEO);
+		// Success
+		return frame(pf, is_video());
+	}
+	else
+	{
+		// Failure
+		// Free the AVFrame
+		av_frame_free(&pf);
+		return ff::frame(false);
+	}
+}
+
+bool ff::decoder::decode_frame(frame& f)
+{
+	if (!ready())
+	{
+		throw std::logic_error("The decoder is not ready.");
 	}
 
-	// Failure
-	// First free the AVFrame
-	av_frame_free(&pf);
-	switch (ret)
+	// Handle f so that it's always created before avcodec_receive_frame()
+	switch (f.get_object_state())
 	{
-	case AVERROR(EAGAIN):
-		// Needs more packets.
-		FF_ASSERT(!signaled_no_more_food, "After draining has started, EAGAIN can never be returned.");
-
-		become_hungry();
-		return ff::frame(false);
+	case ff_object::DESTROYED:
+		f.allocate_object_memory();
+		[[fallthrough]];
+	case ff_object::OBJECT_CREATED:
+		// Do nothing.
 		break;
-	case AVERROR_EOF:
-		// Called during draining.
-		return ff::frame(false);
+	case ff_object::READY:
+		// Release its previous data.
+		f.release_resources_memory();
 		break;
-	case AVERROR(EINVAL):
-		FF_ASSERT(false, "The decoder has not been set up correctly. This should not happen.");
-		break;
-	default:
-		// Other decoding errors.
-		throw std::runtime_error("The decoding failed but the decoder was set up correctly. "
-			"Perhaps the packet you gave was invalid.");
 	}
-	
-	return ff::frame(false);
+
+	// Hungry can only be set here and cancelled in feed_packet()
+	if (hungry())
+	{
+		return false;
+	}
+
+	bool ret = internal_decode_frame(f.av_frame());
+
+	if (ret) // Success
+	{
+		// Don't forget to make f ready
+		// and set its internal fields
+		f.internal_find_num_planes();
+		f.set_v_or_a(is_video());
+		f.state = ff_object::READY;
+	}
+
+	return ret;
+
 }
 
 void ff::decoder::start_draining()
@@ -248,4 +272,39 @@ void ff::decoder::start_draining()
 			ON_FF_ERROR_WITH_CODE("Unexpected error happened when I tried to start draining.", ret);
 		}
 	}
+}
+
+bool ff::decoder::internal_decode_frame(AVFrame* f)
+{
+	int ret = avcodec_receive_frame(p_codec_ctx, f);
+	if (0 == ret) // Success
+	{
+		cancel_full();
+		return true;
+	}
+
+	// Failure
+	switch (ret)
+	{
+	case AVERROR(EAGAIN):
+		// Needs more packets.
+		FF_ASSERT(!signaled_no_more_food, "After draining has started, EAGAIN can never be returned.");
+
+		become_hungry();
+		return false;
+		break;
+	case AVERROR_EOF:
+		// Called during draining.
+		return false;
+		break;
+	case AVERROR(EINVAL):
+		FF_ASSERT(false, "The decoder has not been set up correctly. This should not happen.");
+		break;
+	default:
+		// Other decoding errors.
+		throw std::runtime_error("The decoding failed but the decoder was set up correctly. "
+			"Perhaps the packet you gave was invalid.");
+	}
+
+	return false;
 }

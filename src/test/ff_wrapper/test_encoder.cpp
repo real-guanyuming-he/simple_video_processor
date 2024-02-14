@@ -131,6 +131,8 @@ int main()
 	* which means the next will succeed, too.
 	*/
 
+	FF_TEST_START
+
 	// Test creation
 	{
 		// The default constructor is deleted.
@@ -688,10 +690,10 @@ int main()
 		// Now feed until full.
 		ff::frame f(true);
 		f->time_base = ep.time_base().av_rational();
-
 		int64_t pts = 0;
 		constexpr int64_t pts_delta = 600 / 24;
 		ff::frame::data_properties fp(ep.v_pixel_format(), ep.v_width(), ep.v_height());
+
 		bool full = false;
 		while (!e1.full())
 		{
@@ -740,7 +742,6 @@ int main()
 			TEST_ASSERT_TRUE(e1.encode_packet().destroyed(), "should not be able to encode when hungry.");
 		}
 
-		// Now feed until full.
 		ff::frame f(true);
 		f->time_base = ep.time_base().av_rational();
 		constexpr int num_samples = 32;
@@ -776,6 +777,110 @@ int main()
 		f1.allocate_data(different_fp);
 		TEST_ASSERT_THROWS(e1.feed_frame(f1), std::invalid_argument);
 	}
+
+	// Test the two versions of encode_packet()
+	{
+		// Feed the decoder until it's full before 
+		// decoding a frame so that decode_frame will always decode one.
+
+		ff::encoder e1(AVCodecID::AV_CODEC_ID_GIF);
+		ff::codec_properties ep;
+
+		ep.set_v_pixel_format(e1.supported_v_pixel_formats()[0]);
+		ep.set_v_width(800);
+		ep.set_v_height(600);
+		ep.set_v_sar(ff::rational(1, 1));
+		try
+		{
+			ep.set_v_frame_rate(e1.supported_v_frame_rates()[0]);
+		}
+		catch (const std::domain_error&)
+			// Don't know which frame rates are supported
+		{
+			ep.set_v_frame_rate(ff::rational(24));
+		}
+		ep.set_time_base(ff::common_video_time_base_600);
+		ep.set_type_video();
+		ep.set_id(e1.get_id());
+
+		e1.set_codec_properties(ep);
+		e1.create_codec_context();
+
+		ff::frame f(true);
+		f->time_base = ep.time_base().av_rational();
+		int64_t pts = 0;
+		constexpr int64_t pts_delta = 600 / 24;
+		ff::frame::data_properties fp(ep.v_pixel_format(), ep.v_width(), ep.v_height());
+
+		/*
+		* Feed the encoder frames until it's full.
+		*/
+		auto make_enc_full = [&]() -> void
+		{
+			do
+			{
+				f.allocate_data(fp);
+				f->pts = pts;
+
+				e1.feed_frame(f);
+
+				pts += pts_delta;
+				f.release_resources_memory();
+
+			} while (!e1.full());
+		};
+
+		// Test the method that supports reusing packet
+		ff::packet pkt(false);
+		// Now f is destroyed.
+		make_enc_full();
+		TEST_ASSERT_TRUE(e1.encode_packet(pkt), "Should succeed");
+		TEST_ASSERT_TRUE(pkt.ready(), "pkt should have been made ready.");
+
+		pkt = ff::packet(true);
+		// Now pkt is created;
+		make_enc_full();
+		TEST_ASSERT_TRUE(e1.encode_packet(pkt), "Should succeed");
+		TEST_ASSERT_TRUE(pkt.ready(), "pkt should have been made ready.");
+
+		// Now pkt is ready.
+		const auto* prev_data = pkt.data();
+		make_enc_full();
+		TEST_ASSERT_TRUE(e1.encode_packet(pkt), "Should succeed");
+		TEST_ASSERT_TRUE(pkt.ready(), "pkt should have been made ready.");
+		TEST_ASSERT_TRUE(prev_data != pkt.data(), "Should have new data.");
+
+		// Now decode until hungry to make the next call to decode_frame() fail
+		while (!e1.hungry())
+		{
+			e1.encode_packet();
+		}
+		// Now pkt is ready.
+		TEST_ASSERT_FALSE(e1.encode_packet(pkt), "Should fail");
+		TEST_ASSERT_TRUE(pkt.created(), "pkt should have been made created");
+		// Now f is created.
+		TEST_ASSERT_FALSE(e1.encode_packet(pkt), "Should fail");
+		TEST_ASSERT_TRUE(pkt.created(), "pkt should have been made created");
+		pkt.release_object_memory();
+		// Now pkt is destroyed.
+		TEST_ASSERT_FALSE(e1.encode_packet(pkt), "Should fail");
+		TEST_ASSERT_TRUE(pkt.created(), "pkt should have been made created");
+
+		// Test the method that returns a frame.
+		make_enc_full();
+		pkt = e1.encode_packet();
+		TEST_ASSERT_TRUE(pkt.ready(), "f should have been made ready.");
+
+		// Now decode until hungry to make the next call to decode_frame() fail
+		while (!e1.hungry())
+		{
+			e1.encode_packet();
+		}
+		pkt = e1.encode_packet();
+		TEST_ASSERT_TRUE(pkt.destroyed(), "f should have been made destroyed.");
+	}
+
+	FF_TEST_END
 
 	return 0;
 }

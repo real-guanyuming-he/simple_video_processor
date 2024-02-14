@@ -96,12 +96,31 @@ namespace ff
 		/*
 		* Decodes the next frame from the packets it has been fed.
 		* See the comments for codec_base for when to decode frames.
+		* To reuse a frame, call the version that accepts a frame& parameter.
 		*
 		* @returns a frame decoded; a DESTROYED frame if the decoder is hungry, or
 		* if the decoder has nothing left in its stomach after you started draining it.
 		* @throws std::logic_error if the decoder is not ready.
 		*/
 		frame decode_frame();
+
+		/*
+		* Decodes the next frame from the packets it has been fed.
+		* See the comments for codec_base for when to decode frames.
+		* This version allows you to reuse a frame allocated only once for
+		* a whole decoding loop.
+		*
+		* @param f where the decoded data will be stored inside.
+		*	If f is destroyed, then f will be ready with the decoded data.
+		*	If f is created, then f will be ready with the decoded data.
+		*	If f is ready, then its previous data will be released and
+		* the decoded data will be given to it.
+		*	If the decoding fails (i.e. it returns false), then f will be created with no data.
+		* @returns true if a frame has been decoded; false if the decoder is hungry, or
+		*	if the decoder has nothing left in its stomach after you started draining it.
+		* @throws std::logic_error if the decoder is not ready.
+		*/
+		bool decode_frame(frame& f);
 
 	private:
 /////////////////////////////// Derived from ff_object ///////////////////////////////
@@ -113,6 +132,14 @@ namespace ff
 
 /////////////////////////////// Derived from codec_base ///////////////////////////////
 		void start_draining() override;
+
+	private:
+		/*
+		* Common piece of code of the decode_frame() methods.
+		* 
+		* @returns true iff a frame has been decoded.
+		*/
+		bool internal_decode_frame(AVFrame* f);
 	};
 
 }

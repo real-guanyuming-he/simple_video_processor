@@ -307,6 +307,16 @@ ff::frame& ff::frame::operator=(frame&& right) noexcept
 	return *this;
 }
 
+void ff::frame::set_v_or_a(bool new_v_or_a)
+{
+	if (!created())
+	{
+		throw std::logic_error("Can only set v_or_a when the frame is created.");
+	}
+
+	video_or_audio = new_v_or_a;
+}
+
 int ff::frame::number_planes() const
 {
 	if (!ready())
