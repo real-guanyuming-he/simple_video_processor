@@ -136,5 +136,6 @@ However, the branch names do follow some conventions: (Development also includes
 - Branch `ff_formats_xxx` contains development of formats (file I/O, demuxer, and muxer).
 - Branch `ff_codec_xxx` contains development of decoders and encoders.
 - Branch `ff_util_xxx` contains development of the utility for `ff_wrapper`.
-- Branch `ff_sws...` contains development of the `scscale` encapsulations.
+- Branch `ff_sws...` contains development of the `swscale` encapsulations.
+- Branch `ff_swr...` contains development of the `swresample` encapsulations.
 - Other branch `ff_...` contains miscellaneous development on `ff_wrapper`. For exsample, small, general bug fix; adjusting previous tests for changed API.

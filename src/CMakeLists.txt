@@ -32,6 +32,10 @@ cmake_path(APPEND
 cmake_path(APPEND 
     SrcFFWrapperRootPath "sws"
     OUTPUT_VARIABLE SrcFFWrapperSwsPath)
+cmake_path(APPEND 
+    SrcFFWrapperRootPath "swr"
+    OUTPUT_VARIABLE SrcFFWrapperSwrPath)
+
 
 # The FFmpeg wrapper library
 set(FFWrapperSourceFiles
@@ -74,7 +78,10 @@ set(FFWrapperSourceFiles
     "${SrcFFWrapperCodecPath}/codec_properties.cpp"
 # SwScale
     "${SrcFFWrapperSwsPath}/frame_transformer.h"
-    "${SrcFFWrapperSwsPath}/frame_transformer.cpp")
+    "${SrcFFWrapperSwsPath}/frame_transformer.cpp"
+# SwResample
+    "${SrcFFWrapperSwrPath}/audio_resampler.h"
+    "${SrcFFWrapperSwrPath}/audio_resampler.cpp")
     
 add_library(${FFWrapperName} SHARED
     ${FFWrapperSourceFiles})
