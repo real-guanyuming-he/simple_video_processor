@@ -50,9 +50,11 @@ set(FFWrapperSourceFiles
     "${SrcFFWrapperUtilPath}/util.h"
     "${SrcFFWrapperUtilPath}/dict.h"
     "${SrcFFWrapperUtilPath}/dict.cpp"
-    # Put these two here because FFmpeg put channel layout in libavutil
+    # Put these here because FFmpeg put them in libavutil
     "${SrcFFWrapperUtilPath}/channel_layout.h"
     "${SrcFFWrapperUtilPath}/channel_layout.cpp"
+    "${SrcFFWrapperUtilPath}/audio_fifo_buffer.h"
+    "${SrcFFWrapperUtilPath}/audio_fifo_buffer.cpp"
 # Data
     "${SrcFFWrapperDataPath}/packet.h"
     "${SrcFFWrapperDataPath}/packet.cpp"

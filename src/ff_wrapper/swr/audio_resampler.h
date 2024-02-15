@@ -15,3 +15,49 @@
 * If not, see <https://www.gnu.org/licenses/>.
 */
 
+struct SwrContext;
+
+extern "C"
+{
+#include <libavutil/samplefmt.h>
+}
+
+namespace ff
+{
+	class channel_layout;
+
+	/*
+	* Converts audio samples. The converted samples are stored into
+	* a FIFO buffer for better access.
+	* 
+	* Once constructed, its parameters cannot be changed.
+	* The convertions will be done according to the parameters.
+	*/
+	class audio_resampler
+	{
+	public:
+		// Must provide parameters to init the resampler.
+		audio_resampler() = delete;
+
+		/*
+		* Creates the resampler with the resample parameters.
+		* 
+		* TODO: consider adding some parameters for initializing the FIFO buffer.
+		*/
+		audio_resampler
+		(
+			const channel_layout& dst_ch_layout,
+			AVSampleFormat dst_sample_fmt,
+			int dst_sample_rate,
+			const channel_layout& src_ch_layout,
+			AVSampleFormat src_sample_fmt,
+			int src_sample_rate
+		);
+
+		~audio_resampler() noexcept;
+
+	private:
+		SwrContext* swr_ctx;
+		// TODO: add the FIFO buffer.
+	};
+}
