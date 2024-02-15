@@ -3,10 +3,10 @@ The project is currently under heavy development and may be unstable. Wait until
 
 # Introduction
 The project consists of two pieces of software.
-- An encapsulation of `FFmpeg` done in modern C++ (C++ 20), which is designed to be cross-platform.
-- A GUI video processor on Windows, programmed with the above wrapper and Microsoft's `WinUI 3`.
+- An encapsulation of `FFmpeg`, `ff_wrapper`, done in modern C++ (C++ 20), which is designed to be cross-platform.
+- A GUI video processor on Windows, `simple_video_processor`, programmed with `ff_wrapper` and `WinUI 3`.
 
-The whole software is completely free and open source (in `GNU GPL v3`).
+`ff_wrapper` and `simple_video_processor` are both free/libre software (under `GNU GPL v3`). 
 
 # Motivation
 Initially, I wanted to create a simple video processor for my daily processing tasks, like resizing, compressing, reformating, and clipping. Later, I decided to learn the FFmpeg APIs and create a C++ wrapper for them.
@@ -55,7 +55,7 @@ It has the following features:
 4. The development of the whole project is carried out with good practices. `Git` is used to manage the source code. `CMake` is used to easily configure and build the project across platforms.
 
 ## Planned features:
-The GUI is waiting to be developed.
+The GUI is *waiting* to be developed.
 
 1. Modern design principles are to be used. You can expect
     - Requirement Engineering
