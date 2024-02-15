@@ -135,6 +135,21 @@ namespace ff
 		packet demux_next_packet();
 
 		/*
+		* Demuxes a packet from the currently location in the file.
+		* 
+		* @param pkt where the demuxed data will be stored inside.
+		*	If pkt is destroyed, then pkt will be ready with the demuxed data.
+		*	If pkt is created, then pkt will be ready with the demuxed data.
+		*	If pkt is ready, then its previous data will be released and
+		* the demuxed data will be given to it.
+		*	If the encoding fails (i.e. it returns false), then pkt will be created with no data. 
+		* @returns true if a packet has been demuxed, or false if eof has been reached.
+		* Since then, eof() remains true until it is reset by another related method.
+		* If the packet is not DESTROYED, then it is linked to its corresponding stream.
+		*/
+		bool demux_next_packet(packet& pkt);
+
+		/*
 		* Seeks to the first frame of the stream in the file that is
 		* the first one beyond/before timestamp for direction true/false.
 		* 
@@ -272,10 +287,17 @@ namespace ff
 		*/
 		void internal_probe_stream_info(::AVDictionary** dict);
 
+		/*
+		* common piece of code used in the demux_next_packet()'s
+		* @returns true iff a packet has been demuxed.
+		*/
+		bool internal_demux_packet(AVPacket* pkt);
+
 	public:
 		// Inherited via media_base
 		virtual std::string description() const override;
 		virtual std::vector<std::string> short_names() const override;
 		virtual std::vector<std::string> extensions() const override;
+
 	};
 }

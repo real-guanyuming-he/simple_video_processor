@@ -113,53 +113,56 @@ ff::packet ff::demuxer::demux_next_packet()
 {
 	FF_ASSERT(p_fmt_ctx != nullptr, "Must be ready after construction.");
 
-	// Create an AVPacket inside the function. 
-	// On success, return a ff::packet that takes over the ownership of the AVPacket.
-	// I do this instead of creating a ff::packet directly 
-	// because av_read_frame() will alloc resource for the frame,
-	// which should cause a ff::packet's state to change.
-
+	// Using an AVPacket is more convenient here.
 	::AVPacket* av_pkt = av_packet_alloc();
 	if (nullptr == av_pkt)
 	{
 		throw std::bad_alloc();
 	}
 
-	int ret = av_read_frame(p_fmt_ctx, av_pkt);
-	// ret=0 -> success
-	if (0 == ret)
-	{
-		return packet(av_pkt, streams[av_pkt->stream_index]->time_base);
-	}
-	// ret<0 -> Error or EOF
+	bool ret = internal_demux_packet(av_pkt);
 
-	// On error, pkt will be blank (as if it came from av_packet_alloc())
-	if (nullptr == av_pkt->buf && 0 == av_pkt->size)
+	if (ret)
 	{
-		// Error
-		// Don't forget to free av_pkt first.
-		av_packet_free(&av_pkt);
-
-		switch (ret)
-		{
-		case AVERROR(ENOMEM):
-			throw std::bad_alloc();
-			break;
-		case AVERROR_EOF: // EOF
-			eof_reached = true;
-			return packet();
-		default:
-			ON_FF_ERROR_WITH_CODE("Unexpected error happened during a call to av_read_frame()", ret);
-			break;
-		}
+		// Success
+		return packet(av_pkt);
 	}
 	else
 	{
-		// EOF
-		eof_reached = true;
-		return packet();
+		// Failure
+		av_packet_free(&av_pkt);
+		return packet(false);
 	}
 
+}
+
+bool ff::demuxer::demux_next_packet(packet& pkt)
+{
+	FF_ASSERT(p_fmt_ctx != nullptr, "Must be ready after construction.");
+
+	// Make sure pkt is created before storing demuxed data in it.
+	switch (pkt.get_object_state())
+	{
+	case ff_object::DESTROYED:
+		pkt.allocate_object_memory();
+		[[fallthrough]];
+	case ff_object::OBJECT_CREATED:
+		// Do nothing.
+		break;
+	case ff_object::READY:
+		// Release its data
+		pkt.release_resources_memory();
+		break;
+	}
+
+	bool ret = internal_demux_packet(pkt.av_packet());
+	if (ret)
+	{
+		// Success
+		pkt.state = ff_object::READY;
+	}
+
+	return ret;
 }
 
 void ff::demuxer::seek(int stream_ind, int64_t timestamp, bool direction)
@@ -268,6 +271,42 @@ void ff::demuxer::internal_probe_stream_info(::AVDictionary** dict)
 		{
 			s_indices.push_back(i);
 		}
+	}
+}
+
+bool ff::demuxer::internal_demux_packet(AVPacket* pkt)
+{
+	int ret = av_read_frame(p_fmt_ctx, pkt);
+	// ret=0 -> success
+	if (0 == ret)
+	{
+		pkt->time_base = streams[pkt->stream_index]->time_base;
+		return true;
+	}
+	// ret<0 -> Error or EOF
+
+	// On error, pkt will be blank (as if it came from av_packet_alloc())
+	if (nullptr == pkt->buf && 0 == pkt->size)
+	{
+		// Error
+		switch (ret)
+		{
+		case AVERROR(ENOMEM):
+			throw std::bad_alloc();
+			break;
+		case AVERROR_EOF: // EOF
+			eof_reached = true;
+			return false;
+		default:
+			ON_FF_ERROR_WITH_CODE("Unexpected error happened during a call to av_read_frame()", ret);
+			break;
+		}
+	}
+	else
+	{
+		// EOF
+		eof_reached = true;
+		return false;
 	}
 }
 

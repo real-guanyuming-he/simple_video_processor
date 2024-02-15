@@ -42,6 +42,8 @@ namespace ff
 	{
 		// Encoder needs to set it up during encoding.
 		friend class encoder;
+		// Demuxer needs to set it up during demuxing.
+		friend class demuxer;
 
 	public:
 		inline ~packet() { destroy(); }

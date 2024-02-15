@@ -157,7 +157,8 @@ namespace ff
 		* You can call packet::prepare_for_muxing() and pass the corresponding stream to set it up,
 		* or do what the comment for that method says. The packets must also be coming with increasing dts, 
 		* except in rare situations the dts can be non-decreasing. This parameter is nonconst because 
-		* the underlying FFmpeg function takes a nonconst pointer.
+		* its properties (not data) may be modified by the method. In addition, the FFmpeg av_interleaved_write_frame()
+		* requires a non-const pointer to it.
 		* @throws std::invalid_argument if the packet is invalid.
 		* @throws std::logic_error if you have already called mux_packet_manual().
 		* @throws std::logic_error if you have not prepared the demuxer yet.
@@ -173,8 +174,9 @@ namespace ff
 		* @param pkt the packet to be fed into the muxer. It must be properly set up.
 		* You can call packet::prepare_for_muxing() and pass the corresponding stream to set it up,
 		* or do what the comment for that method says. The packets must also be coming with increasing dts,
-		* except in rare situations the dts can be non-decreasing. This parameter is nonconst because
-		* the underlying FFmpeg function takes a nonconst pointer.
+		* except in rare situations the dts can be non-decreasing. This parameter is nonconst because 
+		* its properties (not data) may be modified by the method. In addition, the FFmpeg av_interleaved_write_frame()
+		* requires a non-const pointer to it.
 		* @throws std::invalid_argument if the packet is invalid.
 		* @throws std::logic_error if you have already called mux_packet_auto().
 		* @throws std::logic_error if you have not prepared the demuxer yet.

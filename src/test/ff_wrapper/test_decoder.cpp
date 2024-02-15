@@ -801,7 +801,8 @@ int main()
 		make_dec_full();
 		TEST_ASSERT_TRUE(dec1.decode_frame(f), "Should succeed");
 		TEST_ASSERT_TRUE(f.ready(), "f should have been made ready.");
-		TEST_ASSERT_TRUE(prev_data != f.data(), "Should have new data.");
+		// The new data might be allocated at the same location as the previous data's
+		//TEST_ASSERT_TRUE(prev_data != f.data(), "Should have new data.");
 
 		// Now decode until hungry to make the next call to decode_frame() fail
 		while (!dec1.hungry())

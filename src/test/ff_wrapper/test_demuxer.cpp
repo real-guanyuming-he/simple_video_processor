@@ -96,6 +96,8 @@ int main()
 	* In addition, media_base isn't tested individually but in here and test_muxer.cpp.
 	*/
 
+	FF_TEST_START
+
 	// Test media_base
 	{
 		std::string l1;
@@ -260,6 +262,75 @@ int main()
 
 		TEST_ASSERT_TRUE(d1.eof(), "Should have eof after the last packet is out.");
 	}
+
+	// Test the two different versions of demux_next_packet()
+	{
+		fs::path test1_path(working_dir / "test1.mp4");
+		std::string test1_path_str(test1_path.generic_string());
+		// Already created.
+		//create_test_video(test1_path_str, 1280, 720, 24, 5);
+		ff::demuxer d1(test1_path);
+
+		auto make_packet_available = [&d1]() -> void
+		{
+			if (d1.eof())
+			{
+				// Seek to near the beginning.
+				d1.seek(0, 1, false);
+			}
+		};
+
+		// Test the method that supports reusing packet
+		ff::packet pkt(false);
+		// Now pkt is destroyed.
+		TEST_ASSERT_TRUE(d1.demux_next_packet(pkt), "Should succeed");
+		TEST_ASSERT_TRUE(pkt.ready(), "pkt should have been made ready.");
+
+		pkt = ff::packet(true);
+		// Now pkt is created;
+		make_packet_available();
+		TEST_ASSERT_TRUE(d1.demux_next_packet(pkt), "Should succeed");
+		TEST_ASSERT_TRUE(pkt.ready(), "pkt should have been made ready.");
+
+		// Now pkt is ready.
+		const auto* prev_data = pkt.data();
+		make_packet_available();
+		TEST_ASSERT_TRUE(d1.demux_next_packet(pkt), "Should succeed");
+		TEST_ASSERT_TRUE(pkt.ready(), "pkt should have been made ready.");
+		// The new data might be allocated at the same location as the previous data's
+		//TEST_ASSERT_TRUE(prev_data != pkt.data(), "Should have new data.");
+
+		// Now demux until eof to make the next call fail
+		while (!d1.eof())
+		{
+			d1.demux_next_packet();
+		}
+		// Now pkt is ready.
+		TEST_ASSERT_FALSE(d1.demux_next_packet(pkt), "Should fail");
+		TEST_ASSERT_TRUE(pkt.created(), "pkt should have been made created");
+		// Now pkt is created.
+		TEST_ASSERT_FALSE(d1.demux_next_packet(pkt), "Should fail");
+		TEST_ASSERT_TRUE(pkt.created(), "pkt should have been made created");
+		pkt.release_object_memory();
+		// Now pkt is destroyed.
+		TEST_ASSERT_FALSE(d1.demux_next_packet(pkt), "Should fail");
+		TEST_ASSERT_TRUE(pkt.created(), "pkt should have been made created");
+
+		// Test the method that returns a packet.
+		make_packet_available();
+		pkt = d1.demux_next_packet();
+		TEST_ASSERT_TRUE(pkt.ready(), "pkt should have been made ready.");
+
+		// Now demux until eof to make the next call fail
+		while (!d1.eof())
+		{
+			d1.demux_next_packet();
+		}
+		pkt = d1.demux_next_packet();
+		TEST_ASSERT_TRUE(pkt.destroyed(), "pkt should have been made destroyed.");
+	}
+
+	FF_TEST_END
 
 	return 0;
 }
