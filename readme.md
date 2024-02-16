@@ -1,6 +1,9 @@
 # Under Development
 The project is currently under heavy development and may be unstable. Wait until the first stable release.
 
+## Slow progress
+The second semester of my final undergraduate academic year will start very soon. During the time updates on this project are expected to be few in number and slow in time.
+
 # Introduction
 The project consists of two pieces of software.
 - An encapsulation of `FFmpeg`, `ff_wrapper`, done in modern C++ (C++ 20), which is designed to be cross-platform.
