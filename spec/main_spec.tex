@@ -1,0 +1,44 @@
+\documentclass{article}
+
+% Hyperlinks in the pdf
+\usepackage{hyperref}
+\hypersetup{colorlinks=true}
+
+% Common commands for static names and their shorter names
+\newcommand{\ffwrappername}{\texttt{ff\_wrapper}}
+\newcommand{\ffwname}{\texttt{ffw}}
+\newcommand{\simplevideoprocessorname}{\texttt{simple\_video\_processor}}
+\newcommand{\svpname}{\texttt{svp}}
+
+\title{Software Specifications for\\
+	\ffwrappername\ and \simplevideoprocessorname\\%
+}
+\author{Guanyuming He}
+\date{\today}
+
+\begin{document}
+\pagenumbering{gobble}
+\pagestyle{empty}	
+\maketitle
+
+\newpage
+\pagenumbering{roman}
+\pagestyle{plain}
+\tableofcontents
+
+\newpage
+\pagenumbering{arabic}
+\pagestyle{headings}
+
+This documentation formally specifies the two pieces of software, \ffwrappername\ and \simplevideoprocessorname. 
+To avoid long names in typesetting, from now on they are also called \ffwname\ and \svpname, respectively.
+
+% specs for ff_wrapper
+\clearpage
+\input{ff_wrapper/ffw_spec.tex}
+
+% specs for simple_video_processor
+\clearpage
+\input{simple_video_processor/svp_spec.tex}
+	
+\end{document}
