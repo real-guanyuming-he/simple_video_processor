@@ -1,4 +1,15 @@
-\documentclass{article}
+\documentclass[oneside, a4paper, 11pt]{report}
+
+% Beautify certain elements
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+%% Beautify design problems
+\newtcolorbox{designproblembox}[1]{%
+colframe=blue!50!white,fonttitle=\bfseries,title={#1},
+skin=bicolor,
+colback=blue!5!white,colbacklower=white,
+parbox=false%
+}
 
 % Hyperlinks in the pdf
 \usepackage{hyperref}
@@ -30,15 +41,12 @@
 \pagenumbering{arabic}
 \pagestyle{headings}
 
-This documentation formally specifies the two pieces of software, \ffwrappername\ and \simplevideoprocessorname. 
-To avoid long names in typesetting, from now on they are also called \ffwname\ and \svpname, respectively.
+\input{introduction.tex}
 
 % specs for ff_wrapper
-\clearpage
 \input{ff_wrapper/ffw_spec.tex}
 
 % specs for simple_video_processor
-\clearpage
 \input{simple_video_processor/svp_spec.tex}
 	
 \end{document}

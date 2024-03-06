@@ -1,1 +1,52 @@
-\part{\ffwrappername\ Specifications}
+\chapter{\ffwrappername\ Specifications}
+
+\section{Current status}
+\ffwname\ is produced in an iterative way, for the following reasons:
+\begin{enumerate}
+	\item Although currently the wrapper is for a fixed major version of FFmpeg, it could be extended in the future to wrap a future version. 
+	Iterative production allows for easy extensions.
+	\item I was not an expert in FFmpeg and multimedia processing at the start, so iterative production enables me to work with my currently limited understanding first,
+	and improve later.
+	\item I was not absolutely certain of what kind of a wrapper I wanted at the start, so iterative production allows me to 
+	improve my requirements along the production as well.
+\end{enumerate}
+
+\subsection{Current progress}
+\paragraph{Iteration 1} \ffwname\ is currently at iteration 1.
+Iteration 1 is currently at the specifications stage.
+
+\subsubsection{Previous progresses}
+\paragraph{Iteration 0} Iteration 0 had only two stages: development and testing.
+In this iteration, I performed initial development of the software without specification. 
+The reason was that I needed to establish an initial understanding of FFmpeg APIs and multimedia processing.
+
+The testing was executed against the comments I wrote.
+
+\section{Past design problems}
+In this section, problems of past design are listed with proposed solutions. The real solutions used will be elaborated in the current specifications.
+
+\subsection{Iteration 0 problems}
+\begin{designproblembox}{\texttt{ff\_object} exposed state control}
+	\textbf{Description:} \texttt{ff\_object} was defined to act as an ADT for FFmpeg objects that needed two-step initialisation and destruction. It used a state machine to ensure that these things occurred in a correct order.
+	
+	Previously, the state machine was exposed to all of its subclasses, which was meant to enable subclasses to construct with states different than the default one.
+\tcblower
+	\textbf{Proposed Solution:} Do not expose it, but define a constructor of \texttt{ff\_object} that can choose the state after construction.
+\end{designproblembox}
+
+\begin{designproblembox}{\texttt{ff\_object} can not act like a weak ref}
+	\textbf{Description:}  \texttt{ff\_object} could only be used to control objects that were completely managed by the user. Should the object have needed to be managed by the FFmpeg libraries for a while, it would not have been possible.
+\tcblower
+	\textbf{Proposed Solution:} Add a managed state and allows for transition to it from any other state. The transited-from state will be remember and restored on exiting the managed state.
+	
+	Exiting into arbitrary state MUST NOT be permitted. Otherwise a user would be able to abuse this mechanism to modify the state however he pleases.
+\end{designproblembox}
+
+\begin{designproblembox}{The four main ADTs had high coupling}
+	\textbf{Description:}  \texttt{demuxer, muxer, decoder, encoder} were the four main ADTs that a user interacted with. However, each did too much in its class. 
+	
+	Specifically, for example, different types of \texttt{decoder}s require different initialisation setups.
+	Such different setups were all done in the constructor of \texttt{decoder}.
+\tcblower
+	\textbf{Proposed Solution:} Let each of the four ADTs have polymorphism --- different types of an ADT inherit from it and implement different initialisation logics.
+\end{designproblembox}
