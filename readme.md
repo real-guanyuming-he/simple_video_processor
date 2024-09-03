@@ -1,8 +1,5 @@
-# Under Development
-The project is currently under heavy development and may be unstable. Wait until the first stable release.
-
-## Slow progress
-The second semester of my final undergraduate academic year will start very soon. During the time updates on this project are expected to be few in number and slow in time.
+# Abandoned, yet again.
+Now that I ascertained my desire pursuit academic development instead of software development, I will have to cease all development of this project and abandon it indefinitely.
 
 # Introduction
 The project consists of two pieces of software.
